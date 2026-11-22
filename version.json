@@ -2,6 +2,6 @@
   "versionCode": 3,
   "versionName": "1.0.3",
   "mandatory": false,
-  "changelog": "Atualização automática v1.0.3: modal automático ao abrir o jogo + sistema completo via GitHub Releases.",
+  "changelog": "• Novos NPCs pedestres espalhados pela cidade (14 personagens)\n• Novo tráfego de veículos nas ruas respeitando semáforos e obstáculos\n• Câmera 360° livre no protagonista e botão de visão Frontal\n• NPC 2 do Job corrigida em pé, com articulações, piscar e física realista\n• Sistema de atualização online direto pelo app",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.3/BrasilRP_GTA6.apk"
 }
