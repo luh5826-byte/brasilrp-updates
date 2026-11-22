@@ -1,7 +1,7 @@
 {
-  "versionCode": 15,
-  "versionName": "1.0.15",
+  "versionCode": 16,
+  "versionName": "1.0.16",
   "mandatory": false,
-  "changelog": "• Novo personagem jogável adicionado: Cool Man (cool_man.glb)\\n• Filtro de ossos IK/FK/Ctrl aplicado ao esqueleto para usar os ossos reais Mixamo com pose neutra automática, articulações anatômicas e física de mola-amortecedor",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.15/BrasilRP_GTA6.apk"
+  "changelog": "• Novo seletor de personagens em grade visível: todos os 7 personagens aparecem ao mesmo tempo na tela\\n• Prévias visuais em cada card com captura automática de retrato 3D real ao selecionar",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.16/BrasilRP_GTA6.apk"
 }
