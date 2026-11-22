@@ -1,7 +1,7 @@
 {
-  "versionCode": 7,
-  "versionName": "1.0.7",
+  "versionCode": 8,
+  "versionName": "1.0.8",
   "mandatory": false,
-  "changelog": "• Seletor de 7 Personagens no Lobby 3D: NPC 1, NPC 2, Japan, Walking, Office, Cat Woman e Lily\n• Corrigido bug onde NPCs afundavam/sumiam no chão ao iniciar o RP\n• NPCs e tráfego agora já andam vivos na cidade mesmo no Lobby 3D\n• Corrigida ativação automática dos sons ambiente, passos, motores e falas dos NPCs ao entrar no RP",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.7/BrasilRP_GTA6.apk"
+  "changelog": "• Novo HUD estilo GTA RP: minimapa circular com barras de vida e stamina logo abaixo\n• Novos controles translúcidos clean (joystick e botões circulares com ícones brancos)\n• Card compacto de dinheiro, banco, estrelas, relógio, slot de arma e botão circular de celular\n• Física de direção dos carros corrigida: maior aderência lateral e câmera acompanhando a frente naturalmente",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.8/BrasilRP_GTA6.apk"
 }
