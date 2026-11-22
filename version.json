@@ -1,7 +1,7 @@
 {
-  "versionCode": 14,
-  "versionName": "1.0.14",
+  "versionCode": 15,
+  "versionName": "1.0.15",
   "mandatory": false,
-  "changelog": "• Corrigida pose neutra automática (alinhamento vetorial real dos ossos) para Cat Woman, Lily e Office: remove o bug dos braços entrando no corpo/peito e corrige a pose de passo congelada da Cat Woman\\n• Cotovelos agora dobram no eixo X anatômico após neutralização da pose, sem torção nos antebraços",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.14/BrasilRP_GTA6.apk"
+  "changelog": "• Novo personagem jogável adicionado: Cool Man (cool_man.glb)\\n• Filtro de ossos IK/FK/Ctrl aplicado ao esqueleto para usar os ossos reais Mixamo com pose neutra automática, articulações anatômicas e física de mola-amortecedor",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.15/BrasilRP_GTA6.apk"
 }
