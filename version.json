@@ -1,7 +1,7 @@
 {
-  "versionCode": 12,
-  "versionName": "1.0.12",
+  "versionCode": 13,
+  "versionName": "1.0.13",
   "mandatory": false,
-  "changelog": "• Corrigido tamanho gigante de Cat Woman e Lily: escala agora é calculada pela posição real dos ossos (olhos/cabeça até os pés), deixando todas com exatamente 1,68m e pés no chão",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.12/BrasilRP_GTA6.apk"
+  "changelog": "• Corrigida articulação dos braços e cotovelos de Cat Woman, Lily e Office: cotovelos agora dobram no eixo anatômico Y (para frente) em vez de torcer o antebraço\n• Braços da Office (T-pose) e Cat Woman/Lily (A-pose) abaixados naturalmente junto ao corpo e filtro anti-twist aplicado nos ossos principais",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.13/BrasilRP_GTA6.apk"
 }
