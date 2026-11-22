@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.0.8",
+  "versionCode": 9,
+  "versionName": "1.0.9",
   "mandatory": false,
-  "changelog": "• Novo HUD estilo GTA RP: minimapa circular com barras de vida e stamina logo abaixo\n• Novos controles translúcidos clean (joystick e botões circulares com ícones brancos)\n• Card compacto de dinheiro, banco, estrelas, relógio, slot de arma e botão circular de celular\n• Física de direção dos carros corrigida: maior aderência lateral e câmera acompanhando a frente naturalmente",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.8/BrasilRP_GTA6.apk"
+  "changelog": "• Personagens Japan e Walking rigados no Blender com esqueleto completo (21 ossos igual à NPC 1) e tamanho padronizado em 1,68m\n• Física completa ativada em TODOS os personagens (Japan, Walking, Office, Cat Woman, Lily): pernas, joelhos, tornozelos, braços, cotovelos, pescoço, cabeça, piscar de olhos, respiração, agachamento, pulo, busto e cabelo/orelhas\n• Corrigido bug de escala e flutuação causado por malha Icosphere oculta e rotação inicial dos ossos\n• Otimização dos modelos 3D: APK ~68 MB mais leve e carregamento mais rápido",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.9/BrasilRP_GTA6.apk"
 }
