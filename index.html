@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brasil RP — Download Oficial (Android APK)</title>
+  <meta name="description" content="Baixe a versão mais recente do Brasil RP para Android." />
+  <meta property="og:title" content="Brasil RP — Download Oficial APK" />
+  <meta property="og:description" content="Baixe agora a última versão atualizada do Brasil RP para Android." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0b0f17" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #182338 0%, #0b0f17 65%);
+      color: #f3f6fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background: rgba(18, 25, 39, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 22px;
+      padding: 28px 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #00c853, #009624);
+      color: #06130a;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #ffffff, #ffd54f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .version {
+      font-size: 14px;
+      color: #9fb0cc;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #00e676, #00b248);
+      color: #05160b;
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(0, 230, 118, 0.35);
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+    .btn:active { transform: scale(0.98); filter: brightness(0.95); }
+    .changelog-box {
+      margin-top: 22px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .changelog-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #ffd54f;
+      margin-bottom: 8px;
+    }
+    .changelog-text {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #d6e0f0;
+      white-space: pre-line;
+    }
+    .footer {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #7d8da8;
+    }
+    .footer a { color: #9fb0cc; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge">Android APK Oficial</span>
+    <h1>Brasil RP</h1>
+    <p class="version" id="versionLabel">Carregando última versão...</p>
+
+    <a class="btn" id="downloadBtn" href="https://github.com/luh5826-byte/brasilrp-updates/releases/latest/download/BrasilRP_GTA6.apk">
+      <span>⬇ BAIXAR ÚLTIMA VERSÃO</span>
+    </a>
+
+    <section class="changelog-box">
+      <div class="changelog-title">Novidades da atualização</div>
+      <div class="changelog-text" id="changelogText">Carregando novidades...</div>
+    </section>
+
+    <p class="footer">
+      Sempre atualizado automaticamente •
+      <a href="https://github.com/luh5826-byte/brasilrp-updates/releases/latest">Ver no GitHub</a>
+    </p>
+  </main>
+
+  <script>
+    const FALLBACK_URL = "https://github.com/luh5826-byte/brasilrp-updates/releases/latest/download/BrasilRP_GTA6.apk";
+    fetch("./version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (data.versionName) {
+          document.getElementById("versionLabel").textContent = "Versão v" + data.versionName + " (Build " + (data.versionCode || "") + ")";
+        }
+        if (data.changelog) {
+          document.getElementById("changelogText").textContent = data.changelog;
+        }
+        if (data.apkUrl) {
+          document.getElementById("downloadBtn").href = data.apkUrl;
+        }
+      })
+      .catch(() => {
+        document.getElementById("versionLabel").textContent = "Última versão disponível";
+        document.getElementById("changelogText").textContent = "Toque no botão acima para baixar o APK mais recente.";
+        document.getElementById("downloadBtn").href = FALLBACK_URL;
+      });
+  </script>
+</body>
+</html>
