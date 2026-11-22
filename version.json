@@ -1,7 +1,7 @@
 {
-  "versionCode": 5,
-  "versionName": "1.0.5",
+  "versionCode": 6,
+  "versionName": "1.0.6",
   "mandatory": false,
-  "changelog": "• Som ambiente dinâmico da cidade (vento, pássaros de dia, grilos à noite, mar e sirenes distantes)\n• Passos realistas do protagonista ao andar, correr e pular\n• Novos sons de carros: motor multi-camada com marchas, cantar pneu no freio/curva, porta e botão Buzina\n• Som espacial dos carros de tráfego passando perto na rua\n• Diálogos falados em português (PT-BR) dos NPCs e cidadãos quando você passa perto",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.5/BrasilRP_GTA6.apk"
+  "changelog": "• Novo seletor de Personagem no Lobby 3D com preview ao lado do carro\n• 7 personagens jogáveis: NPC 1, NPC 2, Japan, Walking, Office, Cat Woman e Lily\n• Animação automática para cada personagem (esqueleto, Mixamo e caminhada suave)\n• Carregamento sob demanda para manter o jogo rápido e leve",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.6/BrasilRP_GTA6.apk"
 }
