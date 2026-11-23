@@ -1,7 +1,7 @@
 {
-  "versionCode": 23,
-  "versionName": "1.0.23",
+  "versionCode": 24,
+  "versionName": "1.0.24",
   "mandatory": false,
-  "changelog": "• Removidos todos os NPCs pedestres que ficavam andando pelo mapa",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.23/BrasilRP_GTA6.apk"
+  "changelog": "• Removidos todos os prédios/construções extras fora do mapa original\n• Corrigidas colisões invisíveis nas ruas (frestas/postes no road_grid)",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.24/BrasilRP_GTA6.apk"
 }
