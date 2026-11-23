@@ -1,0 +1,470 @@
+{
+  "audio/shift_pop.wav": {
+    "sha256": "67cdaf76c5f9f673e1a9e6ae5413dc72055ca703c30fbb5e8e3a3f6b65912367",
+    "size": 28268
+  },
+  "audio/tire_screech.wav": {
+    "sha256": "ea1ad6aeca3df145bccec56cdf0b882b147a9f8da629db053e226ee1587cf98d",
+    "size": 52964
+  },
+  "audio/v8_muscle_0.wav": {
+    "sha256": "584ac1f56443e4ce39e938784d5ec7906a9efd52fc0510a8590d3d24b76402e3",
+    "size": 121004
+  },
+  "audio/v8_muscle_1.wav": {
+    "sha256": "adf8047eea736ea2ad58c3a76dc6092da8c7028eacb231202851a2ff9feb7418",
+    "size": 55268
+  },
+  "audio/v8_muscle_2.wav": {
+    "sha256": "ce908a427721072c668dbb1ffae0525d9c766d6855354c937d0bb545c0301882",
+    "size": 48896
+  },
+  "audio/v8_muscle_3.wav": {
+    "sha256": "b676988bc5f3bf51c3b4835f789799de4253996fb219411b3f7a631b2d93d9ec",
+    "size": 32876
+  },
+  "audio/v8_muscle_4.wav": {
+    "sha256": "04f0a8c16c0962d39bdfed346edd679f161d2149ce35d8dc4c65935bfd0ba9ff",
+    "size": 24776
+  },
+  "images/minimap_ai.jpg": {
+    "sha256": "f9491b3baa5e1963f5f1b20e68b88f1730a2d6cb88356610495ec8610904afcf",
+    "size": 732412
+  },
+  "index.html": {
+    "sha256": "daea3b7a729ffb286e0db652b94839ec0ac953cdd38e3b82ab8f1b4b146eb3c1",
+    "size": 26337
+  },
+  "js/GLTFLoader.js": {
+    "sha256": "5c15967ba830918a9caea6338712c994c354bccd4edc4569bde411c3ec06a3e6",
+    "size": 96550
+  },
+  "js/audio_world.js": {
+    "sha256": "da4b304c0d0f0075e3fe27815de967229c4dd2cf627a5d754bfa492eeb1aba3b",
+    "size": 23773
+  },
+  "js/game.js": {
+    "sha256": "4fca1f6345c88ec6d5f708c8ce1a2e701ec8ccb22fefc0b5f2edd000b658a8e8",
+    "size": 259424
+  },
+  "js/multiplayer.js": {
+    "sha256": "0f2d6ff217e95b5a7e44340fe9243a51180dc0c174c8a31c0ad692123180cd48",
+    "size": 19718
+  },
+  "js/three.min.js": {
+    "sha256": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2",
+    "size": 603445
+  },
+  "models/chars/cat_woman.glb": {
+    "sha256": "483d5d8d2cf62aceba6cad9c549d67e90d429a105bf5355f4952616e2b0a9f08",
+    "size": 111783952
+  },
+  "models/chars/citizen_npc_pack_1_character_lowpoly_mobile.glb": {
+    "sha256": "f743a324bec81b92d43904516f5e36be02f4762fb4dceb66780ea81d045dcb9f",
+    "size": 3252332
+  },
+  "models/chars/cool_man.glb": {
+    "sha256": "78e3a889168d6175913dc528e58ca1a20e87a59e6cf0bbbc3309482f8d5eca61",
+    "size": 7966300
+  },
+  "models/chars/doa_npc_fighter.glb": {
+    "sha256": "61c26449eebb3ea510127e25ba9c9a2782939fc02f9534d6ed0b2b91efeb4f57",
+    "size": 11514144
+  },
+  "models/chars/indian_office_woman.glb": {
+    "sha256": "cd1235c6b86a42843db2dcf44928d0bab9f8afa135903b6775f6680bd711beaa",
+    "size": 16356492
+  },
+  "models/chars/lily.glb": {
+    "sha256": "5f6b42f31c6d2ec35d4539870be15abcd5c76c1b79d41aeed6557899c28d77fb",
+    "size": 97236356
+  },
+  "models/chars/npc_outer_plane.glb": {
+    "sha256": "46c01e09543265a83a096d9cb98bed8f9e4c54fe1e4f4c6d504cd40f407126ba",
+    "size": 1992836
+  },
+  "models/chars/player.glb": {
+    "sha256": "2610f53f02605dcb8d77328fc61d75b1cdb481a9dc11b38642b041305c875d31",
+    "size": 117236
+  },
+  "models/chars/woman_walking.glb": {
+    "sha256": "2f13acf11826b30067b268f763c11ab1ec08e7400839814cce3178145f7c9754",
+    "size": 780544
+  },
+  "models/map/chunk_0_1.glb": {
+    "sha256": "e48232a2145c919a6d9071987ebf6a0d8c1f5609b919b43c464451701e7e8d04",
+    "size": 44236
+  },
+  "models/map/chunk_0_2.glb": {
+    "sha256": "a5348e11945d725806955769fec5dc97ec12bab0f8569f2eb49132097767a759",
+    "size": 144780
+  },
+  "models/map/chunk_0_3.glb": {
+    "sha256": "6617169f3120c8c70f147dcfce95edc96b5a52da020c381c48cf7abd255a920c",
+    "size": 1286744
+  },
+  "models/map/chunk_0_4.glb": {
+    "sha256": "d5af2d046ea93cbc903aeb7ea51e01ba5fa801c0677a1736852990240cc0ebb9",
+    "size": 1028900
+  },
+  "models/map/chunk_0_5.glb": {
+    "sha256": "92d7a9de069d3e51b33f56dc4ce4ce06432f06bea89a48c3ab87fadf2575b432",
+    "size": 257604
+  },
+  "models/map/chunk_0_6.glb": {
+    "sha256": "529e780e3ae84c8f4c73d4c5a3a9cf3d95d490188e02cb564ac963c73c630843",
+    "size": 230828
+  },
+  "models/map/chunk_0_7.glb": {
+    "sha256": "4149d787e8e0a26f54ec830b76a7b9bccfb3093a01bcd03b076c2aa5742dc6cc",
+    "size": 92704
+  },
+  "models/map/chunk_0_8.glb": {
+    "sha256": "71d8270ff063f079c308d6bc698ac4563026df0372399e6a4c8f5afe92256ab6",
+    "size": 35052
+  },
+  "models/map/chunk_0_9.glb": {
+    "sha256": "92ffaca78d054bd43f827f72af67bf45ec1a95bb1df543961bae485ee78e1ab6",
+    "size": 27304
+  },
+  "models/map/chunk_1_2.glb": {
+    "sha256": "5de6ed442efcc91c88e20be23409d166d2d82fdbf5250cb7af124d27a4619d26",
+    "size": 151400
+  },
+  "models/map/chunk_1_3.glb": {
+    "sha256": "80702105feebbdacfa5dba138f8dc310baae0871ad02fcd3a45739e2a989daba",
+    "size": 1577128
+  },
+  "models/map/chunk_1_4.glb": {
+    "sha256": "5fa7e74370db8a4d12394fe6736d401e80e7eafc1aee5634fdf079c8bb903e90",
+    "size": 3778480
+  },
+  "models/map/chunk_1_5.glb": {
+    "sha256": "5fdb35d9642ba67532242cfcaeb35ca55dd1f85cc2ebb58bc07a4e284b7ddc16",
+    "size": 4349028
+  },
+  "models/map/chunk_1_6.glb": {
+    "sha256": "9374dd9d7073e8425c1e5852aceafd99260978aa70117c97378aa8d8b5da7666",
+    "size": 6603572
+  },
+  "models/map/chunk_1_7.glb": {
+    "sha256": "c4aa9fe8a5e034c1792e42d56593d89f42cefb9837e426521678a71468f5a172",
+    "size": 2442748
+  },
+  "models/map/chunk_1_8.glb": {
+    "sha256": "7ec63276865686ea62278561cf9d5d9518639daa4f777cc674ace0cd923ed8af",
+    "size": 318040
+  },
+  "models/map/chunk_1_9.glb": {
+    "sha256": "fb799aad81897fb6f573feaef56602b88168683e60f292e5e2b6db3cd1be7fc7",
+    "size": 39196
+  },
+  "models/map/chunk_2_1.glb": {
+    "sha256": "7f9b26487ec55f3901d5dfd0253e6cf15bb02b26d7cd84adfc96f4b34300515c",
+    "size": 44240
+  },
+  "models/map/chunk_2_2.glb": {
+    "sha256": "3778a5faedd614f484abdf1a65791b1ed27bd1bbe892955235cef8d5db82c6fd",
+    "size": 146380
+  },
+  "models/map/chunk_2_3.glb": {
+    "sha256": "c8102d852cf7836ab6e3e8aa98de767850f3c6f5ecd2a1143c7cd9967ddf005f",
+    "size": 3510056
+  },
+  "models/map/chunk_2_4.glb": {
+    "sha256": "220d019fa527d5d22604d9f8476a8fc694fa0b45fe7075bd806a7ce8e4006b03",
+    "size": 4201696
+  },
+  "models/map/chunk_2_5.glb": {
+    "sha256": "cc121400edccee293340f379783549ecc6c28f17e9b121efbe484fbc3a01efad",
+    "size": 2652648
+  },
+  "models/map/chunk_2_6.glb": {
+    "sha256": "ec9605538336d38bc2cbedfbe864a1a4601021c5b836aa112bc9ff568eed39db",
+    "size": 3097520
+  },
+  "models/map/chunk_2_7.glb": {
+    "sha256": "c122e643194e846f2d110cd74d4466dfce36e051400ba1c5ca71c6f84982feae",
+    "size": 2335304
+  },
+  "models/map/chunk_2_8.glb": {
+    "sha256": "b4c660ba51dfcc4b149cf2311914ec14d5584367caee54d02f08ed04762e7c81",
+    "size": 376088
+  },
+  "models/map/chunk_2_9.glb": {
+    "sha256": "955ba6a519dfe574b9ef4d99f0c888800281e92bbd2be39c577e093de34c69e3",
+    "size": 66888
+  },
+  "models/map/chunk_3_0.glb": {
+    "sha256": "34ed6373d75d4b4c1732e7a3401fec3de3162532d8924fa41c88a3c981d78f86",
+    "size": 44236
+  },
+  "models/map/chunk_3_1.glb": {
+    "sha256": "4ec021896ead6c66bfa6f87391071f2f6b2b0de02ab14a975812b62c61f19dda",
+    "size": 44060
+  },
+  "models/map/chunk_3_2.glb": {
+    "sha256": "65d7db5bf99979314d85d19cf38b20bbdcbaddc785102d1063ff20f29e640c77",
+    "size": 355220
+  },
+  "models/map/chunk_3_3.glb": {
+    "sha256": "42afe007254f320967f5fa1047da854c579602c7266962b103b36e8d111d486e",
+    "size": 257952
+  },
+  "models/map/chunk_3_4.glb": {
+    "sha256": "60bc16e243ac4bce34116deba453ac5b2cb63a1e9dae5726b3e7b361c0793702",
+    "size": 1719484
+  },
+  "models/map/chunk_3_5.glb": {
+    "sha256": "c6c60651e37177bb10487f87e40e5cd9b608baf79a5c419e7e621829615ed094",
+    "size": 1663992
+  },
+  "models/map/chunk_3_6.glb": {
+    "sha256": "136d126c46f4f91086cf5b36162237f6ecef5dbeac1c810839b49f47552c6826",
+    "size": 3699256
+  },
+  "models/map/chunk_3_7.glb": {
+    "sha256": "dc43512ae1be12b0e6e9d3bc6a5dfd2d2e1bdffec0e845c675de58ca039af21d",
+    "size": 2694252
+  },
+  "models/map/chunk_3_8.glb": {
+    "sha256": "6c6e7f3bf142a67d52e4d73cd11a6944628d9c8f4acadaeeba52442c4dac541b",
+    "size": 18296
+  },
+  "models/map/chunk_3_9.glb": {
+    "sha256": "e99a4560ef46c3385a8943325d425edf65ffdb9715298130d54473e4d64007da",
+    "size": 4168016
+  },
+  "models/map/chunk_4_0.glb": {
+    "sha256": "29a5d144643104bd25d5c999bc230b883bf6eaaf4ab9ca37b40bda7f5eea6cf3",
+    "size": 351972
+  },
+  "models/map/chunk_4_1.glb": {
+    "sha256": "3c01491135fb0edba4cac508d2e1579f3fa6c34c807fe33e756ccdc657930de6",
+    "size": 4662444
+  },
+  "models/map/chunk_4_2.glb": {
+    "sha256": "ab86c9119f535fa9d85046a0cd958dc86be1fb251c69d73415b350d85f4f3385",
+    "size": 4946200
+  },
+  "models/map/chunk_4_3.glb": {
+    "sha256": "013a1d3bd6e4625e6b058bc7c287e729e5861357bf751d4797b71f74a7eaf9ff",
+    "size": 4474424
+  },
+  "models/map/chunk_4_4.glb": {
+    "sha256": "f72ded9f46bff464160df4510a7dbcbd74138ce115fbc1c70473a1c5b795cad9",
+    "size": 4718112
+  },
+  "models/map/chunk_4_5.glb": {
+    "sha256": "6759408ecc7a38fda7af20cfa0a9241643c65a419702e5025b61a5d4f227c823",
+    "size": 3091736
+  },
+  "models/map/chunk_4_6.glb": {
+    "sha256": "276d61945280ffcc13af4724491cdb1e519795bb7d48e69a2137305b3a24432d",
+    "size": 1404880
+  },
+  "models/map/chunk_4_7.glb": {
+    "sha256": "507f91d04ead5cb2dc7d8d4bd3193ba1f058c8bb08343d3e0f13d1d350653823",
+    "size": 680640
+  },
+  "models/map/chunk_4_8.glb": {
+    "sha256": "592f3518a1093e6e79d58d46d41cc87972c27e91ce1782ff267151928307f299",
+    "size": 93780
+  },
+  "models/map/chunk_5_0.glb": {
+    "sha256": "a94d81b01566120a83e93a5ae2287600eb3dfbc2998156e0ea742153b873e35e",
+    "size": 810976
+  },
+  "models/map/chunk_5_1.glb": {
+    "sha256": "a23d09e8480e60da9831399aadca8ae53cf60d941e75d3eed1c06adfe84a21a8",
+    "size": 6875516
+  },
+  "models/map/chunk_5_2.glb": {
+    "sha256": "dcdbac7391dbd0fc95d007f68e5ce8dc557f5a9f6f5f8c9199f340401ef424ee",
+    "size": 7408452
+  },
+  "models/map/chunk_5_3.glb": {
+    "sha256": "29f2d9e8b88220a2cf35e1735e10e3acf327765f8015eb5b6df8d2b9f5ac00ea",
+    "size": 6426200
+  },
+  "models/map/chunk_5_4.glb": {
+    "sha256": "062250bd2bba204b845a2c28d495f49f6e4e922f7c9ee27c36f2c1855a2f0b95",
+    "size": 7074976
+  },
+  "models/map/chunk_5_5.glb": {
+    "sha256": "4834cdd928a982af6cee93b80c9a5331cbccceb06b49df66c9616e97baafcaf5",
+    "size": 6780752
+  },
+  "models/map/chunk_5_6.glb": {
+    "sha256": "46e80d01ae24f3849a414403a3a55b78613d0119d605e424b822d988587158b5",
+    "size": 3466872
+  },
+  "models/map/chunk_5_7.glb": {
+    "sha256": "0bfdf8b168eed36c71572a732974dca25670b4c253807b9d5aaeeceb8d645e6c",
+    "size": 460856
+  },
+  "models/map/chunk_5_8.glb": {
+    "sha256": "2c860e645f87d3ef71b20f0e8191d5c229a4983bcc0c85a8422938fbdf84a41a",
+    "size": 356684
+  },
+  "models/map/chunk_5_9.glb": {
+    "sha256": "88a23b734d57c02e538528ba9799849c85d93d367f0b9bd9948341de01a21807",
+    "size": 157040
+  },
+  "models/map/chunk_6_1.glb": {
+    "sha256": "8907181d3d0ae32b86d84566a62d8e077209195dc7af8db25287b4036ceed718",
+    "size": 1810696
+  },
+  "models/map/chunk_6_2.glb": {
+    "sha256": "ac0e541874c40007f446516d7af89ef69a8c96d90d69002d76e3844592f4174b",
+    "size": 1058348
+  },
+  "models/map/chunk_6_3.glb": {
+    "sha256": "4e4cee58512c7b0c755e83763c7400177d7a7eea6db0465ade20a205cf10e2fa",
+    "size": 3033308
+  },
+  "models/map/chunk_6_4.glb": {
+    "sha256": "ff984d8b809d3c5d5cb4a6adb3da235a9956ee1ed5dbeff1e5e8d027f3b1f52e",
+    "size": 2384020
+  },
+  "models/map/chunk_6_5.glb": {
+    "sha256": "d4497d0f60230dd9c1015d7c51ce3a3fbf0b59f3f379424cb4b832bf73e582b0",
+    "size": 3142692
+  },
+  "models/map/chunk_6_6.glb": {
+    "sha256": "b052283ede5f6be343990c1cff6b86d0cb202a16b1c5e1205b99a8d6c412b092",
+    "size": 1442772
+  },
+  "models/map/chunk_7_1.glb": {
+    "sha256": "d6e8189a7a912b41d2098e61e342e6102d080719f35a375196d0f3c16fef1a93",
+    "size": 46688
+  },
+  "models/map/chunk_7_2.glb": {
+    "sha256": "a54f9318b2b10365d1fac5ecf0935acdce703fdcde2a5f52fbf05e2b3d77d819",
+    "size": 1440416
+  },
+  "models/map/chunk_7_3.glb": {
+    "sha256": "ee1c622a6802f5466a7f7acc23ad4bb6ede2275d20bce261a6d9054d85f48dba",
+    "size": 9487896
+  },
+  "models/map/chunk_7_4.glb": {
+    "sha256": "d528918cc74057b73eb764e19ff50b10cb7a1d2270290dc98b98ec13ab19e359",
+    "size": 12300780
+  },
+  "models/map/chunk_7_5.glb": {
+    "sha256": "775de7199759c2fda38b83adc6f995e0adc00cbdbcd29e49e51986443e194f28",
+    "size": 7659936
+  },
+  "models/map/chunk_7_6.glb": {
+    "sha256": "a4a7de0c049d01e3a646ff8db293490066d02a55ca521ebf1586e6be3975b287",
+    "size": 2286068
+  },
+  "models/map/chunk_7_7.glb": {
+    "sha256": "b4b91aaefba463f99149a8bfc3c423088dc57cdf05fca203ce46b4f7da8654f9",
+    "size": 88332
+  },
+  "models/map/chunk_8_2.glb": {
+    "sha256": "101e03a9e1faee52ed64238cf95251cd004db882fc9ef5ca876d8c49804d966e",
+    "size": 2747704
+  },
+  "models/map/chunk_8_3.glb": {
+    "sha256": "09cdb437f37b92abfd44dfdb998cdeaf19271302586ff32128ee00da7f2c6e84",
+    "size": 6570920
+  },
+  "models/map/chunk_8_4.glb": {
+    "sha256": "9c06e62b3cf5be3fbe9c2f21b5ccd11af0a569630eab7fb2d71744caa04c7bb7",
+    "size": 6996120
+  },
+  "models/map/chunk_8_5.glb": {
+    "sha256": "de73efe2d9b7f6065c29676ed25323ee9ccd4955ef8a5501d5c9fd0a2a597672",
+    "size": 8271672
+  },
+  "models/map/chunk_8_6.glb": {
+    "sha256": "37433d8efee91295dc5ec22ee093d2b5688580219d469f645eaf1fe279d85440",
+    "size": 3597152
+  },
+  "models/map/chunk_8_7.glb": {
+    "sha256": "f03551db54fc67ee20e18e6593022ca1c5b7b252213f11d87f03a54b31f226d6",
+    "size": 43740
+  },
+  "models/map/chunk_9_2.glb": {
+    "sha256": "eb2e9f6a1e7a34e1e11882117d29493e5efcff8b47023c567b35a84a25a27a1c",
+    "size": 258232
+  },
+  "models/map/chunk_9_3.glb": {
+    "sha256": "cedafedbb113bf927e6ea0fea79d437613662553ec0d74bd07ef5cf6f3643e46",
+    "size": 2687608
+  },
+  "models/map/chunk_9_4.glb": {
+    "sha256": "928d8037ee8561a501fac617acaf5630685a5d0ef8c3580c508b15cfe321cf7a",
+    "size": 2233400
+  },
+  "models/map/chunk_9_5.glb": {
+    "sha256": "b7b1f4deaae7362cf02196fd3d632e03bc6c537ef1f975e0e80b62baf76af90b",
+    "size": 1804460
+  },
+  "models/map/chunk_9_6.glb": {
+    "sha256": "6b4dbb06523951bef0c547e16ef5fdfd7068fac2708ef083a2bd22bcda390575",
+    "size": 223588
+  },
+  "models/map/collision_map.bin": {
+    "sha256": "68c5ee5b3250a5ac0fd1dd10df09010520d785214f6a14d2ea945487c67fb185",
+    "size": 2479542
+  },
+  "models/map/collision_meta.json": {
+    "sha256": "c18c132822e61655d60abe2417dc05979f90ee124a277f016c882d781cce392b",
+    "size": 67
+  },
+  "models/map/manifest.json": {
+    "sha256": "a8744e2a9c11a68a89a87ea4bac8dc77307a68bd2e123fb7da9f195aadc0e58f",
+    "size": 14222
+  },
+  "models/map/road_grid.bin": {
+    "sha256": "1836a22eec79106add08aa93a01c8672a9761c16bb2c3b5052217dc06ccb2286",
+    "size": 1048576
+  },
+  "models/map/traffic_lights.json": {
+    "sha256": "f8b746acac7ad1c6510c841ee336d54959e3ae90438f1bbc5718ef755e696bdc",
+    "size": 9965
+  },
+  "models/props/prop_atm.glb": {
+    "sha256": "8977b71df4a0638d9ef7efee0970e7eddf9dad5d99b73453928e7e553c7838c6",
+    "size": 24740
+  },
+  "models/props/prop_job.glb": {
+    "sha256": "0dda6b0f7cc5c9fde0de3736e2a08b0770a3e18da310e92ebf94982658499a17",
+    "size": 24476
+  },
+  "models/vehicles/car_gol.glb": {
+    "sha256": "238d64295fac1aa39f284e0a9d3c4fc865648c13eec0ae4d52d9267e9d6c12ab",
+    "size": 172860
+  },
+  "models/vehicles/car_pm.glb": {
+    "sha256": "9d1f4de690aaaa1f75763fbe0392df7b57480bedb324c0f7fea8f430ccbf5c44",
+    "size": 212192
+  },
+  "models/vehicles/car_sport.glb": {
+    "sha256": "1f028e54a9d4bc12e606603b23224bf98d4fbcaf2542ea7b15d07ed2bd77f237",
+    "size": 149736
+  },
+  "models/vehicles/ford_mustang_gtd.glb": {
+    "sha256": "57da24bf6b6af3db90868b888f888a1cd01ff4b2bb2ae7de5680497f74c68fa9",
+    "size": 4241624
+  },
+  "models/vehicles/lexus_lc_500_wald.glb": {
+    "sha256": "d46bcd87a73cb6d8840f2bcbb428d2b605a7397a1a43ec90e50def1ef62e2df4",
+    "size": 26849240
+  },
+  "models/vehicles/traffic_rider_npc_vehicles.glb": {
+    "sha256": "3e1e0e1c9b2d0bffdfe37e85b0ea6a0545102523b0aa7bff8318497193b1211f",
+    "size": 16463608
+  },
+  "models/vehicles/volkswagen_saveiro.glb": {
+    "sha256": "566c0207e69a1d7fdb442ca716e84e78a51d2e2a49bd540a9d62a9e6609b6055",
+    "size": 6738840
+  },
+  "style.css": {
+    "sha256": "8ab47cefac36e32b3eda9276c398ec20a27026a4d4a5bca3c38f01fd33febf26",
+    "size": 28232
+  }
+}
