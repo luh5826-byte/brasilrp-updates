@@ -1,0 +1,17 @@
+{
+  "otaVersion": 1,
+  "minApkCodeForOta": 40,
+  "changelog": "• Efeito blur (backdrop-filter: 14px) no fundo do Lobby ao abrir as Configurações\n• Qualidade gráfica real (setSize + sombras no mapa) e trava/liberação real de FPS (30, 60, 90 e 120 FPS nativo)",
+  "totalBytes": 292682,
+  "files": {
+    "js/game.js": {
+      "sha256": "6f3c02938d319fe66655080b81c4e137ed715fa601bfea20d677a58d1511fa12",
+      "size": 264162
+    },
+    "style.css": {
+      "sha256": "39afe730ae5e641ee64fcbf748c2f56a2afabfc1952d82c18c461c7cc14f512c",
+      "size": 28520
+    }
+  },
+  "deleted": []
+}
