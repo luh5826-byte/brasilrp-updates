@@ -319,12 +319,12 @@
 
   // --- Three.js Setup (Visual Nível GTA V + Performance Mobile) ---
   const canvas = el('gameCanvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', stencil: false });
   const gfxQualities = {
-    low: { dpr: 0.72, shadows: false, shadowSize: 512, far: 195 },
-    medium: { dpr: Math.min(window.devicePixelRatio || 1, 1.15), shadows: false, shadowSize: 1024, far: 265 },
-    high: { dpr: Math.min(window.devicePixelRatio || 1, 1.5), shadows: true, shadowSize: 1024, far: 310 },
-    ultra: { dpr: Math.min(window.devicePixelRatio || 1, 2.0), shadows: true, shadowSize: 2048, far: 380 }
+    low: { dpr: 0.70, shadows: false, shadowSize: 512, far: 185 },
+    medium: { dpr: Math.min(window.devicePixelRatio || 1, 0.95), shadows: false, shadowSize: 1024, far: 245 },
+    high: { dpr: Math.min(window.devicePixelRatio || 1, 1.25), shadows: true, shadowSize: 1024, far: 295 },
+    ultra: { dpr: Math.min(window.devicePixelRatio || 1, 1.55), shadows: true, shadowSize: 2048, far: 350 }
   };
   let currentGfxQuality = 'medium';
   let targetFps = 90;
@@ -584,13 +584,9 @@
     const lowOrMed = (currentGfxQuality === 'low' || currentGfxQuality === 'medium');
     if (m.map) {
       m.map.encoding = THREE.sRGBEncoding;
-      if (lowOrMed) {
-        m.map.generateMipmaps = false;
-        m.map.minFilter = THREE.LinearFilter;
-        m.map.anisotropy = 1;
-      } else {
-        m.map.anisotropy = 2;
-      }
+      m.map.generateMipmaps = true;
+      m.map.minFilter = lowOrMed ? THREE.LinearMipmapNearestFilter : THREE.LinearMipmapLinearFilter;
+      m.map.anisotropy = lowOrMed ? 1 : Math.min(4, maxAniso);
     }
     const hasAlpha = (m.alphaTest > 0 || m.transparent);
     const lm = new THREE.MeshLambertMaterial({
@@ -736,9 +732,9 @@
   const pendingDisposals = [];
   let activeChunkLoads = 0;
   const qualityLevels = [
-    { label: 'Curta', radius: 110 },
-    { label: 'Média', radius: 140 },
-    { label: 'Longa', radius: 195 }
+    { label: 'Curta', radius: 90 },
+    { label: 'Média', radius: 120 },
+    { label: 'Longa', radius: 165 }
   ];
   let qualityIdx = 1;
 
@@ -808,13 +804,15 @@
           const dx = c.cx - px;
           const dz = c.cz - pz;
           grp.visible = (dx * dx + dz * dz <= radSq);
+          grp.matrixAutoUpdate = false;
+          grp.updateMatrix();
           scene.add(grp);
           loadedChunks.set(c.file, { cx: c.cx, cz: c.cz, group: grp, loading: false });
         })
         .catch(() => {})
-        .finally(() => { setTimeout(next, 75); });
+        .finally(() => { setTimeout(next, 180); });
     }
-    setTimeout(next, 400);
+    setTimeout(next, 600);
   }
 
   async function preloadAllMapChunks(px, pz) {
@@ -826,7 +824,7 @@
       return da - db;
     });
     const rad = qualityLevels[qualityIdx].radius;
-    const radSq = (rad + 45) * (rad + 45);
+    const radSq = (rad + 25) * (rad + 25);
     const hasLocalCache = localStorage.getItem(MAP_CACHE_FLAG) === '1';
 
     if (hasLocalCache) {
@@ -841,6 +839,8 @@
           loadGLB('models/map/' + c.file)
             .then((grp) => {
               grp.visible = true;
+              grp.matrixAutoUpdate = false;
+              grp.updateMatrix();
               scene.add(grp);
               loadedChunks.set(c.file, { cx: c.cx, cz: c.cz, group: grp, loading: false });
             })
@@ -867,6 +867,8 @@
             const dx = c.cx - px;
             const dz = c.cz - pz;
             grp.visible = (dx * dx + dz * dz <= radSq);
+            grp.matrixAutoUpdate = false;
+            grp.updateMatrix();
             scene.add(grp);
             loadedChunks.set(c.file, { cx: c.cx, cz: c.cz, group: grp, loading: false });
           })
@@ -885,7 +887,7 @@
   async function updateChunkStreaming(px, pz) {
     if (!mapManifest) return;
     const rad = qualityLevels[qualityIdx].radius;
-    const visRadSq = (rad + 45) * (rad + 45);
+    const visRadSq = (rad + 25) * (rad + 25);
     for (const entry of loadedChunks.values()) {
       if (!entry.group) continue;
       const dx = entry.cx - px;
@@ -1889,19 +1891,18 @@
       parts.wheels.push({ steerPivot, spinObj: spinGroup, front: wn.name === 'WheelFL' || wn.name === 'WheelFR' });
     });
 
-    const lightAnchor = parts.chassis || carObj;
-    const fz = forwardPlusZ ? 1 : -1;
-    const headSpot = new THREE.SpotLight(0xfff4d8, 2.2, 65, Math.PI / 4.8, 0.45, 1.2);
-    headSpot.position.set(0, 0.72, 1.9 * fz);
-    headSpot.target.position.set(0, 0.1, 20 * fz);
-    lightAnchor.add(headSpot);
-    lightAnchor.add(headSpot.target);
-    parts.headSpot = headSpot;
-
-    const domeLight = new THREE.PointLight(0xffe6b0, 0.0, 4.5);
-    domeLight.position.set(0, 1.15, 0.15 * fz);
-    lightAnchor.add(domeLight);
-    parts.domeLight = domeLight;
+    // Luzes compartilhadas globais (evita 10+ SpotLights/PointLights simultâneas na cena e recompilação de shaders)
+    if (!window._sharedCarHeadSpot) {
+      const hs = new THREE.SpotLight(0xfff4d8, 0.0, 62, Math.PI / 4.8, 0.45, 1.2);
+      scene.add(hs);
+      scene.add(hs.target);
+      window._sharedCarHeadSpot = hs;
+    }
+    if (!window._sharedCarDomeLight) {
+      const dl = new THREE.PointLight(0xffe6b0, 0.0, 4.5);
+      scene.add(dl);
+      window._sharedCarDomeLight = dl;
+    }
 
     return parts;
   }
@@ -4475,7 +4476,7 @@
     updateDelivery(dt);
     updateWanted(dt);
     minimapTimer += dt;
-    if (minimapTimer >= 0.10) {
+    if (minimapTimer >= 0.16) {
       minimapTimer = 0;
       drawMinimap();
     }
@@ -4932,8 +4933,12 @@
     AudioFX.updateEngine(!car.broken, Math.abs(car.speed));
   }
 
+  const _steerWheelAxis = new THREE.Vector3(0, 0.3746, 0.9272);
+  const _steerWheelQuat = new THREE.Quaternion();
   function updateVehiclesVisuals(dt) {
     const t = performance.now() * 0.008;
+    let activeSpotUsed = false;
+    let activeDomeUsed = false;
     for (const v of vehicles) {
       if (v.burning && !v.exploded) {
         v.burnTimer = (v.burnTimer || 0) - dt;
@@ -5022,12 +5027,11 @@
       if (v.parts.doorR) v.parts.doorR.rotation.y = v.doorAngle;
 
       if (v.parts.steeringWheel) {
-        const steerAxis = new THREE.Vector3(0, 0.3746, 0.9272);
-        const qSpin = new THREE.Quaternion().setFromAxisAngle(steerAxis, v.steerAngle * 2.2);
+        _steerWheelQuat.setFromAxisAngle(_steerWheelAxis, v.steerAngle * 2.2);
         if (v.parts.steeringInitQ) {
-          v.parts.steeringWheel.quaternion.copy(v.parts.steeringInitQ).multiply(qSpin);
+          v.parts.steeringWheel.quaternion.copy(v.parts.steeringInitQ).multiply(_steerWheelQuat);
         } else {
-          v.parts.steeringWheel.quaternion.copy(qSpin);
+          v.parts.steeringWheel.quaternion.copy(_steerWheelQuat);
         }
       }
 
@@ -5038,14 +5042,21 @@
       });
 
       const interiorLit = v.doorsOpen || (v === player.inCar && v.lightsOn);
-      if (v.parts.headSpot) {
-        const spotOn = v.lightsOn && (v === player.inCar);
-        v.parts.headSpot.visible = spotOn;
-        v.parts.headSpot.intensity = spotOn ? 2.2 : 0.0;
+      const fs = v.forwardSign || -1;
+      const sinY = Math.sin(v.yaw);
+      const cosY = Math.cos(v.yaw);
+      if (v === player.inCar && v.lightsOn && window._sharedCarHeadSpot) {
+        activeSpotUsed = true;
+        const hs = window._sharedCarHeadSpot;
+        hs.position.set(v.pos.x + sinY * 1.9 * fs, v.pos.y + 0.72, v.pos.z + cosY * 1.9 * fs);
+        hs.target.position.set(v.pos.x + sinY * 20 * fs, v.pos.y + 0.1, v.pos.z + cosY * 20 * fs);
+        hs.intensity = 2.2;
       }
-      if (v.parts.domeLight) {
-        v.parts.domeLight.visible = interiorLit && (v === player.inCar || gameMode === 'lobby');
-        v.parts.domeLight.intensity = interiorLit ? 1.6 : 0.0;
+      if (interiorLit && (v === player.inCar || (gameMode === 'lobby' && v === vehicles[0])) && window._sharedCarDomeLight) {
+        activeDomeUsed = true;
+        const dl = window._sharedCarDomeLight;
+        dl.position.set(v.pos.x + sinY * 0.15 * fs, v.pos.y + 1.15, v.pos.z + cosY * 0.15 * fs);
+        dl.intensity = 1.6;
       }
       v.parts.headMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = v.lightsOn ? 2.5 : 0.1; });
       const braking = (v === player.inCar) && (input.brake || keys['KeyS'] || keys['ArrowDown']);
@@ -5058,6 +5069,8 @@
         v.parts.lightR.visible = !v.sirenOn || !blink;
       }
     }
+    if (!activeSpotUsed && window._sharedCarHeadSpot) window._sharedCarHeadSpot.intensity = 0.0;
+    if (!activeDomeUsed && window._sharedCarDomeLight) window._sharedCarDomeLight.intensity = 0.0;
   }
 
   const _tmpEuler = new THREE.Euler();

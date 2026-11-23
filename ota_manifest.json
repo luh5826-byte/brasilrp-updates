@@ -1,12 +1,12 @@
 {
-  "otaVersion": 1,
+  "otaVersion": 2,
   "minApkCodeForOta": 40,
-  "changelog": "• Efeito blur (backdrop-filter: 14px) no fundo do Lobby ao abrir as Configurações\n• Qualidade gráfica real (setSize + sombras no mapa) e trava/liberação real de FPS (30, 60, 90 e 120 FPS nativo)",
-  "totalBytes": 292682,
+  "changelog": "• Otimização pesada de GPU/CPU para 90-120 FPS reais:\n  - 10+ luzes dinâmicas de carros consolidadas em 2 luzes globais (elimina recompilação de shaders e reduz custo em ~5x)\n  - Mipmaps reais ativados nas texturas da cidade + MSAA desligado + teto de DPR otimizado para telas 1.5K/2K\n  - matrixAutoUpdate=false nos chunks estáticos, raio de visão ajustado e menos alocações por frame",
+  "totalBytes": 293614,
   "files": {
     "js/game.js": {
-      "sha256": "6f3c02938d319fe66655080b81c4e137ed715fa601bfea20d677a58d1511fa12",
-      "size": 264162
+      "sha256": "c3ae10b6248a290ade07f21cd974af923e4b2241b25cea7876d8874aab35d880",
+      "size": 265094
     },
     "style.css": {
       "sha256": "39afe730ae5e641ee64fcbf748c2f56a2afabfc1952d82c18c461c7cc14f512c",
