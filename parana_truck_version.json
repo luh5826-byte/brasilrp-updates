@@ -1,8 +1,8 @@
 {
   "app": "parana_truck_sim",
-  "versionCode": 3,
-  "versionName": "1.0.3",
+  "versionCode": 4,
+  "versionName": "1.0.4",
   "mandatory": false,
-  "changelog": "Scania S730 2016 integrado, fisica das rodas, carreta alinhada e iluminacao PBR",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/pts-v1.0.3/ParanaTruckSim.apk"
+  "changelog": "Ruas reais do Contorno Sul com texturas LW3D v2 + Scania S730 2016",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/pts-v1.0.4/ParanaTruckSim.apk"
 }
