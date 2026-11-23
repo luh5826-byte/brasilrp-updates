@@ -1,7 +1,7 @@
 {
-  "versionCode": 33,
-  "versionName": "1.0.33",
+  "versionCode": 34,
+  "versionName": "1.0.34",
   "mandatory": false,
-  "changelog": "• Veículos muito mais resistentes a batidas (com cooldown de dano)\n• Fumaça, fogo no motor e explosão 3D estilo GTA (bola de fogo, onda de choque, tremor de câmera e som de explosão)",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.33/BrasilRP_GTA6.apk"
+  "changelog": "• Colisão reforçada em muretas costeiras e sub-stepping fino para evitar que o carro atravesse e caia no mar\n• Sistema de respawn no Hospital (com carro restaurado) ao morrer ou cair no mar",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.34/BrasilRP_GTA6.apk"
 }
