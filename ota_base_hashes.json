@@ -32,8 +32,8 @@
     "size": 732412
   },
   "index.html": {
-    "sha256": "daea3b7a729ffb286e0db652b94839ec0ac953cdd38e3b82ab8f1b4b146eb3c1",
-    "size": 26337
+    "sha256": "6d133921e34485624410f4d4bedfe5ce296a951657b13232a2d66959acaab676",
+    "size": 26330
   },
   "js/GLTFLoader.js": {
     "sha256": "5c15967ba830918a9caea6338712c994c354bccd4edc4569bde411c3ec06a3e6",
@@ -44,8 +44,8 @@
     "size": 23773
   },
   "js/game.js": {
-    "sha256": "bb4d2f04aac8f5de364fd33891893d60a80d64dbf1c29f26f00d8db75f00d6b0",
-    "size": 263857
+    "sha256": "ddb00e902060737a2524c414129f7a51133fe749e57f2369dc5a4bae004277be",
+    "size": 266326
   },
   "js/multiplayer.js": {
     "sha256": "0f2d6ff217e95b5a7e44340fe9243a51180dc0c174c8a31c0ad692123180cd48",
@@ -464,7 +464,7 @@
     "size": 6738840
   },
   "style.css": {
-    "sha256": "e6ac27db1ccd1ef379b71a6c1533be0131ecc9acb3f05130143ae7df73c855fb",
-    "size": 28451
+    "sha256": "39afe730ae5e641ee64fcbf748c2f56a2afabfc1952d82c18c461c7cc14f512c",
+    "size": 28520
   }
 }

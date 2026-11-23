@@ -1,12 +1,11 @@
 {
-  "versionCode": 40,
-  "versionName": "1.0.40",
+  "versionCode": 41,
+  "versionName": "1.0.41",
   "mandatory": false,
-  "changelog": "• Botão de atualização OTA corrigido (não exigia mais apkUrl para patches leves) e renomeado para ATUALIZAR ⚡\n• Inclui cache local da cidade (IndexedDB), scroll nas Configurações e Lexus LC 500 com rodas e portas funcionais",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.40/BrasilRP_GTA6.apk",
-  "otaVersion": 3,
-  "minApkCodeForOta": 40,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/eac63cf4991e719b0bff571e9e53fc32f73e6b5b/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/eac63cf4991e719b0bff571e9e53fc32f73e6b5b/ota_manifest.json",
-  "otaChangelog": "• Warmup gradual de texturas 1-por-frame em stepChunkWarmups ao hidratar chunks do cache\n• Tráfego otimizado (10 veículos, colisão só < 58m), mar mais leve e telemetria de FPS + Draw Calls (DC) na HUD"
+  "changelog": "• Expiração imediata de cache (0s): UpdateManager agora consulta o SHA real de refs/heads/main via Git info/refs (no-cache) antes de ler version.json\n• Inclui todas as otimizações de GPU/CPU, warmup de texturas, blur nas configurações e telemetria FPS • DC",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.41/BrasilRP_GTA6.apk",
+  "otaVersion": 0,
+  "minApkCodeForOta": 41,
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota_manifest.json"
 }
