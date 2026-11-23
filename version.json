@@ -4,8 +4,9 @@
   "mandatory": false,
   "changelog": "• Sistema de atualização leve (OTA / delta) implementado: próximas atualizações de jogo baixam apenas os arquivos modificados\n• Lexus LC 500 Wald corrigido: rodas dianteiras e traseiras agora giram e esterçam, e portas abrem com pivô na dobradiça",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.39/BrasilRP_GTA6.apk",
-  "otaVersion": 0,
+  "otaVersion": 1,
   "minApkCodeForOta": 39,
   "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota_manifest.json"
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota_manifest.json",
+  "otaChangelog": "• Cache local (IndexedDB) dos 79 chunks da cidade para abertura rápida nas próximas vezes\n• Scroll por toque (touch-action: pan-y) liberado nas Configurações e no Celular para exibir todas as opções e o botão Atualizar App"
 }
