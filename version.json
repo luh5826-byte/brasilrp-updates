@@ -1,7 +1,7 @@
 {
-  "versionCode": 32,
-  "versionName": "1.0.32",
+  "versionCode": 33,
+  "versionName": "1.0.33",
   "mandatory": false,
-  "changelog": "• Soco com animação do braço e dano real em NPCs (knockout + loot), veículos e obstáculos destrutíveis\n• Streaming gradual de texturas/chunks sem travar + API real de Web Radio",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.32/BrasilRP_GTA6.apk"
+  "changelog": "• Veículos muito mais resistentes a batidas (com cooldown de dano)\n• Fumaça, fogo no motor e explosão 3D estilo GTA (bola de fogo, onda de choque, tremor de câmera e som de explosão)",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.33/BrasilRP_GTA6.apk"
 }
