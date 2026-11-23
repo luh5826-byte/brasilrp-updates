@@ -1,12 +1,16 @@
 {
-  "otaVersion": 2,
+  "otaVersion": 3,
   "minApkCodeForOta": 40,
-  "changelog": "• Otimização pesada de GPU/CPU para 90-120 FPS reais:\n  - 10+ luzes dinâmicas de carros consolidadas em 2 luzes globais (elimina recompilação de shaders e reduz custo em ~5x)\n  - Mipmaps reais ativados nas texturas da cidade + MSAA desligado + teto de DPR otimizado para telas 1.5K/2K\n  - matrixAutoUpdate=false nos chunks estáticos, raio de visão ajustado e menos alocações por frame",
-  "totalBytes": 293614,
+  "changelog": "• Warmup gradual de texturas 1-por-frame em stepChunkWarmups ao hidratar chunks do cache\n• Tráfego otimizado (10 veículos, colisão só < 58m), mar mais leve e telemetria de FPS + Draw Calls (DC) na HUD",
+  "totalBytes": 321176,
   "files": {
+    "index.html": {
+      "sha256": "6d133921e34485624410f4d4bedfe5ce296a951657b13232a2d66959acaab676",
+      "size": 26330
+    },
     "js/game.js": {
-      "sha256": "c3ae10b6248a290ade07f21cd974af923e4b2241b25cea7876d8874aab35d880",
-      "size": 265094
+      "sha256": "ddb00e902060737a2524c414129f7a51133fe749e57f2369dc5a4bae004277be",
+      "size": 266326
     },
     "style.css": {
       "sha256": "39afe730ae5e641ee64fcbf748c2f56a2afabfc1952d82c18c461c7cc14f512c",

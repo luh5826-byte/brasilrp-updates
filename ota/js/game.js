@@ -522,11 +522,11 @@
     { w: 2800, h: 1620, x: 790 + 1400, z: -613 }
   ];
   seaPanels.forEach((sp) => {
-    const geo = new THREE.PlaneGeometry(sp.w, sp.h, 36, 24);
+    const geo = new THREE.PlaneGeometry(sp.w, sp.h, 16, 12);
     const m = new THREE.Mesh(geo, waterMat);
     m.rotation.x = -Math.PI / 2;
     m.position.set(sp.x, WATER_Y, sp.z);
-    m.receiveShadow = true;
+    m.receiveShadow = false;
     seaGroup.add(m);
     seaMeshes.push({ mesh: m, geo });
   });
@@ -776,18 +776,25 @@
       return;
     }
 
-    // Fase 2: Adiciona à cena e revela meshes em lotes pequenos (2 por frame)
+    // Fase 2: Adiciona à cena e revela meshes em lotes pequenos (4 por frame)
     if (!item.added) {
       item.added = true;
+      const pCur = player.inCar ? player.inCar.pos : player.pos;
+      const rad = qualityLevels[qualityIdx].radius;
+      const visRadSq = (rad + 25) * (rad + 25);
+      // Encontra posição do chunk se existir
+      item.group.visible = true;
       scene.add(item.group);
     }
     const meshes = item.meshes;
-    const end = Math.min(meshes.length, item.cursor + 2);
+    const end = Math.min(meshes.length, item.cursor + 4);
     for (let i = item.cursor; i < end; i++) {
       meshes[i].visible = true;
     }
     item.cursor = end;
     if (item.cursor >= meshes.length) {
+      const pCur = player.inCar ? player.inCar.pos : player.pos;
+      updateChunkStreaming(pCur.x, pCur.z);
       pendingChunkWarmups.shift();
     }
   }
@@ -798,21 +805,36 @@
     function next() {
       if (idx >= chunks.length) return;
       const c = chunks[idx++];
-      if (loadedChunks.has(c.file)) { setTimeout(next, 10); return; }
+      if (loadedChunks.has(c.file)) { setTimeout(next, 16); return; }
       loadGLB('models/map/' + c.file)
         .then((grp) => {
-          const dx = c.cx - px;
-          const dz = c.cz - pz;
-          grp.visible = (dx * dx + dz * dz <= radSq);
+          const pCur = player.inCar ? player.inCar.pos : player.pos;
+          const dx = c.cx - pCur.x;
+          const dz = c.cz - pCur.z;
+          const shouldShow = (dx * dx + dz * dz <= radSq);
+          grp.visible = false;
           grp.matrixAutoUpdate = false;
           grp.updateMatrix();
-          scene.add(grp);
-          loadedChunks.set(c.file, { cx: c.cx, cz: c.cz, group: grp, loading: false });
+          const textures = [];
+          const meshes = [];
+          grp.traverse((o) => {
+            if (o.isMesh) {
+              o.visible = false;
+              meshes.push(o);
+              const mats = Array.isArray(o.material) ? o.material : [o.material];
+              mats.forEach((m) => { if (m && m.map && !textures.includes(m.map)) textures.push(m.map); });
+            }
+          });
+          loadedChunks.set(c.file, { cx: c.cx, cz: c.cz, group: grp, loading: false, targetVisible: shouldShow });
+          pendingChunkWarmups.push({ group: grp, textures, meshes, texCursor: 0, cursor: 0, added: false });
         })
         .catch(() => {})
-        .finally(() => { setTimeout(next, 180); });
+        .finally(() => {
+          const fastMoving = player.inCar && Math.abs(player.inCar.speed) > 12;
+          setTimeout(next, fastMoving ? 450 : 240);
+        });
     }
-    setTimeout(next, 600);
+    setTimeout(next, 800);
   }
 
   async function preloadAllMapChunks(px, pz) {
@@ -4407,7 +4429,8 @@
     fpsCount++;
     fpsTimer += dt;
     if (fpsTimer >= 0.5) {
-      ui.fpsText.textContent = Math.round(fpsCount / fpsTimer) + ' FPS';
+      const dc = renderer.info && renderer.info.render ? renderer.info.render.calls : 0;
+      ui.fpsText.textContent = `${Math.round(fpsCount / fpsTimer)} FPS • ${dc} DC`;
       fpsCount = 0;
       fpsTimer = 0;
     }
@@ -6012,7 +6035,7 @@
 
   function setupTrafficSystem(px, pz) {
     if (trafficTemplates.length === 0 || roadCells.length === 0) return;
-    const TARGET_TRAFFIC = 14;
+    const TARGET_TRAFFIC = 10;
     for (let i = 0; i < TARGET_TRAFFIC; i++) {
       const sp = pickTrafficSpawnNear(px, pz, i < 8 ? 14 : 32, i < 8 ? 50 : 98);
       if (!sp) continue;
@@ -6221,7 +6244,9 @@
       const u = Math.min(1, tc.segProgress / tc.segLen);
       tc.pos.x = tc.segStartX + (tc.segEndX - tc.segStartX) * u;
       tc.pos.z = tc.segStartZ + (tc.segEndZ - tc.segStartZ) * u;
-      resolveMapWallCollision(tc.pos, tc.radius * 0.85, null, 0.90);
+      if (distP < 58) {
+        resolveMapWallCollision(tc.pos, tc.radius * 0.85, null, 0.90);
+      }
       const gy = getGroundHeight(tc.pos.x, tc.pos.z);
       if (gy !== null && gy >= -0.3 && gy <= 2.6 && Math.abs(gy - tc.pos.y) < 1.35) {
         tc.pos.y += (gy - tc.pos.y) * Math.min(1, dt * 14);
