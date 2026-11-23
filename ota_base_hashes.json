@@ -44,8 +44,8 @@
     "size": 23773
   },
   "js/game.js": {
-    "sha256": "4fca1f6345c88ec6d5f708c8ce1a2e701ec8ccb22fefc0b5f2edd000b658a8e8",
-    "size": 259424
+    "sha256": "bb4d2f04aac8f5de364fd33891893d60a80d64dbf1c29f26f00d8db75f00d6b0",
+    "size": 263857
   },
   "js/multiplayer.js": {
     "sha256": "0f2d6ff217e95b5a7e44340fe9243a51180dc0c174c8a31c0ad692123180cd48",
@@ -464,7 +464,7 @@
     "size": 6738840
   },
   "style.css": {
-    "sha256": "8ab47cefac36e32b3eda9276c398ec20a27026a4d4a5bca3c38f01fd33febf26",
-    "size": 28232
+    "sha256": "e6ac27db1ccd1ef379b71a6c1533be0131ecc9acb3f05130143ae7df73c855fb",
+    "size": 28451
   }
 }
