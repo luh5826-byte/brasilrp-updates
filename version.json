@@ -6,7 +6,7 @@
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.40/BrasilRP_GTA6.apk",
   "otaVersion": 1,
   "minApkCodeForOta": 40,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota_manifest.json",
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b805218/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b805218/ota_manifest.json",
   "otaChangelog": "• Efeito blur (backdrop-filter: 14px) no fundo do Lobby ao abrir as Configurações\n• Qualidade gráfica real (setSize + sombras no mapa) e trava/liberação real de FPS (30, 60, 90 e 120 FPS nativo)"
 }
