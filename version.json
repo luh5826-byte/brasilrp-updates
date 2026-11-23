@@ -1,7 +1,7 @@
 {
-  "versionCode": 21,
-  "versionName": "1.0.21",
+  "versionCode": 22,
+  "versionName": "1.0.22",
   "mandatory": false,
-  "changelog": "• Proteção contra NPCs enterrados no solo ou inclinados no eixo Z",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.21/BrasilRP_GTA6.apk"
+  "changelog": "• Novos Arranha-céus (US Bank Tower, Torre Financeira, California Plaza, Citigroup Center)\n• Novos Serviços Públicos (Delegacia Sheriff, Prefeitura Municipal, IML/Hospital Central)\n• Posicionados em lotes livres fora das ruas com colisão sólida",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.22/BrasilRP_GTA6.apk"
 }
