@@ -1,7 +1,7 @@
 {
-  "versionCode": 16,
-  "versionName": "1.0.16",
+  "versionCode": 17,
+  "versionName": "1.0.17",
   "mandatory": false,
-  "changelog": "• Novo seletor de personagens em grade visível: todos os 7 personagens aparecem ao mesmo tempo na tela\\n• Prévias visuais em cada card com captura automática de retrato 3D real ao selecionar",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.16/BrasilRP_GTA6.apk"
+  "changelog": "• Colisão de carros corrigida (sem atravessar paredes ou cair no limbo)\n• Novo menu de Configurações atualizado\n• Gráficos e texturas PBR aprimorados (Blender + sombras e reflexos)\n• Pés dos personagens ajustados para pisar com a sola completa",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.17/BrasilRP_GTA6.apk"
 }
