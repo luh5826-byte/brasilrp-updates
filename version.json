@@ -1,7 +1,7 @@
 {
-  "versionCode": 18,
-  "versionName": "1.0.18",
+  "versionCode": 19,
+  "versionName": "1.0.19",
   "mandatory": false,
-  "changelog": "• Aviso claro na tela quando o app já está na versão mais recente\n• Toast global visível também no lobby e nas configurações",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.18/BrasilRP_GTA6.apk"
+  "changelog": "• Removidos templates de NPCs quebrados/invisíveis no pack de cidadãos\n• Verificação de malha visível antes de spawnar NPCs",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.19/BrasilRP_GTA6.apk"
 }
