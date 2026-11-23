@@ -1,7 +1,7 @@
 {
-  "versionCode": 37,
-  "versionName": "1.0.37",
+  "versionCode": 38,
+  "versionName": "1.0.38",
   "mandatory": false,
-  "changelog": "• Lexus LC 500 Wald Sports Line importado do Apex Circuit (modelo GLB oficial, física 270 km/h + accel 36.0 + turnRate 2.09 e áudio real V8 Muscle + shift_pop)",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.37/BrasilRP_GTA6.apk"
+  "changelog": "• Mapa completo pré-carregado de uma vez na tela de loading (zero travamentos ao andar/dirigir)\n• Botão explícito 🚗 GARAGEM no Lobby 3D com todos os veículos incluindo Lexus LC 500 Wald\n• Menu do celular com rolagem para chamar o Lexus LC 500 Wald\n• Voz dos NPCs removida",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.38/BrasilRP_GTA6.apk"
 }
