@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• Botão de atualização OTA corrigido (não exigia mais apkUrl para patches leves) e renomeado para ATUALIZAR ⚡\n• Inclui cache local da cidade (IndexedDB), scroll nas Configurações e Lexus LC 500 com rodas e portas funcionais",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.40/BrasilRP_GTA6.apk",
-  "otaVersion": 1,
+  "otaVersion": 2,
   "minApkCodeForOta": 40,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b805218/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b805218/ota_manifest.json",
-  "otaChangelog": "• Efeito blur (backdrop-filter: 14px) no fundo do Lobby ao abrir as Configurações\n• Qualidade gráfica real (setSize + sombras no mapa) e trava/liberação real de FPS (30, 60, 90 e 120 FPS nativo)"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/746b043e7adb6c3a703136341e511c38e354b998/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/746b043e7adb6c3a703136341e511c38e354b998/ota_manifest.json",
+  "otaChangelog": "• Otimização pesada de GPU/CPU para 90-120 FPS reais:\n  - 10+ luzes dinâmicas de carros consolidadas em 2 luzes globais (elimina recompilação de shaders e reduz custo em ~5x)\n  - Mipmaps reais ativados nas texturas da cidade + MSAA desligado + teto de DPR otimizado para telas 1.5K/2K\n  - matrixAutoUpdate=false nos chunks estáticos, raio de visão ajustado e menos alocações por frame"
 }
