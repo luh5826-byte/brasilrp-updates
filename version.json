@@ -1,7 +1,7 @@
 {
-  "versionCode": 20,
-  "versionName": "1.0.20",
+  "versionCode": 21,
+  "versionName": "1.0.21",
   "mandatory": false,
-  "changelog": "• Remoção automática de qualquer NPC com orientação invertida (de cabeça para baixo)",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.20/BrasilRP_GTA6.apk"
+  "changelog": "• Proteção contra NPCs enterrados no solo ou inclinados no eixo Z",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.21/BrasilRP_GTA6.apk"
 }
