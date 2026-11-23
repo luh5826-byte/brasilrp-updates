@@ -1,8 +1,8 @@
 {
   "app": "parana_truck_sim",
-  "versionCode": 7,
-  "versionName": "1.0.7",
+  "versionCode": 8,
+  "versionName": "1.0.8",
   "mandatory": false,
-  "changelog": "Otimizacao de FPS (sem rebuild da UI no loop 3D e culling no minimapa), alinhamento do minimapa OSM e correcao do versionCode do APK",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/pts-v1.0.7/ParanaTruckSim.apk"
+  "changelog": "Sistema de atualizacao identico ao BrasilRP (checagem ~3s apos abrir com modal automatico + botao ATUALIZAR APP) e protecao de inicializacao 3D",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/pts-v1.0.8/ParanaTruckSim.apk"
 }
