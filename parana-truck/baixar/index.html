@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baixando Paraná Truck Simulator...</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b0f17;
+      color: #f3f6fc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    a { color: #00e676; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div>
+    <p>Iniciando download da última versão do Paraná Truck Simulator...</p>
+    <p><a id="directLink" href="https://github.com/luh5826-byte/brasilrp-updates/releases/download/pts-v1.0.6/ParanaTruckSim.apk">Clique aqui se o download não começar automaticamente</a></p>
+  </div>
+  <script>
+    const FALLBACK_URL = "https://github.com/luh5826-byte/brasilrp-updates/releases/download/pts-v1.0.6/ParanaTruckSim.apk";
+    fetch("../../parana_truck_version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        const url = data.apkUrl || FALLBACK_URL;
+        document.getElementById("directLink").href = url;
+        window.location.replace(url);
+      })
+      .catch(() => {
+        window.location.replace(FALLBACK_URL);
+      });
+  </script>
+</body>
+</html>
