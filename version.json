@@ -1,7 +1,7 @@
 {
-  "versionCode": 26,
-  "versionName": "1.0.26",
+  "versionCode": 28,
+  "versionName": "1.0.28",
   "mandatory": false,
-  "changelog": "• Semáforos amarelos nativos do mapa (146 unidades) ativados com lentes dinâmicas (vermelho/amarelo/verde)\n• Removidos postes e faixas artificiais ao redor do spawn\n• Corrigido ziguezague dos carros de tráfego (seguem retos na avenida e param nos semáforos reais)",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.26/BrasilRP_GTA6.apk"
+  "changelog": "• Movimentação com inércia, aceleração/parada com peso e inclinação lateral nas curvas (estilo GTA 5)\n• Postura diferenciada entre andar, sprint (tronco inclinado, passada ampla) e pulo/queda\n• Transições suaves (moveBlend/airBlend) sem travamentos em todos os personagens",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.28/BrasilRP_GTA6.apk"
 }
