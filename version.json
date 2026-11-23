@@ -1,7 +1,7 @@
 {
-  "versionCode": 29,
-  "versionName": "1.0.29",
+  "versionCode": 30,
+  "versionName": "1.0.30",
   "mandatory": false,
-  "changelog": "• Semáforos nativos com lentes maiores (0.105m) e brilho vivo para fora da caixa\n• Correção de sprint/pulo/braços no Cool Man (customRig) para não colar no casaco\n• Tráfego corrigido: carros não sobem mais na calçada, têm separação física e não travam frente a frente",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.29/BrasilRP_GTA6.apk"
+  "changelog": "• Streaming de mapa suave sem travamentos (warmup gradual de chunks)\n• Correção de paredes invisíveis e liberação total de pontes\n• Joystick estilo console com tela limpa e navegação completa nos menus\n• Postes, placas, cones e hidrantes destrutíveis ao colidir com o carro\n• Configurações independentes (Qualidade x FPS) salvas automaticamente + Rádios estilo GTA",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.30/BrasilRP_GTA6.apk"
 }
