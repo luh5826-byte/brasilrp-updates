@@ -1,7 +1,7 @@
 {
-  "versionCode": 35,
-  "versionName": "1.0.35",
+  "versionCode": 36,
+  "versionName": "1.0.36",
   "mandatory": false,
-  "changelog": "• Rádio fake removida: apenas Web Radio real (API Radio Browser) pré-carregada no início do jogo\n• Botões de Zoom Perto/Longe do joystick corrigidos (LB/LT a pé e R3 alternando distâncias no carro)",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.35/BrasilRP_GTA6.apk"
+  "changelog": "• Otimização geral de FPS: remoção de backdrop-filter da HUD, streaming ultra-suave (1 textura/frame), menos sub-steps e menos draw calls\n• Tela de Pausa ao pausar ou ir para segundo plano com silenciamento total de áudio\n• Créditos do desenvolvedor (@j3d9c) no Lobby 3D\n• Tráfego corrigido: carros aleatórios não somem após colisão e não sobem paredes",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.36/BrasilRP_GTA6.apk"
 }
