@@ -1,7 +1,7 @@
 {
-  "versionCode": 31,
-  "versionName": "1.0.31",
+  "versionCode": 32,
+  "versionName": "1.0.32",
   "mandatory": false,
-  "changelog": "• Pré-upload gradual de texturas (renderer.initTexture) e descarga escalonada de chunks para eliminar travamentos\n• API real de Web Radio (Radio Browser) com estações brasileiras ao vivo e fallback offline",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.31/BrasilRP_GTA6.apk"
+  "changelog": "• Soco com animação do braço e dano real em NPCs (knockout + loot), veículos e obstáculos destrutíveis\n• Streaming gradual de texturas/chunks sem travar + API real de Web Radio",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.32/BrasilRP_GTA6.apk"
 }
