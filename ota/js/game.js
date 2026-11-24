@@ -98,6 +98,27 @@
       this.beep(520, 0.032, 'triangle', 0.09);
       setTimeout(() => this.beep(780, 0.025, 'square', 0.05), 28);
     },
+    _lastCurbMs: 0,
+    curbThump(intensity = 0.7) {
+      if (!soundEnabled) return;
+      const nowMs = performance.now();
+      if (nowMs - this._lastCurbMs < 68) return;
+      this._lastCurbMs = nowMs;
+      this.resume();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const now = ctx.currentTime;
+      const amp = Math.max(0.06, Math.min(0.28, intensity * 0.24));
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(92 + intensity * 38, now);
+      o.frequency.exponentialRampToValueAtTime(36, now + 0.085);
+      g.gain.setValueAtTime(amp, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(now); o.stop(now + 0.10);
+    },
     doorSlam() {
       if (!soundEnabled) return;
       this.resume();
@@ -2044,6 +2065,94 @@
     return refY;
   }
 
+  // --- Patch Local de Triângulos 3D para Raycast Milimétrico de Degraus de Escadas e Meio-Fios ---
+  // Extrai apenas os triângulos horizontais/inclinados da malha 3D real dentro de 14m×14m ao redor do carro (custo ~0.015ms/roda)
+  const localMeshPatch = { cx: 1e9, cz: 1e9, chunkCount: -1, data: new Float32Array(0), count: 0 };
+  function ensureLocalMeshPatch(wx, wz) {
+    const dx = wx - localMeshPatch.cx;
+    const dz = wz - localMeshPatch.cz;
+    if (dx * dx + dz * dz < 14.0 && localMeshPatch.chunkCount === loadedChunks.size && localMeshPatch.count > 0) return;
+
+    const halfBox = 8.5;
+    const minX = wx - halfBox, maxX = wx + halfBox;
+    const minZ = wz - halfBox, maxZ = wz + halfBox;
+    const tmp = [];
+
+    for (const entry of loadedChunks.values()) {
+      if (!entry.group || !entry.group.visible) continue;
+      if (Math.abs(entry.cx - wx) > 135 || Math.abs(entry.cz - wz) > 135) continue;
+      entry.group.traverse((obj) => {
+        if (!obj.isMesh || !obj.geometry || !obj.geometry.attributes || !obj.geometry.attributes.position) return;
+        const mat = Array.isArray(obj.material) ? obj.material[0] : obj.material;
+        const isCutout = mat && (mat.alphaTest > 0.05 || (mat.name && mat.name.includes('Cutout')));
+        const posAttr = obj.geometry.attributes.position;
+        const pArr = posAttr.array;
+        const idxAttr = obj.geometry.index;
+        const iArr = idxAttr ? idxAttr.array : null;
+        const triCount = iArr ? (iArr.length / 3) : (posAttr.count / 3);
+        for (let t = 0; t < triCount; t++) {
+          const i0 = (iArr ? iArr[t * 3] : t * 3) * 3;
+          const i1 = (iArr ? iArr[t * 3 + 1] : t * 3 + 1) * 3;
+          const i2 = (iArr ? iArr[t * 3 + 2] : t * 3 + 2) * 3;
+          const ax = pArr[i0], bx = pArr[i1], cx = pArr[i2];
+          if ((ax < minX && bx < minX && cx < minX) || (ax > maxX && bx > maxX && cx > maxX)) continue;
+          const az = pArr[i0 + 2], bz = pArr[i1 + 2], cz = pArr[i2 + 2];
+          if ((az < minZ && bz < minZ && cz < minZ) || (az > maxZ && bz > maxZ && cz > maxZ)) continue;
+          const ay = pArr[i0 + 1], by = pArr[i1 + 1], cy = pArr[i2 + 1];
+          const ux = bx - ax, uy = by - ay, uz = bz - az;
+          const vx = cx - ax, vy = cy - ay, vz = cz - az;
+          const nx = uy * vz - uz * vy;
+          const ny = uz * vx - ux * vz;
+          const nz = ux * vy - uy * vx;
+          const nl = Math.hypot(nx, ny, nz);
+          if (nl < 1e-6) continue;
+          const absNy = Math.abs(ny / nl);
+          // Cutout: só grelhas metálicas grandes horizontais de pontes; Opaco: pisos, degraus, meio-fios e rampas
+          if (isCutout ? (absNy < 0.88 || nl * 0.5 < 1.2) : (absNy < 0.52)) continue;
+          const tMinX = ax < bx ? (ax < cx ? ax : cx) : (bx < cx ? bx : cx);
+          const tMaxX = ax > bx ? (ax > cx ? ax : cx) : (bx > cx ? bx : cx);
+          const tMinZ = az < bz ? (az < cz ? az : cz) : (bz < cz ? bz : cz);
+          const tMaxZ = az > bz ? (az > cz ? az : cz) : (bz > cz ? bz : cz);
+          tmp.push(tMinX, tMaxX, tMinZ, tMaxZ, ax, ay, az, bx, by, bz, cx, cy, cz);
+        }
+      });
+    }
+    localMeshPatch.cx = wx;
+    localMeshPatch.cz = wz;
+    localMeshPatch.chunkCount = loadedChunks.size;
+    localMeshPatch.data = Float32Array.from(tmp);
+    localMeshPatch.count = tmp.length / 13;
+  }
+
+  function sampleExactMeshGround(wx, wz, refY, maxUp = 1.55, maxDown = 2.2) {
+    const n = localMeshPatch.count;
+    if (n === 0) return null;
+    const d = localMeshPatch.data;
+    let bestY = null;
+    const minY = refY - maxDown;
+    const maxY = refY + maxUp;
+    for (let i = 0; i < n; i++) {
+      const o = i * 13;
+      if (wx < d[o] || wx > d[o + 1] || wz < d[o + 2] || wz > d[o + 3]) continue;
+      const ax = d[o + 4], ay = d[o + 5], az = d[o + 6];
+      const bx = d[o + 7], by = d[o + 8], bz = d[o + 9];
+      const cx = d[o + 10], cy = d[o + 11], cz = d[o + 12];
+      const den = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (den > -1e-7 && den < 1e-7) continue;
+      const invDen = 1.0 / den;
+      const w0 = ((bz - cz) * (wx - cx) + (cx - bx) * (wz - cz)) * invDen;
+      if (w0 < -0.002) continue;
+      const w1 = ((cz - az) * (wx - cx) + (ax - cx) * (wz - cz)) * invDen;
+      if (w1 < -0.002 || w0 + w1 > 1.002) continue;
+      const w2 = 1.0 - w0 - w1;
+      const hy = w0 * ay + w1 * by + w2 * cy;
+      if (hy >= minY && hy <= maxY) {
+        if (bestY === null || hy > bestY) bestY = hy;
+      }
+    }
+    return bestY;
+  }
+
   // --- Partículas de Fumaça Drift & Motor Danificado ---
   const SMOKE_COUNT = 110;
   const smokePositions = new Float32Array(SMOKE_COUNT * 3);
@@ -2875,6 +2984,10 @@
       steerAngle: 0,
       roll: 0,
       pitch: 0,
+      rollVel: 0,
+      pitchVel: 0,
+      angVel: 0,
+      mass: isSaveiro ? 1.50 : isLexus ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
       hp: 100,
       broken: false,
       nitro: 100,
@@ -6432,9 +6545,12 @@
     }
 
     if (hitMapWall) {
-      if (speedKmh > 32) {
+      if (speedKmh > 26) {
         AudioFX.crash(); vibrate(55);
         applyCarDamage(speedKmh);
+        car.pitchVel = (car.pitchVel || 0) + Math.min(1.8, speedKmh * 0.015);
+        camShakeTimer = Math.max(camShakeTimer, 0.28);
+        camShakePower = Math.max(camShakePower, Math.min(0.45, speedKmh * 0.004));
       }
       car.vel.multiplyScalar(0.76);
     }
@@ -6458,46 +6574,128 @@
       }
     }
 
+    // Física real de colisão entre veículos dirigíveis (conservação de momento + empurrão + torque)
+    const carMass = car.mass || 1.35;
+    const invM1 = 1.0 / carMass;
     for (const other of vehicles) {
       if (other === car) continue;
-      const dx = car.pos.x - other.pos.x;
-      const dz = car.pos.z - other.pos.z;
+      if (Math.abs(car.pos.y - other.pos.y) > 2.6) continue;
+      const dx = other.pos.x - car.pos.x;
+      const dz = other.pos.z - car.pos.z;
       const d = Math.hypot(dx, dz);
-      const minD = 3.1;
+      const minD = 3.05;
       if (d > 0.01 && d < minD) {
         const nx = dx / d, nz = dz / d, pen = minD - d;
-        car.pos.x += nx * pen * 0.5; car.pos.z += nz * pen * 0.5;
-        other.pos.x -= nx * pen * 0.5; other.pos.z -= nz * pen * 0.5;
-        other.vel.x -= nx * Math.min(12, Math.abs(car.speed) * 0.6);
-        other.vel.z -= nz * Math.min(12, Math.abs(car.speed) * 0.6);
-        car.vel.multiplyScalar(0.68);
-        if (speedKmh > 30) {
-          AudioFX.crash(); vibrate(55);
-          applyCarDamage(speedKmh);
-          other.hp = Math.max(0, other.hp - Math.min(10, (speedKmh - 26) * 0.12));
+        const invM2 = 1.0 / (other.mass || 1.35);
+        const invSum = invM1 + invM2;
+        // Separação proporcional às massas
+        car.pos.x -= nx * pen * (invM1 / invSum);
+        car.pos.z -= nz * pen * (invM1 / invSum);
+        other.pos.x += nx * pen * (invM2 / invSum);
+        other.pos.z += nz * pen * (invM2 / invSum);
+
+        const relVn = (car.vel.x - other.vel.x) * nx + (car.vel.z - other.vel.z) * nz;
+        if (relVn > 0) {
+          const j = (1.22 * relVn) / invSum;
+          car.vel.x -= nx * j * invM1 * 0.80;
+          car.vel.z -= nz * j * invM1 * 0.80;
+          other.vel.x += nx * j * invM2 * 1.15;
+          other.vel.z += nz * j * invM2 * 1.15;
+          // Torque rotacional ao acertar fora do centro do outro carro
+          const ofX = Math.sin(other.yaw), ofZ = Math.cos(other.yaw);
+          const sideHit = nx * ofZ - nz * ofX;
+          other.angVel = (other.angVel || 0) + sideHit * Math.min(3.5, relVn * 0.14);
+          other.rollVel = (other.rollVel || 0) - sideHit * Math.min(2.2, relVn * 0.12);
+          car.pitchVel = (car.pitchVel || 0) + Math.min(1.5, relVn * 0.09);
+          if (relVn > 6.5) {
+            AudioFX.crash(); vibrate(50);
+            applyCarDamage(relVn * 3.2);
+            other.hp = Math.max(0, other.hp - Math.min(12, (relVn - 5.5) * 0.6));
+          }
+        }
+        // Empurrão contínuo quando o jogador acelera encostado no outro carro
+        if (gas) {
+          other.vel.x += forwardDir.x * 9.5 * dt;
+          other.vel.z += forwardDir.z * 9.5 * dt;
         }
       }
     }
 
+    // Física real de impacto e empurrão em carros aleatórios do tráfego (impulso, derrapagem, spin e dominó!)
     for (const tc of trafficCars) {
-      const dx = car.pos.x - tc.pos.x;
-      const dz = car.pos.z - tc.pos.z;
+      if (Math.abs(car.pos.y - tc.pos.y) > 2.8) continue;
+      const dx = tc.pos.x - car.pos.x;
+      const dz = tc.pos.z - car.pos.z;
       const d = Math.hypot(dx, dz);
-      const minD = tc.radius + 1.55;
+      const minD = tc.radius + 1.50;
       if (d > 0.01 && d < minD) {
         const nx = dx / d, nz = dz / d, pen = minD - d;
-        car.pos.x += nx * pen * 0.6; car.pos.z += nz * pen * 0.6;
-        tc.pos.x -= nx * pen * 0.4; tc.pos.z -= nz * pen * 0.4;
-        tc.segStartX = tc.pos.x;
-        tc.segStartZ = tc.pos.z;
-        tc.segProgress = 0;
-        tc.segLen = Math.max(0.5, Math.hypot(tc.segEndX - tc.segStartX, tc.segEndZ - tc.segStartZ));
-        tc.speed = 0;
-        tc.waitTimer = 1.8;
-        car.vel.multiplyScalar(0.62);
-        if (speedKmh > 30) {
-          AudioFX.crash(); vibrate(55);
-          applyCarDamage(speedKmh * 0.8);
+        const tcMass = tc.mass || 1.15;
+        const invM2 = 1.0 / tcMass;
+        const invSum = invM1 + invM2;
+
+        // Separação proporcional às massas (carro leve do tráfego cede muito mais espaço ao ser empurrado!)
+        car.pos.x -= nx * pen * (invM1 / invSum) * 0.65;
+        car.pos.z -= nz * pen * (invM1 / invSum) * 0.65;
+        tc.pos.x += nx * pen * (invM2 / invSum) * 1.18;
+        tc.pos.z += nz * pen * (invM2 / invSum) * 1.18;
+
+        const tcVx = tc.knockTimer > 0 ? tc.physVel.x : Math.sin(tc.yaw) * tc.speed;
+        const tcVz = tc.knockTimer > 0 ? tc.physVel.z : Math.cos(tc.yaw) * tc.speed;
+        const relVn = (car.vel.x - tcVx) * nx + (car.vel.z - tcVz) * nz;
+
+        if (tc.knockTimer <= 0) {
+          tc.physVel.set(tcVx, 0, tcVz);
+        }
+
+        if (relVn > 0.15) {
+          const j = (1.26 * relVn) / invSum;
+          // Carro do jogador retém boa parte do embalo ao empurrar tráfego leve; carros pesados (caminhões) oferecem mais resistência
+          car.vel.x -= nx * j * invM1 * 0.68;
+          car.vel.z -= nz * j * invM1 * 0.68;
+          tc.physVel.x += nx * j * invM2 * 1.32;
+          tc.physVel.z += nz * j * invM2 * 1.32;
+          // Leve impulso vertical em pancadas fortes
+          if (relVn > 11.0) tc.physVelY = Math.min(3.8, (relVn - 9.0) * 0.18);
+
+          // Torque real (manobra PIT / cavalo-de-pau ao atingir a lateral ou quina do carro aleatório!)
+          const tcFwdX = Math.sin(tc.yaw), tcFwdZ = Math.cos(tc.yaw);
+          const hitOffX = (car.pos.x + nx * 1.3) - tc.pos.x;
+          const hitOffZ = (car.pos.z + nz * 1.3) - tc.pos.z;
+          const torqueCross = hitOffX * (nx * j) - hitOffZ * (nz * j);
+          const sideFactor = (car.vel.x * tcFwdZ - car.vel.z * tcFwdX);
+          tc.angVel = Math.max(-6.5, Math.min(6.5, (tc.angVel || 0) + (torqueCross * 0.11 + sideFactor * 0.08) * invM2));
+
+          // Balanço físico de impacto na carroceria dos dois veículos
+          const sideImpact = nx * tcFwdZ - nz * tcFwdX;
+          tc.impactRoll = Math.max(-0.22, Math.min(0.22, (tc.impactRoll || 0) - sideImpact * Math.min(0.18, relVn * 0.012)));
+          tc.impactPitch = Math.max(-0.18, Math.min(0.18, (tc.impactPitch || 0) + Math.min(0.15, relVn * 0.01)));
+          car.pitchVel = (car.pitchVel || 0) + Math.min(2.1, relVn * 0.10);
+          car.suspHeaveVel = (car.suspHeaveVel || 0) - Math.min(0.8, relVn * 0.035);
+
+          tc.knockTimer = Math.max(tc.knockTimer || 0, Math.min(3.6, 1.35 + relVn * 0.11));
+          tc.waitTimer = 0;
+
+          if (relVn > 4.5) {
+            AudioFX.crash();
+            vibrate(Math.min(75, Math.round(22 + relVn * 2.4)));
+            camShakeTimer = Math.max(camShakeTimer, 0.25);
+            camShakePower = Math.max(camShakePower, Math.min(0.42, relVn * 0.018));
+            if (relVn > 9.5) applyCarDamage(relVn * 2.6);
+            if (!tc.hornCooldown || tc.hornCooldown <= 0) {
+              tc.hornCooldown = 4.0;
+              if (Math.random() < 0.65) setTimeout(() => AudioFX.horn(), 120);
+            }
+          }
+        }
+
+        // Empurrão contínuo real: se o jogador continuar acelerando encostado no carro aleatório, empurra ele pela rua!
+        if (gas || Math.abs(forwardSpeed) > 1.0) {
+          const pushPower = (gas ? (car.accelPower * 0.58) : 6.0) * invM2;
+          tc.physVel.x += nx * pushPower * dt + forwardDir.x * (gas ? 5.5 : 0) * invM2 * dt;
+          tc.physVel.z += nz * pushPower * dt + forwardDir.z * (gas ? 5.5 : 0) * invM2 * dt;
+          tc.knockTimer = Math.max(tc.knockTimer || 0, 1.2);
+          tc.waitTimer = 0;
         }
       }
     }
@@ -6529,10 +6727,13 @@
       }
     }
 
-    const targetRoll = -car.steerAngle * Math.min(0.065, speedKmh * 0.00045) + dampedLateral * 0.004;
-    const targetPitch = brake ? 0.032 : (gas ? -0.022 : 0);
-    car.roll += (targetRoll - car.roll) * Math.min(1, dt * 10);
-    car.pitch += (targetPitch - car.pitch) * Math.min(1, dt * 10);
+    // Transferência de peso real (molas de Roll e Pitch na suspensão da carroceria)
+    const targetRoll = -car.steerAngle * Math.min(0.085, speedKmh * 0.00058) + dampedLateral * 0.0055;
+    const targetPitch = brake ? 0.048 : (gas ? (car.nitroActive ? -0.052 : -0.032) : 0);
+    car.rollVel = (car.rollVel || 0) + ((targetRoll - (car.roll || 0)) * 78 - (car.rollVel || 0) * 11.5) * dt;
+    car.pitchVel = (car.pitchVel || 0) + ((targetPitch - (car.pitch || 0)) * 72 - (car.pitchVel || 0) * 11.0) * dt;
+    car.roll = Math.max(-0.18, Math.min(0.18, (car.roll || 0) + car.rollVel * dt));
+    car.pitch = Math.max(-0.15, Math.min(0.15, (car.pitch || 0) + car.pitchVel * dt));
 
     player.pos.copy(car.pos);
     const spdInt = Math.round(speedKmh);
@@ -6580,26 +6781,88 @@
       const halfWB = wheelBase * 0.5;
       const halfTW = trackWidth * 0.5;
 
-      // Amostragem de altura real nas 4 rodas + centro (lógica de degraus e escadarias!)
-      const hCenter = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.85);
+      // Amostragem de altura real nas 4 rodas + centro com raycast 3D milimétrico (degraus de escadas + meio-fios!)
+      const useExactMesh = (v === player.inCar);
+      if (useExactMesh) ensureLocalMeshPatch(v.pos.x, v.pos.z);
+
+      const hCenterGrid = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.85);
+      const hCenterExact = useExactMesh ? sampleExactMeshGround(v.pos.x, v.pos.z, v.pos.y, 1.55, 2.2) : null;
+      const hCenter = hCenterExact !== null ? hCenterExact : hCenterGrid;
       const refY = hCenter !== null ? hCenter : v.pos.y;
+      const absSpd = Math.abs(v.speed || 0);
+
       const sampleWheelG = (lx, lz) => {
         const wx = v.pos.x + lx * cosY + lz * sinY;
         const wz = v.pos.z - lx * sinY + lz * cosY;
-        return getWalkableGround(wx, wz, refY, 1.85);
+        const exact = useExactMesh ? sampleExactMeshGround(wx, wz, refY, 1.55, 2.2) : null;
+        return { wx, wz, h: exact !== null ? exact : getWalkableGround(wx, wz, refY, 1.85), fromMesh: exact !== null };
       };
 
       let sumF = 0, cntF = 0, sumR = 0, cntR = 0;
       let sumPX = 0, cntPX = 0, sumMX = 0, cntMX = 0;
       let sumAll = 0, cntAll = 0;
       const wheelHits = [];
+      const wheelRoadCells = [];
+      let anyOnAsphalt = false, anyOnSidewalk = false;
       const wList = (v.parts && v.parts.wheels && v.parts.wheels.length >= 4) ? v.parts.wheels : null;
 
       if (wList) {
         for (let wi = 0; wi < wList.length; wi++) {
           const w = wList[wi];
-          const wh = sampleWheelG(w.localX, w.localZ);
-          wheelHits.push(wh);
+          const s = sampleWheelG(w.localX, w.localZ);
+          const rc = getRoadCellAt(s.wx, s.wz);
+          wheelRoadCells.push(rc);
+          if (rc === 1) anyOnAsphalt = true;
+          else if (rc === 2) anyOnSidewalk = true;
+          wheelHits.push(s);
+        }
+        // Meio-fio físico real: se parte do carro está na calçada (rc===2) e parte no asfalto (rc===1), garante degrau real de guia
+        for (let wi = 0; wi < wList.length; wi++) {
+          const w = wList[wi];
+          const s = wheelHits[wi];
+          const rc = wheelRoadCells[wi];
+          let wh = s.h;
+          if (wh !== null && anyOnAsphalt && anyOnSidewalk && rc === 2 && !s.fromMesh) {
+            wh += 0.105;
+          }
+          // Detecta cruzamento de meio-fio (Asfalto <-> Calçada) por roda individual!
+          if (v.grounded && w.lastRoadCell !== undefined && w.lastRoadCell !== rc) {
+            const climbedCurb = (w.lastRoadCell === 1 && rc === 2);
+            const droppedCurb = (w.lastRoadCell === 2 && rc === 1);
+            if (climbedCurb || droppedCurb) {
+              const kick = climbedCurb
+                ? (1.35 + Math.min(2.1, absSpd * 0.13))
+                : -(1.05 + Math.min(1.6, absSpd * 0.10));
+              w.suspVel = (w.suspVel || 0) + kick;
+              v.suspHeaveVel = (v.suspHeaveVel || 0) + kick * 0.16;
+              v.rollVel = (v.rollVel || 0) + (w.localX >= 0 ? 1 : -1) * kick * 0.14;
+              v.pitchVel = (v.pitchVel || 0) - (w.localZ >= 0 ? 1 : -1) * kick * 0.10;
+              if (climbedCurb && absSpd > 1.2) {
+                v.vel.multiplyScalar(0.965);
+              }
+              if (v === player.inCar && absSpd > 0.6) {
+                AudioFX.curbThump(Math.min(1.0, (climbedCurb ? 0.45 : 0.30) + absSpd * 0.045));
+                vibrate(climbedCurb ? 14 : 9);
+              }
+            }
+          }
+          w.lastRoadCell = rc;
+
+          // Detecta impacto real de degrau de escada / desnível súbito na malha 3D sob esta roda!
+          if (v.grounded && wh !== null && w.lastGroundY !== undefined && absSpd > 0.5) {
+            const stepJump = wh - w.lastGroundY;
+            if (Math.abs(stepJump) > 0.055 && Math.abs(stepJump) < 0.48) {
+              w.suspVel = (w.suspVel || 0) + stepJump * 11.5;
+              v.suspHeaveVel = (v.suspHeaveVel || 0) + stepJump * 1.8;
+              if (v === player.inCar && absSpd > 1.4 && stepJump > 0.065) {
+                AudioFX.curbThump(Math.min(0.85, 0.25 + stepJump * 2.2));
+                vibrate(8);
+              }
+            }
+          }
+          if (wh !== null) w.lastGroundY = wh;
+
+          s.h = wh;
           if (wh !== null) {
             sumAll += wh; cntAll++;
             if (w.localZ * fs >= 0) { sumF += wh; cntF++; } else { sumR += wh; cntR++; }
@@ -6607,10 +6870,10 @@
           }
         }
       } else {
-        const hFL = sampleWheelG(halfTW, halfWB * fs);
-        const hFR = sampleWheelG(-halfTW, halfWB * fs);
-        const hRL = sampleWheelG(halfTW, -halfWB * fs);
-        const hRR = sampleWheelG(-halfTW, -halfWB * fs);
+        const hFL = sampleWheelG(halfTW, halfWB * fs).h;
+        const hFR = sampleWheelG(-halfTW, halfWB * fs).h;
+        const hRL = sampleWheelG(halfTW, -halfWB * fs).h;
+        const hRR = sampleWheelG(-halfTW, -halfWB * fs).h;
         if (hFL !== null) { sumAll += hFL; cntAll++; sumF += hFL; cntF++; sumPX += hFL; cntPX++; }
         if (hFR !== null) { sumAll += hFR; cntAll++; sumF += hFR; cntF++; sumMX += hFR; cntMX++; }
         if (hRL !== null) { sumAll += hRL; cntAll++; sumR += hRL; cntR++; sumPX += hRL; cntPX++; }
@@ -6629,17 +6892,18 @@
       if (avg4 !== null) {
         const dPitch = (hFront !== null && hRear !== null) ? (hFront - hRear) : 0;
         const dRoll = (hPlusX !== null && hMinusX !== null) ? (hPlusX - hMinusX) : 0;
-        targetSlopePitch = Math.max(-0.52, Math.min(0.52, -Math.atan2(dPitch, wheelBase) * fs));
-        targetSlopeRoll = Math.max(-0.36, Math.min(0.36, Math.atan2(dRoll, trackWidth)));
+        targetSlopePitch = Math.max(-0.54, Math.min(0.54, -Math.atan2(dPitch, wheelBase) * fs));
+        targetSlopeRoll = Math.max(-0.38, Math.min(0.38, Math.atan2(dRoll, trackWidth)));
         slopeMag = Math.hypot(dPitch / wheelBase, dRoll / trackWidth);
       }
 
-      // Folga de crista dos degraus: em escadas/rampas íngremes, as quinas vivas ficam +6..11cm acima da média
-      const stepCrestLift = slopeMag > 0.14 ? Math.min(0.11, (slopeMag - 0.14) * 0.24) : 0;
+      // Se estamos usando raycast 3D exato dos degraus, não precisa de folga artificial grande; se grade 1.5m, aplica folga de crista
+      const anyExact = wList && wheelHits.some((s) => s.fromMesh);
+      const stepCrestLift = (!anyExact && slopeMag > 0.14) ? Math.min(0.11, (slopeMag - 0.14) * 0.24) : 0;
       let gy = null;
       if (avg4 !== null) {
         gy = avg4 + stepCrestLift;
-        if (hCenter !== null && hCenter - 0.03 > gy) gy = hCenter - 0.03;
+        if (hCenter !== null && hCenter - 0.025 > gy) gy = hCenter - 0.025;
       } else {
         gy = hCenter;
       }
@@ -6705,16 +6969,27 @@
       } else {
         v.grounded = false;
       }
-      if (v !== player.inCar && v.vel.lengthSq() > 0.01) {
-        v.pos.addScaledVector(v.vel, dt);
-        v.vel.multiplyScalar(0.92);
-        resolveMapWallCollision(v.pos, 1.65, v.vel, 1.65);
+      if (v !== player.inCar) {
+        if (v.vel.lengthSq() > 0.01) {
+          v.pos.addScaledVector(v.vel, dt);
+          v.vel.multiplyScalar(Math.max(0, 1 - dt * 3.8));
+          resolveMapWallCollision(v.pos, 1.55, v.vel, 1.45);
+        }
+        if (Math.abs(v.angVel || 0) > 0.01) {
+          v.yaw += v.angVel * dt;
+          v.angVel *= Math.max(0, 1 - dt * 4.5);
+        }
+        // Amortecimento natural das molas de carroceria em veículos estacionados após empurrão
+        v.rollVel = (v.rollVel || 0) + (-(v.roll || 0) * 65 - (v.rollVel || 0) * 10) * dt;
+        v.pitchVel = (v.pitchVel || 0) + (-(v.pitch || 0) * 65 - (v.pitchVel || 0) * 10) * dt;
+        v.roll = (v.roll || 0) + v.rollVel * dt;
+        v.pitch = (v.pitch || 0) + v.pitchVel * dt;
       }
 
       // Inclinação 3D completa do VEÍCULO INTEIRO (carroceria + portas + rodas) acompanhando escadas e rampas!
       if (v.grounded) {
-        v.slopePitch = (v.slopePitch || 0) + (targetSlopePitch - (v.slopePitch || 0)) * Math.min(1, dt * 12);
-        v.slopeRoll = (v.slopeRoll || 0) + (targetSlopeRoll - (v.slopeRoll || 0)) * Math.min(1, dt * 12);
+        v.slopePitch = (v.slopePitch || 0) + (targetSlopePitch - (v.slopePitch || 0)) * Math.min(1, dt * 13);
+        v.slopeRoll = (v.slopeRoll || 0) + (targetSlopeRoll - (v.slopeRoll || 0)) * Math.min(1, dt * 13);
       } else {
         v.slopePitch = (v.slopePitch || 0) * Math.max(0, 1 - dt * 3.5);
         v.slopeRoll = (v.slopeRoll || 0) * Math.max(0, 1 - dt * 3.5);
@@ -6722,8 +6997,7 @@
       v.mesh.rotation.order = 'YXZ';
       v.mesh.rotation.set(v.slopePitch || 0, v.yaw, v.slopeRoll || 0);
 
-      // Suspensão independente por roda com física de degraus (mola + amortecedor + micro-impulsos de escada)
-      const absSpd = Math.abs(v.speed || 0);
+      // Suspensão independente por roda acompanhando degraus 3D reais e meio-fios (mola + amortecedor)
       const onStairs = v.grounded && slopeMag > 0.15;
       if (onStairs && absSpd > 0.35) {
         const prevSteps = Math.floor((v.stairDist || 0) / 0.42);
@@ -6740,32 +7014,32 @@
       if (wList) {
         const sinP = Math.sin(v.slopePitch || 0);
         const sinR = Math.sin(v.slopeRoll || 0);
-        const stepAmp = onStairs ? Math.min(0.068, (slopeMag - 0.12) * 0.16) * Math.min(1.0, absSpd / 3.0) : 0;
+        // Se já estamos amostrando degraus 3D exatos da malha, a onda complementar é mais sutil
+        const stepAmp = onStairs ? Math.min(anyExact ? 0.032 : 0.068, (slopeMag - 0.12) * (anyExact ? 0.08 : 0.16)) * Math.min(1.0, absSpd / 3.0) : 0;
         const stepK = (Math.PI * 2) / 0.42;
 
         for (let wi = 0; wi < wList.length; wi++) {
           const w = wList[wi];
           let targetSusp = 0;
           if (v.grounded) {
-            const wh = wheelHits[wi];
+            const wh = wheelHits[wi] ? wheelHits[wi].h : null;
             if (wh !== null) {
               const planeWY = v.pos.y - w.localZ * sinP + w.localX * sinR;
               targetSusp = wh - planeWY;
             }
             if (stepAmp > 0.002) {
-              // Onda individual de degrau por eixo/roda conforme o pneu galga cada aresta da escada
               const wPhase = ((v.stairDist || 0) + w.localZ * 0.85 + w.localX * 0.35) * stepK;
               const crest = Math.max(0, Math.sin(wPhase));
               targetSusp += crest * stepAmp;
             }
-            targetSusp = Math.max(-0.09, Math.min(0.11, targetSusp));
+            targetSusp = Math.max(-0.11, Math.min(0.13, targetSusp));
           } else {
-            // No ar (salto): suspensão estende levemente para baixo (droop realista)
-            targetSusp = -0.08;
+            // No ar (salto): suspensão estende para baixo (droop realista)
+            targetSusp = -0.095;
           }
           // Mola-amortecedor de roda (Hooke + Damping)
-          w.suspVel = (w.suspVel || 0) + ((targetSusp - (w.suspY || 0)) * 165 - (w.suspVel || 0) * 18) * dt;
-          w.suspY = Math.max(-0.10, Math.min(0.12, (w.suspY || 0) + w.suspVel * dt));
+          w.suspVel = (w.suspVel || 0) + ((targetSusp - (w.suspY || 0)) * 185 - (w.suspVel || 0) * 17) * dt;
+          w.suspY = Math.max(-0.12, Math.min(0.14, (w.suspY || 0) + w.suspVel * dt));
           w.steerPivot.position.y = w.baseY + w.suspY;
           meanWheelSusp += w.suspY;
           stairBodyPitch -= w.suspY * (w.localZ >= 0 ? 1 : -1) * 0.14;
@@ -7952,6 +8226,7 @@
       const wheels = [];
       mesh.traverse((o) => { if (o.name === 'TrafficWheel') wheels.push(o); });
       mesh.position.set(sp.x, sp.y, sp.z);
+      mesh.rotation.order = 'YXZ';
       mesh.rotation.y = sp.yaw;
       scene.add(mesh);
       trafficCars.push({
@@ -7959,6 +8234,7 @@
         wheels,
         pos: mesh.position,
         radius: tpl.radius,
+        mass: tpl.isHeavy ? 2.5 : 1.15,
         yaw: sp.yaw,
         speed: 5.5 + Math.random() * 2.5,
         maxSpeed: tpl.isHeavy ? (6.5 + Math.random() * 1.8) : (8.2 + Math.random() * 2.8),
@@ -7974,7 +8250,15 @@
         segLen: sp.segLen,
         segProgress: 0,
         turning: false,
-        waitTimer: 0
+        waitTimer: 0,
+        physVel: new THREE.Vector3(),
+        physVelY: 0,
+        angVel: 0,
+        knockTimer: 0,
+        impactPitch: 0,
+        impactRoll: 0,
+        slopePitch: 0,
+        hornCooldown: 0
       });
     }
   }
@@ -8008,6 +8292,126 @@
           tc.turning = false;
           tc.waitTimer = 0;
           tc.stuckTimer = 0;
+          tc.physVel.set(0, 0, 0);
+          tc.physVelY = 0;
+          tc.angVel = 0;
+          tc.knockTimer = 0;
+          tc.impactPitch = 0;
+          tc.impactRoll = 0;
+          tc.slopePitch = 0;
+        }
+        continue;
+      }
+
+      if (tc.hornCooldown > 0) tc.hornCooldown -= dt;
+
+      // MODO FÍSICO LIVRE: carro aleatório foi empurrado/atingido — desliza, derrapa, gira (spin) e empurra outros (efeito dominó)!
+      if (tc.knockTimer > 0 || (tc.physVel && tc.physVel.lengthSq() > 0.06)) {
+        tc.knockTimer = Math.max(0, (tc.knockTimer || 0) - dt);
+
+        // Atrito anisotrópico real dos pneus (rola mais fácil na frente/trás, derrapa forte de lado com fumaça!)
+        const fX = Math.sin(tc.yaw), fZ = Math.cos(tc.yaw);
+        const rX = fZ, rZ = -fX;
+        const vFwd = tc.physVel.x * fX + tc.physVel.z * fZ;
+        const vLat = tc.physVel.x * rX + tc.physVel.z * rZ;
+        const newVFwd = vFwd * Math.max(0, 1 - dt * 1.9);
+        const newVLat = vLat * Math.max(0, 1 - dt * 5.6);
+        tc.physVel.x = fX * newVFwd + rX * newVLat;
+        tc.physVel.z = fZ * newVFwd + rZ * newVLat;
+
+        // Fumaça branca de pneu ao derrapar de lado após colisão
+        if (Math.abs(vLat) > 3.2 && Math.random() < 0.45) {
+          spawnSmoke(new THREE.Vector3(tc.pos.x, tc.pos.y + 0.25, tc.pos.z), tc.physVel);
+        }
+
+        // Integração linear + rotação angular real
+        tc.pos.x += tc.physVel.x * dt;
+        tc.pos.z += tc.physVel.z * dt;
+        tc.yaw += (tc.angVel || 0) * dt;
+        tc.angVel = (tc.angVel || 0) * Math.max(0, 1 - dt * 3.8);
+
+        // Colisão do carro aleatório empurrado com prédios/muros
+        if (resolveMapWallCollision(tc.pos, tc.radius * 0.85, tc.physVel, 1.05)) {
+          tc.physVel.multiplyScalar(0.55);
+          tc.angVel *= 0.6;
+        }
+
+        // Efeito dominó: carro aleatório empurrado colide e empurra OUTROS carros aleatórios!
+        for (const other of trafficCars) {
+          if (other === tc || Math.abs(other.pos.y - tc.pos.y) > 2.6) continue;
+          const odx = other.pos.x - tc.pos.x;
+          const odz = other.pos.z - tc.pos.z;
+          const od = Math.hypot(odx, odz);
+          const minSep = tc.radius + other.radius + 0.15;
+          if (od > 0.01 && od < minSep) {
+            const onx = odx / od, onz = odz / od;
+            const pen = minSep - od;
+            tc.pos.x -= onx * pen * 0.45; tc.pos.z -= onz * pen * 0.45;
+            other.pos.x += onx * pen * 0.55; other.pos.z += onz * pen * 0.55;
+            const oVx = other.knockTimer > 0 ? other.physVel.x : Math.sin(other.yaw) * other.speed;
+            const oVz = other.knockTimer > 0 ? other.physVel.z : Math.cos(other.yaw) * other.speed;
+            const rVn = (tc.physVel.x - oVx) * onx + (tc.physVel.z - oVz) * onz;
+            if (rVn > 0.5) {
+              const invA = 1 / (tc.mass || 1.15), invB = 1 / (other.mass || 1.15);
+              const jj = (1.18 * rVn) / (invA + invB);
+              if (other.knockTimer <= 0) other.physVel.set(oVx, 0, oVz);
+              tc.physVel.x -= onx * jj * invA * 0.85;
+              tc.physVel.z -= onz * jj * invA * 0.85;
+              other.physVel.x += onx * jj * invB * 1.10;
+              other.physVel.z += onz * jj * invB * 1.10;
+              other.angVel = (other.angVel || 0) + (onx * Math.cos(other.yaw) - onz * Math.sin(other.yaw)) * rVn * 0.18;
+              other.knockTimer = Math.max(other.knockTimer || 0, 1.5);
+              other.waitTimer = 0;
+            }
+          }
+        }
+
+        // Gravidade real e altura de terreno/calçada/escada sob o carro aleatório empurrado
+        tc.physVelY = (tc.physVelY || 0) - 22 * dt;
+        tc.pos.y += tc.physVelY * dt;
+        const kGy = getWalkableGround(tc.pos.x, tc.pos.z, tc.pos.y, 1.65);
+        if (kGy !== null && tc.pos.y <= kGy + 0.08) {
+          tc.pos.y = kGy;
+          if (tc.physVelY < -2.5) tc.impactPitch = (tc.impactPitch || 0) + 0.08;
+          tc.physVelY = 0;
+        } else if (tc.pos.y < -35) {
+          tc.pos.x = 99999; // recicla se cair fora do mapa
+          continue;
+        }
+
+        // Inclinação de rampa + amortecimento do balanço de impacto
+        const fhT = getWalkableGround(tc.pos.x + fX * 1.35, tc.pos.z + fZ * 1.35, tc.pos.y, 1.4) ?? tc.pos.y;
+        const rhT = getWalkableGround(tc.pos.x - fX * 1.35, tc.pos.z - fZ * 1.35, tc.pos.y, 1.4) ?? tc.pos.y;
+        const targetSp = Math.max(-0.45, Math.min(0.45, -Math.atan2(fhT - rhT, 2.7)));
+        tc.slopePitch = (tc.slopePitch || 0) + (targetSp - (tc.slopePitch || 0)) * Math.min(1, dt * 10);
+        tc.impactPitch *= Math.max(0, 1 - dt * 6.5);
+        tc.impactRoll *= Math.max(0, 1 - dt * 6.5);
+
+        tc.mesh.rotation.order = 'YXZ';
+        tc.mesh.rotation.set(tc.slopePitch + tc.impactPitch, tc.yaw, tc.impactRoll);
+        if (tc.mesh.visible && Math.abs(newVFwd) > 0.2) {
+          const wSpin = newVFwd * dt * 2.5;
+          for (const w of tc.wheels) w.rotation.x = (w.rotation.x + wSpin) % (Math.PI * 2);
+        }
+
+        // Quando desacelerou quase por completo e acabou o knockTimer, retoma a IA na rua mais próxima
+        if (tc.knockTimer <= 0 && tc.physVel.lengthSq() < 0.25 && Math.abs(tc.angVel || 0) < 0.25) {
+          tc.physVel.set(0, 0, 0);
+          tc.angVel = 0;
+          tc.speed = 0;
+          if (colMeta && roadGrid) {
+            const N = roadGridN;
+            const worldW = colMeta.W * colMeta.step, worldH = colMeta.H * colMeta.step;
+            const gx0 = Math.max(4, Math.min(N - 5, Math.floor(((tc.pos.x - colMeta.minX) / worldW) * N)));
+            const gy0 = Math.max(4, Math.min(N - 5, Math.floor((1.0 - (-tc.pos.z - colMeta.minY) / worldH) * N)));
+            const [rgx, rgy] = snapNodeToNearestRoad(gx0, gy0, N, 18);
+            tc.gx = rgx; tc.gy = rgy;
+            tc.nextGx = rgx; tc.nextGy = rgy;
+          }
+          tc.segStartX = tc.pos.x; tc.segStartZ = tc.pos.z;
+          tc.segEndX = tc.pos.x; tc.segEndZ = tc.pos.z;
+          tc.segLen = 0.5; tc.segProgress = 0.5;
+          tc.waitTimer = 0.4;
         }
         continue;
       }
@@ -8199,7 +8603,16 @@
         tc.stuckTimer = 0;
       }
 
-      tc.mesh.rotation.y = tc.yaw;
+      // Inclinação suave de rampa também nos carros de tráfego normal
+      const fX0 = Math.sin(tc.yaw), fZ0 = Math.cos(tc.yaw);
+      const fh0 = getWalkableGround(tc.pos.x + fX0 * 1.35, tc.pos.z + fZ0 * 1.35, tc.pos.y, 1.2) ?? tc.pos.y;
+      const rh0 = getWalkableGround(tc.pos.x - fX0 * 1.35, tc.pos.z - fZ0 * 1.35, tc.pos.y, 1.2) ?? tc.pos.y;
+      const tSlope0 = Math.max(-0.4, Math.min(0.4, -Math.atan2(fh0 - rh0, 2.7)));
+      tc.slopePitch = (tc.slopePitch || 0) + (tSlope0 - (tc.slopePitch || 0)) * Math.min(1, dt * 8);
+      tc.impactPitch = (tc.impactPitch || 0) * Math.max(0, 1 - dt * 6);
+      tc.impactRoll = (tc.impactRoll || 0) * Math.max(0, 1 - dt * 6);
+      tc.mesh.rotation.order = 'YXZ';
+      tc.mesh.rotation.set(tc.slopePitch + tc.impactPitch, tc.yaw, tc.impactRoll);
       if (tc.mesh.visible && tc.speed > 0.2) {
         const wSpin = tc.speed * dt * 2.5;
         for (const w of tc.wheels) w.rotation.x = (w.rotation.x + wSpin) % (Math.PI * 2);
