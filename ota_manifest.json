@@ -1,20 +1,20 @@
 {
-  "otaVersion": 26,
+  "otaVersion": 27,
   "minApkCodeForOta": 42,
-  "changelog": "• Eliminada a trepidação ao dirigir: sincronia exata X/Z da câmera com o veículo (suavização exponencial apenas em Y) + filtro passa-baixa e super-amortecimento na suspensão sobre juntas do asfalto",
-  "totalBytes": 18682476,
+  "changelog": "• Com controle Bluetooth conectado, tocar na tela touch libera imediatamente os controles na tela (e volta para tela limpa ao voltar a usar o controle)",
+  "totalBytes": 18684245,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "d859e88a388d7bdd3fc79173c039e58813fef5e58b996fffdcade425d6ea0f0c",
-      "size": 48564
+      "sha256": "bdf1523e40c95a47120c7bd2e6e9d91674e22444122fc200cf22e82596b5bac3",
+      "size": 48989
     },
     "js/game.js": {
-      "sha256": "910dadf0f13eddd370ed55dc6e118c872b511c6815e2618696c02e43a4336b1b",
-      "size": 388067
+      "sha256": "04b41414681a94258a7d9326ecab97de50db436514bb987225b8b0ea406b133e",
+      "size": 389411
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",

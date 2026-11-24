@@ -4656,6 +4656,7 @@
     nitro: false,
     steer: 0,
     active: false,
+    touchOverride: false,
     menuFocusEl: null,
     navCooldown: 0
   };
@@ -4672,13 +4673,27 @@
     }
   }
 
+  // Ao tocar na tela touch mesmo com controle Bluetooth conectado, libera os controles touch imediatamente!
+  window.addEventListener('touchstart', () => {
+    if (document.body.classList.contains('gamepad-mode') || !padState.touchOverride) {
+      if (padState.active || document.body.classList.contains('gamepad-mode')) {
+        padState.touchOverride = true;
+        padState.joyX = 0; padState.joyY = 0;
+        padState.gas = false; padState.gasAmount = 0; padState.brake = false;
+        padState.drift = false; padState.nitro = false; padState.steer = 0;
+        setGamepadUiMode(false);
+      }
+    }
+  }, { passive: true, capture: true });
+
   window.addEventListener('gamepadconnected', (e) => {
+    padState.touchOverride = false;
     setGamepadUiMode(true);
-    showToast(`🎮 Controle conectado: ${e.gamepad.id.slice(0, 26)} (Tela limpa)`, 3200);
+    showToast(`🎮 Controle conectado: ${e.gamepad.id.slice(0, 26)} (Toque na tela para liberar controles touch)`, 3400);
   });
   window.addEventListener('gamepaddisconnected', () => {
-    padState.active = false; padState.joyX = 0; padState.joyY = 0;
-    padState.gas = false; padState.brake = false; padState.drift = false; padState.nitro = false; padState.steer = 0;
+    padState.active = false; padState.touchOverride = false; padState.joyX = 0; padState.joyY = 0;
+    padState.gas = false; padState.gasAmount = 0; padState.brake = false; padState.drift = false; padState.nitro = false; padState.steer = 0;
     setGamepadUiMode(false);
     showToast('🎮 Controle desconectado');
   });
@@ -4798,10 +4813,10 @@
     let gp = null;
     for (let i = 0; i < pads.length; i++) { if (pads[i] && pads[i].connected) { gp = pads[i]; break; } }
     if (!gp) {
-      if (padState.active) { padState.active = false; setGamepadUiMode(false); }
+      if (padState.active) { padState.active = false; padState.touchOverride = false; setGamepadUiMode(false); }
       return;
     }
-    if (!padState.active) setGamepadUiMode(true);
+    if (!padState.active && !padState.touchOverride) setGamepadUiMode(true);
     padState.active = true;
 
     const pSens = save.padSens || 1.0;
@@ -4814,6 +4829,19 @@
     const btn = (i) => gp.buttons[i] ? gp.buttons[i].pressed : false;
     const val = (i) => gp.buttons[i] ? gp.buttons[i].value : 0;
     const justPressed = (i) => btn(i) && !padState.prevBtns[i];
+
+    // Se o jogador voltou a usar o controle Bluetooth após ter tocado na tela, reativa o modo tela limpa
+    const anyPadInput = lx !== 0 || ly !== 0 || rx !== 0 || ry !== 0 ||
+      gp.buttons.some((b) => b && (b.pressed || b.value > 0.2));
+    if (padState.touchOverride) {
+      if (anyPadInput) {
+        padState.touchOverride = false;
+        setGamepadUiMode(true);
+      } else {
+        padState.prevBtns = gp.buttons.map((b) => b.pressed);
+        return;
+      }
+    }
 
     // Se houver algum menu/modal ou lobby aberto, os botões de navegação operam no menu
     const menuCtx = getActiveMenuContainer();
