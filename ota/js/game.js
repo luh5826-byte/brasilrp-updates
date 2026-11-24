@@ -94,6 +94,42 @@
       this.beep(340, 0.22, 'sawtooth', 0.12);
       this.beep(425, 0.22, 'sawtooth', 0.10);
     },
+    doorLatch() {
+      this.beep(520, 0.032, 'triangle', 0.09);
+      setTimeout(() => this.beep(780, 0.025, 'square', 0.05), 28);
+    },
+    doorSlam() {
+      if (!soundEnabled) return;
+      this.resume();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const now = ctx.currentTime;
+      // Impacto grave abafado de porta automotiva batendo ("TUM!")
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(118, now);
+      o.frequency.exponentialRampToValueAtTime(34, now + 0.15);
+      g.gain.setValueAtTime(0.28, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(now); o.stop(now + 0.18);
+
+      const bufLen = Math.floor(ctx.sampleRate * 0.11);
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.28));
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const flt = ctx.createBiquadFilter();
+      flt.type = 'lowpass';
+      flt.frequency.setValueAtTime(460, now);
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.22, now);
+      ng.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+      src.connect(flt); flt.connect(ng); ng.connect(ctx.destination);
+      src.start(now);
+    },
     explosion() {
       if (!soundEnabled) return;
       this.resume();
@@ -2413,11 +2449,18 @@
     if (parts.doorL) parts.doorLSign = computeOutwardSign(parts.doorL);
     if (parts.doorR) parts.doorRSign = computeOutwardSign(parts.doorR);
 
-    // Determina posição do assento do motorista a partir do volante real
+    // Determina posição do assento do motorista a partir do volante real e identifica qual porta é a do motorista
     if (parts.steeringWheel) {
       parts.steeringWheel.getWorldPosition(_wp);
       _wp.applyMatrix4(invRoot);
       parts.driverSeatOffset.set(_wp.x, Math.max(0.08, _wp.y - 0.72), _wp.z - 0.42);
+    }
+    parts.driverIsLeftNode = true;
+    if (parts.doorL && parts.doorR) {
+      const pL = new THREE.Vector3(), pR = new THREE.Vector3();
+      parts.doorL.getWorldPosition(pL); pL.applyMatrix4(invRoot);
+      parts.doorR.getWorldPosition(pR); pR.applyMatrix4(invRoot);
+      parts.driverIsLeftNode = Math.abs(pL.x - parts.driverSeatOffset.x) <= Math.abs(pR.x - parts.driverSeatOffset.x);
     }
 
     // Posições exatas das 2 lentes dos faróis dianteiros e 2 lanternas traseiras
@@ -3400,55 +3443,83 @@
   let nearestCar = null;
   let nearestProp = null;
 
+  const carAccessAnim = {
+    active: false,
+    mode: 'enter', // 'enter' | 'exit'
+    car: null,
+    t: 0,
+    dur: 1.28,
+    startX: 0,
+    startY: 0,
+    startZ: 0,
+    startYaw: 0,
+    latchPlayed: false,
+    slamPlayed: false
+  };
+
   function enterVehicle(car) {
+    if (carAccessAnim.active) return;
     player.inCar = car;
     setSpin360Mode(false);
     if (ui.btnSpinPlayer) ui.btnSpinPlayer.classList.add('hidden');
     if (ui.btnFrontCam) ui.btnFrontCam.classList.add('hidden');
-    // Motorista visível sentado no banco ao volante (oculta apenas se ativar câmera de 1ª pessoa)
-    if (player.mesh) player.mesh.visible = !player.firstPersonCar;
-    car.doorsOpen = true;
-    car.doorAutoTimer = 1.4;
+    if (player.mesh) player.mesh.visible = true;
+
+    car.doorsOpen = false;
+    car.doorAutoTimer = 0;
+    car.driverDoorAnimAngle = 0;
+
+    carAccessAnim.active = true;
+    carAccessAnim.mode = 'enter';
+    carAccessAnim.car = car;
+    carAccessAnim.t = 0;
+    carAccessAnim.dur = 1.28;
+    carAccessAnim.startX = player.pos.x;
+    carAccessAnim.startY = player.pos.y;
+    carAccessAnim.startZ = player.pos.z;
+    carAccessAnim.startYaw = player.mesh ? player.mesh.rotation.y : (player.yaw + Math.PI);
+    carAccessAnim.latchPlayed = false;
+    carAccessAnim.slamPlayed = false;
+
     ui.footControls.classList.add('hidden');
     ui.carControls.classList.remove('hidden');
     ui.speedBox.classList.remove('hidden');
     ui.btnCarLights.classList.toggle('on', car.lightsOn);
-    ui.btnCarDoors.classList.toggle('on', car.doorsOpen);
+    ui.btnCarDoors.classList.remove('on');
     ui.btnCarCam.classList.toggle('on', player.firstPersonCar);
     input.camYaw = car.forwardSign > 0 ? (car.yaw + Math.PI) : car.yaw;
-    vibrate(45);
-    showToast(`Entrou em: ${car.name}`);
-    GtaRadio.showBanner();
-    setTimeout(() => { if (player.inCar === car && !isPaused) GtaRadio.start(); }, 160);
+    vibrate(30);
+    showToast(`Entrando em: ${car.name}`);
   }
 
   function exitVehicle() {
     const car = player.inCar;
-    if (!car) return;
+    if (!car || carAccessAnim.active) return;
     GtaRadio.stop(true);
-    player.inCar = null;
     player.firstPersonCar = false;
     ui.screenFx.classList.remove('nitro-active');
-    car.doorsOpen = true;
-    car.doorAutoTimer = 1.6;
-    const driverSideSign = (car.parts && car.parts.driverSeatOffset && car.parts.driverSeatOffset.x >= 0) ? 1 : -1;
-    const sideX = Math.cos(car.yaw) * 2.05 * driverSideSign;
-    const sideZ = -Math.sin(car.yaw) * 2.05 * driverSideSign;
-    player.pos.set(car.pos.x + sideX, car.pos.y + 0.35, car.pos.z + sideZ);
-    resolveMapWallCollision(player.pos, 0.55);
-    if (player.mesh) {
-      player.mesh.scale.setScalar(1);
-      player.mesh.position.copy(player.pos);
-      player.mesh.rotation.set(0, player.yaw + Math.PI, 0);
-      player.mesh.visible = true;
-    }
+    AudioFX.updateEngine(false, 0);
+
+    car.doorsOpen = false;
+    car.doorAutoTimer = 0;
+    car.speed *= 0.25;
+    car.vel.multiplyScalar(0.25);
+
+    carAccessAnim.active = true;
+    carAccessAnim.mode = 'exit';
+    carAccessAnim.car = car;
+    carAccessAnim.t = 0;
+    carAccessAnim.dur = 1.08;
+    carAccessAnim.latchPlayed = true;
+    carAccessAnim.slamPlayed = false;
+    AudioFX.doorLatch();
+
     ui.carControls.classList.add('hidden');
     ui.footControls.classList.remove('hidden');
     ui.speedBox.classList.add('hidden');
     if (ui.btnSpinPlayer) ui.btnSpinPlayer.classList.remove('hidden');
     if (ui.btnFrontCam) ui.btnFrontCam.classList.remove('hidden');
-    AudioFX.updateEngine(false, 0);
-    vibrate(30);
+    vibrate(25);
   }
 
   el('btnEnterCar').onclick = () => { if (nearestCar && !player.inCar) enterVehicle(nearestCar); };
@@ -5603,14 +5674,23 @@
     if (keys['KeyS']) jy += 1;
 
     updateDayNightCycle(dt);
-    if (!player.inCar) updatePlayer(dt, jx, jy);
-    else updateDrivingApex(dt);
+    const lockFootForAnim = carAccessAnim.active && carAccessAnim.mode === 'exit' && (carAccessAnim.t / carAccessAnim.dur) < 0.72;
+    const lockDriveForAnim = carAccessAnim.active && carAccessAnim.mode === 'enter' && (carAccessAnim.t / carAccessAnim.dur) < 0.78;
+    if (!player.inCar) {
+      if (!lockFootForAnim) updatePlayer(dt, jx, jy);
+    } else if (!lockDriveForAnim) {
+      updateDrivingApex(dt);
+    } else {
+      player.inCar.vel.multiplyScalar(0.85);
+      player.inCar.speed *= 0.85;
+      player.pos.copy(player.inCar.pos);
+    }
 
     updateNPCs(dt);
     updateTraffic(dt);
     updateTrafficLights(dt);
+    updateCarAccessAndDriver(dt);
     updateVehiclesVisuals(dt);
-    if (player.inCar) updateSeatedDriverVisual();
     updatePunchFx(dt);
     updateGpsRoadIndicators();
     updateSmoke(dt);
@@ -5632,8 +5712,213 @@
     renderer.render(scene, camera);
   }
 
-  // Atualiza posição e pose sentada do personagem dentro do carro (mãos ao volante!)
-  function updateSeatedDriverVisual() {
+  function smoothStep01(a, b, x) {
+    const t = Math.max(0, Math.min(1, (x - a) / Math.max(1e-5, b - a)));
+    return t * t * (3 - 2 * t);
+  }
+
+  function lerpAngleRad(a, b, t) {
+    let d = b - a;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    return a + d * t;
+  }
+
+  function applyDriverPoseBlend(sitBlend, duckBlend, reachHandle, pullDoor, sideSign, steerAngle) {
+    const s = Math.max(0, Math.min(1, sitBlend));
+    const st = (steerAngle || 0) * 0.45 * s;
+    const duck = duckBlend * 0.36;
+    const doorLeftArm = sideSign > 0; // LHD (+X) usa braço esquerdo para puxar a porta; RHD (-X) usa direito
+    const reachL = doorLeftArm ? (reachHandle * 0.95 + pullDoor * 0.75) : 0;
+    const reachR = !doorLeftArm ? (reachHandle * 0.95 + pullDoor * 0.75) : 0;
+    const pullSpreadL = doorLeftArm ? pullDoor * 0.65 : 0;
+    const pullSpreadR = !doorLeftArm ? pullDoor * 0.65 : 0;
+
+    if (player.isDoa && player.bones && player.bones['pelvis_07']) {
+      setBoneWorldDelta(player, 'spine_upper_025', duck, 0, 0);
+      setBoneWorldDelta(player, 'leg_left_thigh_08', -1.32 * s, 0, -0.18);
+      setBoneWorldDelta(player, 'leg_right_thigh_015', -1.32 * s, 0, 0.18);
+      setBoneWorldDelta(player, 'leg_left_knee_09', 1.38 * s, 0, 0);
+      setBoneWorldDelta(player, 'leg_right_knee_016', 1.38 * s, 0, 0);
+      setBoneWorldDelta(player, 'arm_left_shoulder_2_0266', (-0.95 + st) * s - reachL, 0, -0.52 - pullSpreadL);
+      setBoneWorldDelta(player, 'arm_right_shoulder_2_0292', (-0.95 - st) * s - reachR, 0, 0.52 + pullSpreadR);
+      setBoneWorldDelta(player, 'arm_left_elbow_0267', -0.45 * s - reachL * 0.35, 0, 0);
+      setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.45 * s - reachR * 0.35, 0, 0);
+    } else if (player.isCustomChar && player.customRig) {
+      const r = player.customRig;
+      if (r.spine) setBoneWorldDelta(player, r.spine, duck * 0.6, 0, 0);
+      if (r.chest) setBoneWorldDelta(player, r.chest, duck * 0.5, 0, 0);
+      if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.32 * s, 0, 0);
+      if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.32 * s, 0, 0);
+      if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.36 * s, 0, 0);
+      if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.36 * s, 0, 0);
+      if (r.armL) setBoneWorldDelta(player, r.armL, (-0.92 + st) * s - reachL, 0, 0.12 + pullSpreadL);
+      if (r.armR) setBoneWorldDelta(player, r.armR, (-0.92 - st) * s - reachR, 0, -0.12 - pullSpreadR);
+      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.42 * s - reachL * 0.3, 0, 0);
+      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.42 * s - reachR * 0.3, 0, 0);
+    } else if (player.bones && player.bones.Hips) {
+      setBoneDelta(player, 'Spine', duck * 0.55, 0, 0);
+      setBoneDelta(player, 'Chest', duck * 0.45, 0, 0);
+      setBoneDelta(player, 'ThighL', -1.32 * s, 0, 0);
+      setBoneDelta(player, 'ThighR', -1.32 * s, 0, 0);
+      setBoneDelta(player, 'ShinL', 1.36 * s, 0, 0);
+      setBoneDelta(player, 'ShinR', 1.36 * s, 0, 0);
+      setBoneDelta(player, 'UpperArmL', (-0.95 + st) * s - reachL, 0, 0.22 + pullSpreadL);
+      setBoneDelta(player, 'UpperArmR', (-0.95 - st) * s - reachR, 0, -0.22 - pullSpreadR);
+      setBoneDelta(player, 'ForeArmL', -0.42 * s - reachL * 0.3, 0, 0.15);
+      setBoneDelta(player, 'ForeArmR', -0.42 * s - reachR * 0.3, 0, -0.15);
+    }
+  }
+
+  // Animação completa de Entrar no Carro + Fechar a Porta / Sair do Carro + Fechar a Porta + Motorista ao Volante
+  function updateCarAccessAndDriver(dt) {
+    if (carAccessAnim.active && carAccessAnim.car) {
+      const ca = carAccessAnim;
+      const car = ca.car;
+      ca.t += dt;
+      const u = Math.min(1, ca.t / ca.dur);
+
+      const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
+      const sideSign = seat.x >= 0 ? 1 : -1;
+      const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
+
+      const seatWX = car.pos.x + seat.x * cosY + seat.z * sinY;
+      const seatWY = car.pos.y + seat.y;
+      const seatWZ = car.pos.z - seat.x * sinY + seat.z * cosY;
+
+      const standLocalX = sideSign * 1.44;
+      const standLocalZ = seat.z - 0.05;
+      const standWX = car.pos.x + standLocalX * cosY + standLocalZ * sinY;
+      const standWZ = car.pos.z - standLocalX * sinY + standLocalZ * cosY;
+      const standWY = getWalkableGround(standWX, standWZ, car.pos.y, 1.5) ?? car.pos.y;
+      const faceDoorYaw = car.yaw - sideSign * (Math.PI * 0.5);
+
+      if (ca.mode === 'enter') {
+        if (u >= 0.08 && !ca.latchPlayed) {
+          ca.latchPlayed = true;
+          AudioFX.doorLatch();
+        }
+        // Curva da porta: abre (0.08..0.34), mantém aberta p/ entrar (0.34..0.70), puxa fechando (0.70..0.95)
+        let dAng = 0;
+        if (u < 0.34) {
+          dAng = smoothStep01(0.08, 0.34, u) * 1.08;
+        } else if (u < 0.70) {
+          dAng = 1.08;
+        } else if (u < 0.95) {
+          const k = (u - 0.70) / 0.25;
+          dAng = (1.0 - k * k) * 1.08;
+        } else {
+          dAng = 0;
+          if (!ca.slamPlayed) {
+            ca.slamPlayed = true;
+            AudioFX.doorSlam();
+            car.roll = (car.roll || 0) - sideSign * 0.042;
+            vibrate(38);
+            GtaRadio.showBanner();
+            if (!isPaused) GtaRadio.start();
+          }
+        }
+        car.driverDoorAnimAngle = dAng;
+
+        if (player.mesh) {
+          player.mesh.visible = !player.firstPersonCar || u < 0.68;
+          if (u < 0.28) {
+            // Fase 1: aproxima da porta caminhando e estica a mão na maçaneta
+            const w = smoothStep01(0.0, 0.28, u);
+            const px = ca.startX + (standWX - ca.startX) * w;
+            const py = ca.startY + (standWY - ca.startY) * w;
+            const pz = ca.startZ + (standWZ - ca.startZ) * w;
+            player.mesh.scale.setScalar(1.0);
+            player.mesh.position.set(px, py, pz);
+            player.mesh.rotation.set(0, lerpAngleRad(ca.startYaw, faceDoorYaw, w), 0);
+            const distMove = Math.hypot(standWX - ca.startX, standWZ - ca.startZ);
+            if (distMove > 0.25 && u < 0.20) {
+              animateJobNpcBones(player, dt * 1.4, true);
+            } else {
+              applyDriverPoseBlend(0, 0, smoothStep01(0.08, 0.26, u), 0, sideSign, 0);
+            }
+          } else {
+            // Fase 2 & 3: abaixa a cabeça sob o teto, entra deslizando para o assento e puxa a porta fechando
+            const enterW = smoothStep01(0.28, 0.70, u);
+            const duck = Math.sin(enterW * Math.PI);
+            const px = standWX + (seatWX - standWX) * enterW;
+            const py = standWY + (seatWY - standWY) * enterW - duck * 0.14;
+            const pz = standWZ + (seatWZ - standWZ) * enterW;
+            const sc = 1.0 + (0.84 - 1.0) * enterW;
+            player.mesh.scale.setScalar(sc);
+            player.mesh.position.set(px, py, pz);
+            const bodyYaw = lerpAngleRad(faceDoorYaw, car.yaw, smoothStep01(0.34, 0.72, u));
+            player.mesh.rotation.set((car.pitch || 0) * enterW, bodyYaw, -(car.roll || 0) * enterW);
+
+            const pullBlend = (u >= 0.68 && u < 0.95) ? Math.sin(((u - 0.68) / 0.27) * Math.PI) : 0;
+            applyDriverPoseBlend(enterW, duck, 0, pullBlend, sideSign, car.steerAngle);
+          }
+        }
+
+        if (u >= 1.0) {
+          ca.active = false;
+          car.driverDoorAnimAngle = 0;
+        }
+        return;
+      } else {
+        // MODO SAIR DO CARRO: abre a porta (0..0.24), sai do banco p/ calçada (0.24..0.70), bate a porta fechando (0.70..0.96)
+        let dAng = 0;
+        if (u < 0.24) {
+          dAng = smoothStep01(0.0, 0.24, u) * 1.06;
+        } else if (u < 0.70) {
+          dAng = 1.06;
+        } else if (u < 0.96) {
+          const k = (u - 0.70) / 0.26;
+          dAng = (1.0 - k * k) * 1.06;
+        } else {
+          dAng = 0;
+          if (!ca.slamPlayed) {
+            ca.slamPlayed = true;
+            AudioFX.doorSlam();
+            car.roll = (car.roll || 0) + sideSign * 0.036;
+            vibrate(32);
+          }
+        }
+        car.driverDoorAnimAngle = dAng;
+
+        const outW = smoothStep01(0.20, 0.68, u);
+        const sitBlend = 1.0 - outW;
+        const duck = Math.sin(outW * Math.PI);
+
+        if (u >= 0.70 && player.inCar === car) {
+          player.inCar = null;
+          player.pos.set(standWX, standWY + 0.05, standWZ);
+          player.yaw = car.yaw + Math.PI;
+          resolveMapWallCollision(player.pos, 0.55);
+        }
+
+        if (player.mesh && player.inCar === car) {
+          player.mesh.visible = true;
+          const px = seatWX + (standWX - seatWX) * outW;
+          const py = seatWY + (standWY - seatWY) * outW - duck * 0.13;
+          const pz = seatWZ + (standWZ - seatWZ) * outW;
+          player.mesh.scale.setScalar(0.84 + (1.0 - 0.84) * outW);
+          player.mesh.position.set(px, py, pz);
+          const outYaw = lerpAngleRad(car.yaw, faceDoorYaw + Math.PI, outW);
+          player.mesh.rotation.set(0, outYaw, 0);
+          const pushDoor = u < 0.26 ? smoothStep01(0.0, 0.24, u) : 0;
+          applyDriverPoseBlend(sitBlend, duck, 0, pushDoor, sideSign, 0);
+        } else if (player.mesh && u < 0.95) {
+          player.mesh.scale.setScalar(1.0);
+          // Empurra brevemente a porta para fechar antes de liberar pose normal
+          const pushBack = Math.sin(((u - 0.70) / 0.25) * Math.PI);
+          applyDriverPoseBlend(0, 0, pushBack * 0.55, 0, sideSign, 0);
+        }
+
+        if (u >= 1.0) {
+          ca.active = false;
+          car.driverDoorAnimAngle = 0;
+          if (player.mesh) player.mesh.scale.setScalar(1.0);
+        }
+        return;
+      }
+    }
+
     const car = player.inCar;
     if (!car || !player.mesh) return;
     player.mesh.visible = !player.firstPersonCar;
@@ -5645,37 +5930,7 @@
     player.mesh.scale.setScalar(0.84);
     player.mesh.position.set(wx, car.pos.y + seat.y, wz);
     player.mesh.rotation.set(car.pitch || 0, car.yaw, -(car.roll || 0));
-
-    const st = (car.steerAngle || 0) * 0.45;
-    if (player.isDoa && player.bones && player.bones['pelvis_07']) {
-      setBoneWorldDelta(player, 'leg_left_thigh_08', -1.32, 0, -0.18);
-      setBoneWorldDelta(player, 'leg_right_thigh_015', -1.32, 0, 0.18);
-      setBoneWorldDelta(player, 'leg_left_knee_09', 1.38, 0, 0);
-      setBoneWorldDelta(player, 'leg_right_knee_016', 1.38, 0, 0);
-      setBoneWorldDelta(player, 'arm_left_shoulder_2_0266', -0.95 + st, 0, -0.52);
-      setBoneWorldDelta(player, 'arm_right_shoulder_2_0292', -0.95 - st, 0, 0.52);
-      setBoneWorldDelta(player, 'arm_left_elbow_0267', -0.45, 0, 0);
-      setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.45, 0, 0);
-    } else if (player.isCustomChar && player.customRig) {
-      const r = player.customRig;
-      if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.32, 0, 0);
-      if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.32, 0, 0);
-      if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.36, 0, 0);
-      if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.36, 0, 0);
-      if (r.armL) setBoneWorldDelta(player, r.armL, -0.92 + st, 0, 0.12);
-      if (r.armR) setBoneWorldDelta(player, r.armR, -0.92 - st, 0, -0.12);
-      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.42, 0, 0);
-      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.42, 0, 0);
-    } else if (player.bones && player.bones.Hips) {
-      setBoneDelta(player, 'ThighL', -1.32, 0, 0);
-      setBoneDelta(player, 'ThighR', -1.32, 0, 0);
-      setBoneDelta(player, 'ShinL', 1.36, 0, 0);
-      setBoneDelta(player, 'ShinR', 1.36, 0, 0);
-      setBoneDelta(player, 'UpperArmL', -0.95 + st, 0, 0.22);
-      setBoneDelta(player, 'UpperArmR', -0.95 - st, 0, -0.22);
-      setBoneDelta(player, 'ForeArmL', -0.42, 0, 0.15);
-      setBoneDelta(player, 'ForeArmR', -0.42, 0, -0.15);
-    }
+    applyDriverPoseBlend(1.0, 0, 0, 0, seat.x >= 0 ? 1 : -1, car.steerAngle);
   }
 
   // Colisão OBB retangular orientada (impede atravessar capô, portas e porta-malas de veículos!)
@@ -6273,8 +6528,12 @@
       }
       const targetDoor = v.doorsOpen ? 1.05 : 0.0;
       v.doorAngle += (targetDoor - v.doorAngle) * Math.min(1, dt * 8.5);
-      if (v.parts.doorL) v.parts.doorL.rotation.y = (v.parts.doorLSign || -1) * v.doorAngle;
-      if (v.parts.doorR) v.parts.doorR.rotation.y = (v.parts.doorRSign || 1) * v.doorAngle;
+      const drvAnimAng = v.driverDoorAnimAngle || 0;
+      const dLeftIsDrv = v.parts.driverIsLeftNode !== false;
+      const angL = dLeftIsDrv ? Math.max(v.doorAngle, drvAnimAng) : v.doorAngle;
+      const angR = !dLeftIsDrv ? Math.max(v.doorAngle, drvAnimAng) : v.doorAngle;
+      if (v.parts.doorL) v.parts.doorL.rotation.y = (v.parts.doorLSign || -1) * angL;
+      if (v.parts.doorR) v.parts.doorR.rotation.y = (v.parts.doorRSign || 1) * angR;
 
       if (v.parts.steeringWheel) {
         _steerWheelQuat.setFromAxisAngle(_steerWheelAxis, v.steerAngle * 2.2);
@@ -6291,7 +6550,7 @@
         w.spinObj.rotation.x = (w.spinObj.rotation.x + wheelSpin) % (Math.PI * 2);
       });
 
-      const interiorLit = v.doorsOpen || (v === player.inCar && v.lightsOn);
+      const interiorLit = v.doorsOpen || (v.driverDoorAnimAngle > 0.06) || (v === player.inCar && v.lightsOn && v.doorsOpen);
       const braking = (v === player.inCar) && (input.brake || keys['KeyS'] || keys['ArrowDown']);
       if (v.parts.headLightGroup) v.parts.headLightGroup.visible = Boolean(v.lightsOn);
       if (v.parts.tailLightGroup) {
