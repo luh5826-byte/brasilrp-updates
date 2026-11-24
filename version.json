@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 5,
+  "otaVersion": 6,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/c8948a9f4387976659203ae3c329e9f745fae94e/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/c8948a9f4387976659203ae3c329e9f745fae94e/ota_manifest.json",
-  "otaChangelog": "• Adicionado Log de Atualizações nas Configurações com o histórico de cada versão"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/3c3458bf3a5505a7cdc5407c386ada61161805d8/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/3c3458bf3a5505a7cdc5407c386ada61161805d8/ota_manifest.json",
+  "otaChangelog": "• Fim das paredes invisíveis embaixo de viadutos, passarelas, marquises e árvores (nova camada de colisão gerada da geometria real)\n• Personagem e veículos usam o piso real sob viadutos\n• Mar ao redor da cidade removido; limite do mapa na borda da cidade"
 }
