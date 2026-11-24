@@ -1402,6 +1402,27 @@ body.gamepad-mode .weapon-phone-col {
   line-height: 1.5;
 }
 .dev-credits-card b { color: #ffd41f; }
+.dev-insta-link {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+}
+.dev-insta-link:active { transform: scale(0.96); opacity: 0.9; }
+.dev-thanks {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #00f0ff;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.4px;
+}
 .lobby-credits-btn {
   padding: 0 12px !important;
   width: auto !important;

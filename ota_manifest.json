@@ -1,16 +1,16 @@
 {
-  "otaVersion": 17,
+  "otaVersion": 18,
   "minApkCodeForOta": 42,
-  "changelog": "• Adicionado McDonald's 3D real com Drive-Thru funcional na praça próxima à Central (combo pelo carro na janela e salão para recuperar vida a pé), integrado ao GPS e à missão 'Primeiro Corre'",
-  "totalBytes": 11165424,
+  "changelog": "• Créditos atualizados: Desenvolvido por Luan Felipe (Programação, história e design) com link direto para Instagram @luanf46 na tela DEV e na Splash Screen",
+  "totalBytes": 11166407,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "d5bf9a82553a3a1beb5487d12f582e65e33b5cba39503a5d6bf2131d4860a2eb",
-      "size": 45181
+      "sha256": "134a28569be52f567742e5ec8047decb5dbba84d78ece2bb51bc610ded96ede1",
+      "size": 45643
     },
     "js/game.js": {
       "sha256": "87a8d02682e0869cf446fad09869d7f8d5f3f56d4d0e326b6c00afe195fdc386",
@@ -41,8 +41,8 @@
       "size": 1223680
     },
     "style.css": {
-      "sha256": "ee9780284453c5e4c57d2c4d1b3b99ae088464e543430e4b319b59ca1069f4fb",
-      "size": 37581
+      "sha256": "34cf84dbae482ab5d8ce489d07af71c173c95f8ee6737f609a7e27529e7482c8",
+      "size": 38102
     }
   }
 }
