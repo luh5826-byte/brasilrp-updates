@@ -2124,11 +2124,12 @@
     localMeshPatch.count = tmp.length / 13;
   }
 
-  function sampleExactMeshGround(wx, wz, refY, maxUp = 1.55, maxDown = 2.2) {
+  function sampleExactMeshGround(wx, wz, refY, maxUp = 0.55, maxDown = 1.8) {
     const n = localMeshPatch.count;
     if (n === 0) return null;
     const d = localMeshPatch.data;
     let bestY = null;
+    let bestDist = 1e9;
     const minY = refY - maxDown;
     const maxY = refY + maxUp;
     for (let i = 0; i < n; i++) {
@@ -2147,10 +2148,32 @@
       const w2 = 1.0 - w0 - w1;
       const hy = w0 * ay + w1 * by + w2 * cy;
       if (hy >= minY && hy <= maxY) {
-        if (bestY === null || hy > bestY) bestY = hy;
+        // Escolhe sempre a superfície mais próxima da altura atual do pneu (nunca salta para muretas/corrimãos acima!)
+        const dist = Math.abs(hy - refY) + (hy > refY + 0.35 ? 0.45 : 0);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestY = hy;
+        }
       }
     }
     return bestY;
+  }
+
+  // Perfil circular do pneu (R≈0.34m): rola suavemente sobre quinas de degraus e meio-fios sem saltos quadrados!
+  function sampleCircularWheelGround(wx, wz, fwdX, fwdZ, refY) {
+    const h0 = sampleExactMeshGround(wx, wz, refY, 0.55, 1.8);
+    const hF = sampleExactMeshGround(wx + fwdX * 0.24, wz + fwdZ * 0.24, refY, 0.55, 1.8);
+    const hB = sampleExactMeshGround(wx - fwdX * 0.24, wz - fwdZ * 0.24, refY, 0.55, 1.8);
+    let best = h0;
+    if (hF !== null) {
+      const liftedF = hF - 0.105; // curvatura circular do pneu a ±24cm do eixo (R - sqrt(R² - 0.24²) ≈ 0.105m)
+      if (best === null || liftedF > best) best = liftedF;
+    }
+    if (hB !== null) {
+      const liftedB = hB - 0.105;
+      if (best === null || liftedB > best) best = liftedB;
+    }
+    return best;
   }
 
   // --- Partículas de Fumaça Drift & Motor Danificado ---
@@ -6781,21 +6804,28 @@
       const halfWB = wheelBase * 0.5;
       const halfTW = trackWidth * 0.5;
 
-      // Amostragem de altura real nas 4 rodas + centro com raycast 3D milimétrico (degraus de escadas + meio-fios!)
+      // Amostragem circular de pneu real nas 4 rodas + centro (rola suavemente sobre degraus e meio-fios sem teletransporte!)
       const useExactMesh = (v === player.inCar);
       if (useExactMesh) ensureLocalMeshPatch(v.pos.x, v.pos.z);
 
-      const hCenterGrid = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.85);
-      const hCenterExact = useExactMesh ? sampleExactMeshGround(v.pos.x, v.pos.z, v.pos.y, 1.55, 2.2) : null;
+      const hCenterGrid = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.35);
+      const hCenterExact = useExactMesh ? sampleExactMeshGround(v.pos.x, v.pos.z, v.pos.y, 0.58, 1.8) : null;
       const hCenter = hCenterExact !== null ? hCenterExact : hCenterGrid;
-      const refY = hCenter !== null ? hCenter : v.pos.y;
+      const refY = v.grounded ? v.pos.y : (hCenter !== null ? hCenter : v.pos.y);
       const absSpd = Math.abs(v.speed || 0);
+      const fwdX = sinY * fs;
+      const fwdZ = cosY * fs;
 
       const sampleWheelG = (lx, lz) => {
         const wx = v.pos.x + lx * cosY + lz * sinY;
         const wz = v.pos.z - lx * sinY + lz * cosY;
-        const exact = useExactMesh ? sampleExactMeshGround(wx, wz, refY, 1.55, 2.2) : null;
-        return { wx, wz, h: exact !== null ? exact : getWalkableGround(wx, wz, refY, 1.85), fromMesh: exact !== null };
+        // Estima altura esperada da roda segundo a inclinação atual do carro para manter janela vertical justa
+        const wheelRefY = refY - lz * Math.sin(v.slopePitch || 0) + lx * Math.sin(v.slopeRoll || 0);
+        const exact = useExactMesh ? sampleCircularWheelGround(wx, wz, fwdX, fwdZ, wheelRefY) : null;
+        let h = exact !== null ? exact : getWalkableGround(wx, wz, wheelRefY, 1.15);
+        // Trava picos absurdos isolados de mureta/corrimão lateral para nunca arremessar o carro para cima
+        if (h !== null && h - wheelRefY > 0.58) h = wheelRefY + 0.58;
+        return { wx, wz, h, fromMesh: exact !== null };
       };
 
       let sumF = 0, cntF = 0, sumR = 0, cntR = 0;
@@ -6908,9 +6938,7 @@
         gy = hCenter;
       }
 
-      // Física vertical real (gravidade em saltos/rampas + empuxo na água + proteção anti-limbo)
-      v.velY -= 22 * dt;
-      v.pos.y += v.velY * dt;
+      // Física vertical contínua com mola-amortecedor no chassi (ZERO teletransporte em degraus/meio-fios!)
       const outside = isOutsideIsland(v.pos.x, v.pos.z);
 
       if (outside && v.pos.y < WATER_Y + 0.1) {
@@ -6918,6 +6946,7 @@
         const floatY = WATER_Y - 0.65;
         v.velY += (floatY - v.pos.y) * 8.0 * dt;
         v.velY *= 0.88;
+        v.pos.y += v.velY * dt;
         v.vel.multiplyScalar(0.92);
         v.speed *= 0.92;
         if (v === player.inCar) {
@@ -6927,47 +6956,67 @@
             return;
           }
         }
-      } else if (gy !== null && v.pos.y <= gy + 0.18) {
+      } else if (gy !== null && (v.pos.y <= gy + (v.grounded ? 0.26 : 0.12))) {
         v.waterTimer = 0;
-        if (v.velY < -14 && v === player.inCar && !v.broken && !v.burning) {
+        if (!v.grounded && v.velY < -14 && v === player.inCar && !v.broken && !v.burning) {
           v.hp = Math.max(0, v.hp - Math.min(12, Math.abs(v.velY + 12) * 0.8));
           vibrate(45);
           if (v.hp <= 0) { v.burning = true; v.burnTimer = 1.6; showToast('🔥 Motor pegando fogo! Saia do carro!', 2200); }
         }
         // Impacto de pouso alimenta a mola vertical da carroceria
-        if (!v.grounded && v.velY < -3.5) {
-          v.suspHeaveVel = (v.suspHeaveVel || 0) + Math.max(-1.6, v.velY * 0.12);
+        if (!v.grounded && v.velY < -3.2) {
+          v.suspHeaveVel = (v.suspHeaveVel || 0) + Math.max(-1.6, v.velY * 0.13);
+          v.velY *= 0.25;
         }
-        // Transição suave na subida de escadas para não dar saltos bruscos de frame em frame
-        if (v.grounded && Math.abs(gy - v.pos.y) <= 0.45) {
-          v.pos.y += (gy - v.pos.y) * Math.min(1, dt * 22);
-        } else {
+
+        // Mola-amortecedor criticamente amortecida: sobe degraus, escadas e meio-fios com fluidez real sem nunca pular em 1 frame!
+        const errY = gy - v.pos.y;
+        const springK = errY > 0 ? 74.0 : 88.0;
+        const dampC = 16.5;
+        v.velY += (errY * springK - v.velY * dampC) * dt;
+        // Limita velocidade máxima de subida em degrau para manter movimento 100% orgânico e sedoso
+        if (v.velY > 4.2) v.velY = 4.2;
+        if (v.velY < -7.5) v.velY = -7.5;
+        v.pos.y += v.velY * dt;
+
+        // Batente mecânico inferior da suspensão (comprime até 16cm no máximo para o assoalho nunca entrar no chão)
+        if (v.pos.y < gy - 0.16) {
+          v.pos.y = gy - 0.16;
+          if (v.velY < 0) v.velY = 0;
+        }
+        // Quando quase em repouso no plano, estabiliza sem micro-tremor
+        if (Math.abs(gy - v.pos.y) < 0.004 && Math.abs(v.velY) < 0.02) {
           v.pos.y = gy;
+          v.velY = 0;
         }
-        v.velY = 0;
+
         v.grounded = true;
         if (!isSolidMapCell(v.pos.x, v.pos.z, v.pos.y, 1.65)) {
           v.lastSafePos.copy(v.pos);
         }
-      } else if (gy === null && v.pos.y < -15.5) {
-        if (v === player.inCar) {
-          respawnAtHospital('Carro caiu no mar!');
-          return;
-        }
-        v.pos.copy(v.lastSafePos);
-        v.pos.y = getSafeGroundForSpawn(v.pos.x, v.pos.z, v.lastSafePos.y) + 0.12;
-        v.velY = 0;
-        v.vel.set(0, 0, 0);
-        v.grounded = true;
-      } else if (!outside && v.pos.y < -36.0) {
-        // Proteção absoluta contra limbo profundo (abaixo dos túneis subterrâneos de -28.6m)
-        v.pos.copy(v.lastSafePos);
-        v.pos.y = getSafeGroundForSpawn(v.pos.x, v.pos.z, v.lastSafePos.y) + 0.15;
-        v.velY = 0;
-        v.vel.multiplyScalar(0.2);
-        v.grounded = true;
       } else {
-        v.grounded = false;
+        // No ar (salto/queda livre)
+        v.velY -= 22 * dt;
+        v.pos.y += v.velY * dt;
+        if (gy === null && v.pos.y < -15.5) {
+          if (v === player.inCar) {
+            respawnAtHospital('Carro caiu no mar!');
+            return;
+          }
+          v.pos.copy(v.lastSafePos);
+          v.pos.y = getSafeGroundForSpawn(v.pos.x, v.pos.z, v.lastSafePos.y) + 0.12;
+          v.velY = 0;
+          v.vel.set(0, 0, 0);
+          v.grounded = true;
+        } else if (!outside && v.pos.y < -36.0) {
+          v.pos.copy(v.lastSafePos);
+          v.pos.y = getSafeGroundForSpawn(v.pos.x, v.pos.z, v.lastSafePos.y) + 0.15;
+          v.velY = 0;
+          v.vel.multiplyScalar(0.2);
+          v.grounded = true;
+        } else {
+          v.grounded = false;
+        }
       }
       if (v !== player.inCar) {
         if (v.vel.lengthSq() > 0.01) {
@@ -6986,13 +7035,17 @@
         v.pitch = (v.pitch || 0) + v.pitchVel * dt;
       }
 
-      // Inclinação 3D completa do VEÍCULO INTEIRO (carroceria + portas + rodas) acompanhando escadas e rampas!
+      // Inclinação 3D do veículo com mola-amortecedor criticamente amortecida (transição cinematográfica em escadas e rampas!)
       if (v.grounded) {
-        v.slopePitch = (v.slopePitch || 0) + (targetSlopePitch - (v.slopePitch || 0)) * Math.min(1, dt * 13);
-        v.slopeRoll = (v.slopeRoll || 0) + (targetSlopeRoll - (v.slopeRoll || 0)) * Math.min(1, dt * 13);
+        v.slopePitchVel = (v.slopePitchVel || 0) + ((targetSlopePitch - (v.slopePitch || 0)) * 56 - (v.slopePitchVel || 0) * 14.5) * dt;
+        v.slopeRollVel = (v.slopeRollVel || 0) + ((targetSlopeRoll - (v.slopeRoll || 0)) * 56 - (v.slopeRollVel || 0) * 14.5) * dt;
+        v.slopePitch = Math.max(-0.56, Math.min(0.56, (v.slopePitch || 0) + v.slopePitchVel * dt));
+        v.slopeRoll = Math.max(-0.40, Math.min(0.40, (v.slopeRoll || 0) + v.slopeRollVel * dt));
       } else {
-        v.slopePitch = (v.slopePitch || 0) * Math.max(0, 1 - dt * 3.5);
-        v.slopeRoll = (v.slopeRoll || 0) * Math.max(0, 1 - dt * 3.5);
+        v.slopePitchVel = (v.slopePitchVel || 0) * Math.max(0, 1 - dt * 5);
+        v.slopeRollVel = (v.slopeRollVel || 0) * Math.max(0, 1 - dt * 5);
+        v.slopePitch = (v.slopePitch || 0) * Math.max(0, 1 - dt * 3.0);
+        v.slopeRoll = (v.slopeRoll || 0) * Math.max(0, 1 - dt * 3.0);
       }
       v.mesh.rotation.order = 'YXZ';
       v.mesh.rotation.set(v.slopePitch || 0, v.yaw, v.slopeRoll || 0);

@@ -1,20 +1,20 @@
 {
-  "otaVersion": 14,
+  "otaVersion": 15,
   "minApkCodeForOta": 42,
-  "changelog": "• Física real de meio-fio e escadas: raycast 3D milimétrico por roda acompanha cada degrau e guia da calçada com mola-amortecedor individual, som de impacto no meio-fio e transferência real de peso na carroceria\n• Física de impacto e empurrão nos carros aleatórios: ao bater ou empurrar veículos do tráfego, eles deslizam com atrito real de pneu, giram (cavalo-de-pau), soltam fumaça e empurram outros carros em efeito dominó",
-  "totalBytes": 9890448,
+  "changelog": "• Suavização completa da suspensão em escadas e meio-fios: eliminado o salto instantâneo para cima com perfil circular de pneu (3 amostras por roda) e mola-amortecedor contínua no chassi, pitch e roll",
+  "totalBytes": 9893668,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "eea2049ce95a9a1b5fc3fd20478a4497e747e739316ed9d4d72e39c671fb33d6",
-      "size": 40989
+      "sha256": "2e9e651cf5f0fa093de1c28e55d5afdac8844bfc79abcdf3030e8840156763a1",
+      "size": 41446
     },
     "js/game.js": {
-      "sha256": "2ec523fc4d202bc4a8285a6b32028206378aa1aaed408371a03093e1ce3c7bed",
-      "size": 375469
+      "sha256": "deb1574f0a5b1462bf3f64580234c1c869cb36d2eddd5fc2889c38b2f4320002",
+      "size": 378232
     },
     "js/multiplayer.js": {
       "sha256": "d90cd7b73590a542adb7ba4b315592a10dc29584254ef8044590a192237515d4",
