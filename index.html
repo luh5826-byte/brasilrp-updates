@@ -402,13 +402,60 @@
     /* CRÉDITOS */
     .dev-box {
       display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .dev-top {
+      display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
-    .dev-info h3 { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 3px; }
-    .dev-info p { font-size: 13px; color: var(--muted); }
+    .dev-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dev-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ffd41f, #ff8f00);
+      color: #070b12;
+      font-weight: 900;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 6px 18px rgba(255, 212, 31, 0.28);
+    }
+    .dev-info h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 2px; }
+    .dev-info p { font-size: 13px; color: var(--gold); font-weight: 700; }
+    .dev-bio {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #d6e0f0;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .dev-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .dev-tag {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.28);
+      color: var(--cyan);
+    }
     .insta-btn {
       display: inline-flex;
       align-items: center;
@@ -612,14 +659,32 @@
 
     <!-- CRÉDITOS DO DESENVOLVEDOR -->
     <section class="section-card">
+      <div class="section-head" style="margin-bottom:14px">
+        <div class="section-title">Sobre o Desenvolvedor</div>
+        <div class="section-tip">Projeto Independente</div>
+      </div>
       <div class="dev-box">
-        <div class="dev-info">
-          <h3>Desenvolvido por Luan Felipe</h3>
-          <p>Programação, história e design • Obrigado por jogar!</p>
+        <div class="dev-top">
+          <div class="dev-profile">
+            <div class="dev-avatar">LF</div>
+            <div class="dev-info">
+              <h3>Luan Felipe</h3>
+              <p>Criador • Programação, História e Design</p>
+            </div>
+          </div>
+          <a class="insta-btn" href="https://www.instagram.com/luanf46/" target="_blank" rel="noopener noreferrer">
+            Instagram @luanf46
+          </a>
         </div>
-        <a class="insta-btn" href="https://www.instagram.com/luanf46/" target="_blank" rel="noopener noreferrer">
-          Instagram @luanf46
-        </a>
+        <div class="dev-bio">
+          Desenvolvedor independente responsável por toda a programação, roteiro das missões, design de interface e otimização 3D do <b>Brasil RP: GTA 6 Edition</b> para Android — trazendo mundo aberto fluido a 60 FPS, física de veículos, áudio dinâmico e atualizações constantes via OTA. <b>Obrigado por jogar!</b>
+        </div>
+        <div class="dev-tags">
+          <span class="dev-tag">Programação 3D &amp; Android</span>
+          <span class="dev-tag">História &amp; Missões</span>
+          <span class="dev-tag">Game Design &amp; UI</span>
+          <span class="dev-tag">Otimização 60 FPS</span>
+        </div>
       </div>
     </section>
 
