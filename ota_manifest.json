@@ -1,16 +1,16 @@
 {
-  "otaVersion": 23,
+  "otaVersion": 24,
   "minApkCodeForOta": 42,
-  "changelog": "• Saveiro Cross Brasil (FRW4A84) totalmente reconstruída: lataria azul metálica e capô 100% lisos (sem manchas cinzas), Bandeira do Brasil completa com globo azul nítido no capô, placa Mercosul FRW4A84 corrigida (sem espelho), rodas diamantadas prata/preto e interior completo preservado\n• Removidas as 2 bolinhas brancas flutuantes da frente dos faróis de todos os carros",
-  "totalBytes": 18808139,
+  "changelog": "• Rodas dianteiras da Saveiro corrigidas (sem oscilação): agora usam exatamente a mesma malha redonda e centralização das rodas traseiras, mantendo o esterçamento suave para direita e esquerda",
+  "totalBytes": 18696454,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "b7bccc40787af69096a543dc673f1717b7bff9dc28328c8fb0567cfccd77dc89",
-      "size": 47082
+      "sha256": "0dd185ac0fa7e415b4bae359cceeac3475c2e9222b90722b714ed4b29120621d",
+      "size": 47513
     },
     "js/game.js": {
       "sha256": "4487746dab2ac20514341e6121f5ce660b3136ec35c60547eb75704ce5e73f7b",
@@ -41,12 +41,12 @@
       "size": 1223680
     },
     "models/vehicles/saveiro_brasil.glb": {
-      "sha256": "af8d5bba9942bfadf1fda18356792254d1d041a60e3a2a57b24684d9068d9b09",
-      "size": 5723040
+      "sha256": "1a5fe8cdd652aa914344a1925f0e4a003685e0ed14240a86fe4432b23b9acc89",
+      "size": 5671984
     },
     "models/vehicles/vw_pickup_azul.glb": {
-      "sha256": "e41946bfd775a8e4fdf940c9ddea619851b85dbe075d286aba8332f73f0f1778",
-      "size": 1914824
+      "sha256": "bb7fc350e5722fc61385439fadf9f3bc5931fe63bcf5b7065e2afbbc8f6f87ea",
+      "size": 1853764
     },
     "style.css": {
       "sha256": "34cf84dbae482ab5d8ce489d07af71c173c95f8ee6737f609a7e27529e7482c8",
