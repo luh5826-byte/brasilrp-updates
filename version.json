@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 2,
+  "otaVersion": 3,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/eb606f145c0433b604e6596df281eeddf3cd10c9/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/eb606f145c0433b604e6596df281eeddf3cd10c9/ota_manifest.json",
-  "otaChangelog": "• Movimentação estilo GTA V aplicada (Patch A/B/C):\n  - Marchas analógicas suaves (andar 1.7 m/s, correr 3.8 m/s no máximo do stick, sprint 5.6 m/s)\n  - Cadência dos passos sincronizada pela distância percorrida\n  - Câmera a pé com acompanhamento suave (camFollowRate 9/6) e +8° de FOV no sprint"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b9286c5a6763ff451e3a6a928b17ee24ae00c095/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b9286c5a6763ff451e3a6a928b17ee24ae00c095/ota_manifest.json",
+  "otaChangelog": "• Corrige cabelo longo preto da personagem (HairMid/HairTip) para balançar apenas para trás, sem atravessar a cintura/corpo"
 }
