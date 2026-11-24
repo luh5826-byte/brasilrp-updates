@@ -1,20 +1,20 @@
 {
-  "otaVersion": 10,
+  "otaVersion": 11,
   "minApkCodeForOta": 42,
-  "changelog": "• Animação completa estilo GTA V ao entrar e sair dos veículos: caminha até a maçaneta, abre apenas a porta do motorista, abaixa a cabeça ao entrar na cabine, senta ao volante e puxa a porta batendo com som automotivo realista e balanço na suspensão",
-  "totalBytes": 7374657,
+  "changelog": "• Corrigida altura e posição do motorista sentado na cabine (nunca atravessa o teto solar nem o para-brisa)\n• Corrigido enquadramento local dos cones de farol para saírem exclusivamente das lentes dianteiras para frente",
+  "totalBytes": 7376488,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "6be0163ba4aaea13dbe77abd56192865ca96692f5a5b397ec6674c5180351a65",
-      "size": 38535
+      "sha256": "1061a0e44913dbe15ac9f61f2bf63baab29347070713d7d1aba934279270a57a",
+      "size": 39032
     },
     "js/game.js": {
-      "sha256": "a82855f6a93e687a37409eb2e7649c837b22734549b25702dc89262a63ddb3a8",
-      "size": 341674
+      "sha256": "6d5226f9678636d7f3652a0ffe8ce73591b7bbef6141ef785a74b8150b2f86b1",
+      "size": 343008
     },
     "js/multiplayer.js": {
       "sha256": "d90cd7b73590a542adb7ba4b315592a10dc29584254ef8044590a192237515d4",

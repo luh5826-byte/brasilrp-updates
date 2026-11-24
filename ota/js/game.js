@@ -2369,7 +2369,24 @@
 
     carObj.updateMatrixWorld(true);
     const invRoot = new THREE.Matrix4().copy(carObj.matrixWorld).invert();
-    const rootBox = new THREE.Box3().setFromObject(carObj);
+    // Bounding box estritamente no ESPAÇO LOCAL do veículo (nunca em coordenadas de mundo!)
+    const localBox = new THREE.Box3();
+    const _meshBox = new THREE.Box3();
+    const _toLocal = new THREE.Matrix4();
+    carObj.traverse((m) => {
+      if (m.isMesh && m.geometry) {
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        if (m.geometry.boundingBox) {
+          _toLocal.multiplyMatrices(invRoot, m.matrixWorld);
+          _meshBox.copy(m.geometry.boundingBox).applyMatrix4(_toLocal);
+          localBox.union(_meshBox);
+        }
+      }
+    });
+    if (localBox.isEmpty()) {
+      localBox.min.set(-0.98, 0, -2.25);
+      localBox.max.set(0.98, 1.32, 2.25);
+    }
     const headPositions = [];
     const tailPositions = [];
     const _wp = new THREE.Vector3();
@@ -2449,11 +2466,17 @@
     if (parts.doorL) parts.doorLSign = computeOutwardSign(parts.doorL);
     if (parts.doorR) parts.doorRSign = computeOutwardSign(parts.doorR);
 
-    // Determina posição do assento do motorista a partir do volante real e identifica qual porta é a do motorista
+    // Determina posição exata do assento do motorista DENTRO da cabine (abaixo do teto!) e qual porta é a do motorista
+    const roofY = Math.max(1.18, localBox.max.y);
+    const seatCharHeight = 1.68 * 0.76; // 1.277m da base dos pés ao topo da cabeça com escala 0.76
+    const maxSeatOriginY = (roofY - 0.18) - seatCharHeight;
     if (parts.steeringWheel) {
       parts.steeringWheel.getWorldPosition(_wp);
       _wp.applyMatrix4(invRoot);
-      parts.driverSeatOffset.set(_wp.x, Math.max(0.08, _wp.y - 0.72), _wp.z - 0.42);
+      const idealY = Math.min(_wp.y - 1.06, maxSeatOriginY);
+      parts.driverSeatOffset.set(_wp.x, idealY, _wp.z - 0.48);
+    } else {
+      parts.driverSeatOffset.set(0.35, Math.min(-0.30, maxSeatOriginY), -0.22);
     }
     parts.driverIsLeftNode = true;
     if (parts.doorL && parts.doorR) {
@@ -2463,37 +2486,40 @@
       parts.driverIsLeftNode = Math.abs(pL.x - parts.driverSeatOffset.x) <= Math.abs(pR.x - parts.driverSeatOffset.x);
     }
 
-    // Posições exatas das 2 lentes dos faróis dianteiros e 2 lanternas traseiras
+    // Posições locais exatas das 2 lentes dos faróis dianteiros (+Z) e 2 lanternas traseiras (-Z)
     const fSign = forwardPlusZ ? 1 : -1;
-    const frontZ = (fSign > 0 ? rootBox.max.z : rootBox.min.z) - fSign * 0.08;
-    const rearZ = (fSign > 0 ? rootBox.min.z : rootBox.max.z) + fSign * 0.06;
-    const halfW = Math.max(0.55, (rootBox.max.x - rootBox.min.x) * 0.34);
-    const hL = headPositions.length >= 2 ? headPositions[0] : new THREE.Vector3(halfW, 0.64, frontZ);
-    const hR = headPositions.length >= 2 ? headPositions[1] : new THREE.Vector3(-halfW, 0.64, frontZ);
-    const tL = tailPositions.length >= 2 ? tailPositions[0] : new THREE.Vector3(halfW, 0.68, rearZ);
-    const tR = tailPositions.length >= 2 ? tailPositions[1] : new THREE.Vector3(-halfW, 0.68, rearZ);
+    const frontZ = (fSign > 0 ? localBox.max.z : localBox.min.z) - fSign * 0.14;
+    const rearZ = (fSign > 0 ? localBox.min.z : localBox.max.z) + fSign * 0.05;
+    const halfW = Math.max(0.54, (localBox.max.x - localBox.min.x) * 0.35);
+    const headY = Math.max(0.48, Math.min(0.68, roofY * 0.45));
+    const tailY = Math.max(0.56, Math.min(0.80, roofY * 0.56));
+    const hL = headPositions.length >= 2 ? headPositions[0] : new THREE.Vector3(halfW, headY, frontZ);
+    const hR = headPositions.length >= 2 ? headPositions[1] : new THREE.Vector3(-halfW, headY, frontZ);
+    const tL = tailPositions.length >= 2 ? tailPositions[0] : new THREE.Vector3(halfW, tailY, rearZ);
+    const tR = tailPositions.length >= 2 ? tailPositions[1] : new THREE.Vector3(-halfW, tailY, rearZ);
     parts.headMidLocal = new THREE.Vector3((hL.x + hR.x) * 0.5, (hL.y + hR.y) * 0.5, (hL.z + hR.z) * 0.5);
 
     if (!_headBeamGeo) {
-      _headBeamGeo = new THREE.ConeGeometry(0.95, 7.5, 12, 1, true);
-      // Ápice do cone na lente do farol (0,0,0), abrindo para +Z
-      _headBeamGeo.translate(0, -3.75, 0);
+      _headBeamGeo = new THREE.ConeGeometry(0.42, 4.8, 16, 1, true);
+      // Ápice (r=0) na lente do farol (0,0,0), abrindo suavemente para FRENTE (+Z = +4.8m)
+      _headBeamGeo.translate(0, -2.4, 0);
       _headBeamGeo.rotateX(-Math.PI / 2);
-      _flareQuadGeo = new THREE.CircleGeometry(0.18, 12);
+      _flareQuadGeo = new THREE.CircleGeometry(0.14, 12);
     }
     const headBeamMat = new THREE.MeshBasicMaterial({
-      color: 0xfff6d8,
+      color: 0xfff6dc,
       transparent: true,
-      opacity: 0.19,
+      opacity: 0.075,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
       toneMapped: false
     });
+    parts.headBeamMat = headBeamMat;
     const headFlareMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -2502,7 +2528,7 @@
     parts.tailMat = new THREE.MeshBasicMaterial({
       color: 0xff1722,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.62,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -2512,17 +2538,17 @@
     [hL, hR].forEach((hp) => {
       const beam = new THREE.Mesh(_headBeamGeo, headBeamMat);
       beam.position.copy(hp);
-      beam.rotation.x = 0.08 * fSign;
+      beam.rotation.x = 0.09 * fSign;
       if (fSign < 0) beam.rotation.y = Math.PI;
       parts.headLightGroup.add(beam);
 
       const flare = new THREE.Mesh(_flareQuadGeo, headFlareMat);
-      flare.position.set(hp.x, hp.y, hp.z + fSign * 0.03);
+      flare.position.set(hp.x, hp.y, hp.z + fSign * 0.06);
       parts.headLightGroup.add(flare);
     });
     [tL, tR].forEach((tp) => {
       const tf = new THREE.Mesh(_flareQuadGeo, parts.tailMat);
-      tf.scale.set(1.15, 0.65, 1);
+      tf.scale.set(1.1, 0.55, 1);
       tf.position.set(tp.x, tp.y, tp.z - fSign * 0.03);
       parts.tailLightGroup.add(tf);
     });
@@ -5736,37 +5762,37 @@
 
     if (player.isDoa && player.bones && player.bones['pelvis_07']) {
       setBoneWorldDelta(player, 'spine_upper_025', duck, 0, 0);
-      setBoneWorldDelta(player, 'leg_left_thigh_08', -1.32 * s, 0, -0.18);
-      setBoneWorldDelta(player, 'leg_right_thigh_015', -1.32 * s, 0, 0.18);
-      setBoneWorldDelta(player, 'leg_left_knee_09', 1.38 * s, 0, 0);
-      setBoneWorldDelta(player, 'leg_right_knee_016', 1.38 * s, 0, 0);
-      setBoneWorldDelta(player, 'arm_left_shoulder_2_0266', (-0.95 + st) * s - reachL, 0, -0.52 - pullSpreadL);
-      setBoneWorldDelta(player, 'arm_right_shoulder_2_0292', (-0.95 - st) * s - reachR, 0, 0.52 + pullSpreadR);
-      setBoneWorldDelta(player, 'arm_left_elbow_0267', -0.45 * s - reachL * 0.35, 0, 0);
-      setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.45 * s - reachR * 0.35, 0, 0);
+      setBoneWorldDelta(player, 'leg_left_thigh_08', -1.46 * s, 0, -0.18);
+      setBoneWorldDelta(player, 'leg_right_thigh_015', -1.46 * s, 0, 0.18);
+      setBoneWorldDelta(player, 'leg_left_knee_09', 1.48 * s, 0, 0);
+      setBoneWorldDelta(player, 'leg_right_knee_016', 1.48 * s, 0, 0);
+      setBoneWorldDelta(player, 'arm_left_shoulder_2_0266', (-0.88 + st) * s - reachL, 0, -0.52 - pullSpreadL);
+      setBoneWorldDelta(player, 'arm_right_shoulder_2_0292', (-0.88 - st) * s - reachR, 0, 0.52 + pullSpreadR);
+      setBoneWorldDelta(player, 'arm_left_elbow_0267', -0.48 * s - reachL * 0.35, 0, 0);
+      setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.48 * s - reachR * 0.35, 0, 0);
     } else if (player.isCustomChar && player.customRig) {
       const r = player.customRig;
       if (r.spine) setBoneWorldDelta(player, r.spine, duck * 0.6, 0, 0);
       if (r.chest) setBoneWorldDelta(player, r.chest, duck * 0.5, 0, 0);
-      if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.32 * s, 0, 0);
-      if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.32 * s, 0, 0);
-      if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.36 * s, 0, 0);
-      if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.36 * s, 0, 0);
-      if (r.armL) setBoneWorldDelta(player, r.armL, (-0.92 + st) * s - reachL, 0, 0.12 + pullSpreadL);
-      if (r.armR) setBoneWorldDelta(player, r.armR, (-0.92 - st) * s - reachR, 0, -0.12 - pullSpreadR);
-      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.42 * s - reachL * 0.3, 0, 0);
-      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.42 * s - reachR * 0.3, 0, 0);
+      if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.46 * s, 0, 0);
+      if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.46 * s, 0, 0);
+      if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.48 * s, 0, 0);
+      if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.48 * s, 0, 0);
+      if (r.armL) setBoneWorldDelta(player, r.armL, (-0.86 + st) * s - reachL, 0, 0.12 + pullSpreadL);
+      if (r.armR) setBoneWorldDelta(player, r.armR, (-0.86 - st) * s - reachR, 0, -0.12 - pullSpreadR);
+      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.46 * s - reachL * 0.3, 0, 0);
+      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.46 * s - reachR * 0.3, 0, 0);
     } else if (player.bones && player.bones.Hips) {
       setBoneDelta(player, 'Spine', duck * 0.55, 0, 0);
       setBoneDelta(player, 'Chest', duck * 0.45, 0, 0);
-      setBoneDelta(player, 'ThighL', -1.32 * s, 0, 0);
-      setBoneDelta(player, 'ThighR', -1.32 * s, 0, 0);
-      setBoneDelta(player, 'ShinL', 1.36 * s, 0, 0);
-      setBoneDelta(player, 'ShinR', 1.36 * s, 0, 0);
-      setBoneDelta(player, 'UpperArmL', (-0.95 + st) * s - reachL, 0, 0.22 + pullSpreadL);
-      setBoneDelta(player, 'UpperArmR', (-0.95 - st) * s - reachR, 0, -0.22 - pullSpreadR);
-      setBoneDelta(player, 'ForeArmL', -0.42 * s - reachL * 0.3, 0, 0.15);
-      setBoneDelta(player, 'ForeArmR', -0.42 * s - reachR * 0.3, 0, -0.15);
+      setBoneDelta(player, 'ThighL', -1.46 * s, 0, 0);
+      setBoneDelta(player, 'ThighR', -1.46 * s, 0, 0);
+      setBoneDelta(player, 'ShinL', 1.48 * s, 0, 0);
+      setBoneDelta(player, 'ShinR', 1.48 * s, 0, 0);
+      setBoneDelta(player, 'UpperArmL', (-0.88 + st) * s - reachL, 0, 0.22 + pullSpreadL);
+      setBoneDelta(player, 'UpperArmR', (-0.88 - st) * s - reachR, 0, -0.22 - pullSpreadR);
+      setBoneDelta(player, 'ForeArmL', -0.46 * s - reachL * 0.3, 0, 0.15);
+      setBoneDelta(player, 'ForeArmR', -0.46 * s - reachR * 0.3, 0, -0.15);
     }
   }
 
@@ -5844,7 +5870,7 @@
             const px = standWX + (seatWX - standWX) * enterW;
             const py = standWY + (seatWY - standWY) * enterW - duck * 0.14;
             const pz = standWZ + (seatWZ - standWZ) * enterW;
-            const sc = 1.0 + (0.84 - 1.0) * enterW;
+            const sc = 1.0 + (0.76 - 1.0) * enterW;
             player.mesh.scale.setScalar(sc);
             player.mesh.position.set(px, py, pz);
             const bodyYaw = lerpAngleRad(faceDoorYaw, car.yaw, smoothStep01(0.34, 0.72, u));
@@ -5897,7 +5923,7 @@
           const px = seatWX + (standWX - seatWX) * outW;
           const py = seatWY + (standWY - seatWY) * outW - duck * 0.13;
           const pz = seatWZ + (standWZ - seatWZ) * outW;
-          player.mesh.scale.setScalar(0.84 + (1.0 - 0.84) * outW);
+          player.mesh.scale.setScalar(0.76 + (1.0 - 0.76) * outW);
           player.mesh.position.set(px, py, pz);
           const outYaw = lerpAngleRad(car.yaw, faceDoorYaw + Math.PI, outW);
           player.mesh.rotation.set(0, outYaw, 0);
@@ -5923,11 +5949,11 @@
     if (!car || !player.mesh) return;
     player.mesh.visible = !player.firstPersonCar;
     if (!player.mesh.visible) return;
-    const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
+    const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.35, y: -0.31, z: -0.22 };
     const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
     const wx = car.pos.x + seat.x * cosY + seat.z * sinY;
     const wz = car.pos.z - seat.x * sinY + seat.z * cosY;
-    player.mesh.scale.setScalar(0.84);
+    player.mesh.scale.setScalar(0.76);
     player.mesh.position.set(wx, car.pos.y + seat.y, wz);
     player.mesh.rotation.set(car.pitch || 0, car.yaw, -(car.roll || 0));
     applyDriverPoseBlend(1.0, 0, 0, 0, seat.x >= 0 ? 1 : -1, car.steerAngle);
@@ -6552,7 +6578,10 @@
 
       const interiorLit = v.doorsOpen || (v.driverDoorAnimAngle > 0.06) || (v === player.inCar && v.lightsOn && v.doorsOpen);
       const braking = (v === player.inCar) && (input.brake || keys['KeyS'] || keys['ArrowDown']);
-      if (v.parts.headLightGroup) v.parts.headLightGroup.visible = Boolean(v.lightsOn);
+      if (v.parts.headLightGroup) {
+        v.parts.headLightGroup.visible = Boolean(v.lightsOn);
+        if (v.parts.headBeamMat) v.parts.headBeamMat.opacity = 0.02 + streetLampState.nightFactor * 0.075;
+      }
       if (v.parts.tailLightGroup) {
         v.parts.tailLightGroup.visible = Boolean(v.lightsOn || braking);
         if (v.parts.tailMat) v.parts.tailMat.opacity = braking ? 0.98 : 0.58;
