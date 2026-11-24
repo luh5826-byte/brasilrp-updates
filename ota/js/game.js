@@ -5473,14 +5473,14 @@
   if (el('phGoMcEnter')) {
     el('phGoMcEnter').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-78.0, -128.0, "McDonald's (Salão)");
+      setGpsDestination(-133.3, -73.1, "McDonald's (Salão)");
       AudioFX.coin();
     };
   }
   if (el('phGoMcDrive')) {
     el('phGoMcDrive').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-150.0, -68.0, "McDonald's Drive-Thru");
+      setGpsDestination(-143.4, -56.9, "McDonald's Drive-Thru");
       AudioFX.coin();
     };
   }
@@ -5744,6 +5744,29 @@
         hGrp.add(pad);
         scene.add(hGrp);
         rpProps.push({ type: 'safehouse', label: 'Minha Casa', pos: hGrp.position, mesh: hGrp });
+      })();
+
+      // McDonald's Drive-Thru real (engadine_mcdonalds_restaurant_low_poly.glb otimizado) na praça plana em (-139, -60)
+      (function buildMcDonalds() {
+        const mcOx = -139.3, mcOz = -59.6;
+        loadGLB('models/props/mcdonalds_drivethru.glb').then((mcScene) => {
+          const mcY = getSafeGroundForSpawn(mcOx + 3.3, mcOz - 0.4, groundY);
+          mcScene.position.set(mcOx, mcY, mcOz);
+          mcScene.traverse((o) => {
+            if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; }
+          });
+          scene.add(mcScene);
+          mcBuildings.push({ mesh: mcScene, x: mcOx + 3.3, z: mcOz - 0.4 });
+          // Balcão de atendimento a pé (face sul do salão)
+          const counterPos = new THREE.Vector3(-133.3, getSafeGroundForSpawn(-133.3, -73.1, mcY), -73.1);
+          rpProps.push({ type: 'mcdonalds', label: "McDonald's", pos: counterPos, mesh: mcScene });
+          // Janela do Drive-Thru (pista de carros)
+          driveThrus.push({
+            pos: new THREE.Vector3(-143.4, mcY, -56.9),
+            label: "McDonald's Drive-Thru",
+            cooldown: 0
+          });
+        }).catch((e) => console.warn("McDonald's GLB indisponível:", e));
       })();
 
       // NPC 2 (doa_npc_fighter.glb) na calçada ao lado da Central Delivery!

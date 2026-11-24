@@ -32,7 +32,7 @@
       ],
       steps: [
         { type: 'enter_car', label: 'Entre em um veículo na rua', color: 0xffd41f },
-        { type: 'reach', x: -150.0, z: -68.0, radius: 10, requireCar: true, timer: 120, label: 'Passe no McDonald\'s Drive-Thru', gpsName: '🍔 McDonald\'s Drive-Thru', color: 0xffd41f, onDoneDialogue: [{ who: 'marta', text: 'Boa! Pedido retirado. Agora acelera pro Centro Sul antes que esfrie!' }] },
+        { type: 'reach', x: -143.4, z: -56.9, radius: 9, requireCar: true, timer: 120, label: 'Passe no McDonald\'s Drive-Thru', gpsName: '🍔 McDonald\'s Drive-Thru', color: 0xffd41f, onDoneDialogue: [{ who: 'marta', text: 'Boa! Pedido retirado. Agora acelera pro Centro Sul antes que esfrie!' }] },
         { type: 'reach', x: -65.7, z: 13.4, radius: 9.5, requireCar: true, timer: 110, label: 'Entregue no Centro Sul VIP', gpsName: '📦 Entrega VIP', color: 0x00e676, onDoneDialogue: [{ who: 'marta', text: 'Cliente satisfeito! Volta até o Caixa Banco 24h na Central para encerrar o expediente.' }] },
         { type: 'reach', x: -171.8, z: -173.1, radius: 9.5, label: 'Volte ao Banco 24h Central', gpsName: '🏧 Banco 24h Central', color: 0xffd41f }
       ]

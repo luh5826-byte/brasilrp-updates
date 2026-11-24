@@ -1,24 +1,24 @@
 {
-  "otaVersion": 16,
+  "otaVersion": 17,
   "minApkCodeForOta": 42,
-  "changelog": "• Modo História — Capítulo 1 'Ascensão em Liberty BR' com 6 missões encadeadas, legendas/diálogos estilo GTA, checkpoints 3D luminosos, cronômetro e recompensas (+R$, +XP e Lexus LC 500 Wald Dourado no final)\n• Novo App 'Missões' no Smartphone iFruit com Nível RP (Lv. 1–50) e 3 missões secundárias infinitas: Motorista App (Uber RP), Time Trial (com recorde) e Patrulha PM-BR",
-  "totalBytes": 9940084,
+  "changelog": "• Adicionado McDonald's 3D real com Drive-Thru funcional na praça próxima à Central (combo pelo carro na janela e salão para recuperar vida a pé), integrado ao GPS e à missão 'Primeiro Corre'",
+  "totalBytes": 11165424,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "d98709f715971251869fb5c3bd4ca25b5a58bb0c4f7977b14f88930cc8a9da29",
-      "size": 44731
+      "sha256": "d5bf9a82553a3a1beb5487d12f582e65e33b5cba39503a5d6bf2131d4860a2eb",
+      "size": 45181
     },
     "js/game.js": {
-      "sha256": "dbb3ed2de3941cbde5c44832f458bf1e4d2f43beaa736f287c7919cd0eb66429",
-      "size": 379899
+      "sha256": "87a8d02682e0869cf446fad09869d7f8d5f3f56d4d0e326b6c00afe195fdc386",
+      "size": 381110
     },
     "js/missions.js": {
-      "sha256": "bfbc6ae00b4e2fdcf1f4e02c68e0740c81cf7fef5894ce5d40ec5cf7a5545c7a",
-      "size": 36533
+      "sha256": "80798e19090eef545dddb456376f4a525465b890e01fe3bcc6c727643ee91a5d",
+      "size": 36532
     },
     "js/multiplayer.js": {
       "sha256": "d90cd7b73590a542adb7ba4b315592a10dc29584254ef8044590a192237515d4",
@@ -36,10 +36,13 @@
       "sha256": "da821324dd6c3da171838b11339a9eda0fc7f828af03cfee491506b3d61893aa",
       "size": 1048576
     },
+    "models/props/mcdonalds_drivethru.glb": {
+      "sha256": "a4fc79a7e6a74a4f42192fca4d855e642a777f04696b909578a04b3b6e61c8ab",
+      "size": 1223680
+    },
     "style.css": {
       "sha256": "ee9780284453c5e4c57d2c4d1b3b99ae088464e543430e4b319b59ca1069f4fb",
       "size": 37581
     }
-  },
-  "deleted": []
+  }
 }
