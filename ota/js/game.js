@@ -13,6 +13,8 @@
     bestRaceTime: null,
     sideDone: 0,
     starterCar: 'volkswagen_saveiro',
+    playerChar: 'cool_man',
+    jobNpcTurn: 1,
     paint: '#ffffff',
     camSens: 1.0,
     padSens: 1.0,
@@ -27,6 +29,7 @@
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) save = Object.assign(save, JSON.parse(raw));
   } catch (e) {}
+  save.playerChar = 'cool_man';
   function persistSave() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
@@ -2362,6 +2365,8 @@
   const npcs = [];
   const rpProps = [];
   let jobNpcRef = null;
+  let jobNpcSwapFn = null;
+  let jobNpcShiftTimer = 0;
   let vehicleTemplates = {};
   let citizenTemplates = [];
   let trafficTemplates = [];
@@ -2994,14 +2999,15 @@
     const isSaveiro = typeKey === 'volkswagen_saveiro';
     const isMustang = typeKey === 'ford_mustang_gtd';
     const isLexus = typeKey === 'lexus_lc_500_wald';
-    // Todos os 5 veículos (Saveiro, Mustang, Lexus, Gol e PM) têm a frente real em +Z!
+    // Todos os 5 veículos (VW Pickup Azul, Mustang, Lexus, Gol e PM) têm a frente real em +Z!
     const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
 
+    const isLexusSpec = isLexus || isSaveiro;
     const v = {
       type: typeKey,
       forwardSign: forwardPlusZ ? 1 : -1,
-      name: isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiro ? 'VW Saveiro' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
+      name: isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
       mesh,
       parts,
       pos: mesh.position,
@@ -3016,7 +3022,7 @@
       rollVel: 0,
       pitchVel: 0,
       angVel: 0,
-      mass: isSaveiro ? 1.50 : isLexus ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
+      mass: isLexusSpec ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
       hp: 100,
       broken: false,
       nitro: 100,
@@ -3026,13 +3032,13 @@
       doorAutoTimer: 0,
       lightsOn: true,
       sirenOn: false,
-      // Lexus LC 500 Wald & Mustang com specs exatas do Apex Circuit (270 km/h, accel 36.0, turnRate 2.09, V8 Muscle)
-      maxTopSpeedMs: isLexus ? (270 / 3.6) : isMustang ? (296 / 3.6) : isSaveiro ? (195 / 3.6) : (175 / 3.6),
-      accelPower: isLexus ? 36.0 : isMustang ? 34.0 : isSaveiro ? 26.5 : 22.0,
-      turnRate: isLexus ? 2.09 : 2.15,
-      soundProfile: isLexus ? 'v8_muscle' : null
+      // VW Pickup Azul & Lexus LC 500 Wald com specs idênticas do Apex Circuit (270 km/h, accel 36.0, turnRate 2.09, V8 Muscle)
+      maxTopSpeedMs: isLexusSpec ? (270 / 3.6) : isMustang ? (296 / 3.6) : (175 / 3.6),
+      accelPower: isLexusSpec ? 36.0 : isMustang ? 34.0 : 22.0,
+      turnRate: isLexusSpec ? 2.09 : 2.15,
+      soundProfile: isLexusSpec ? 'v8_muscle' : null
     };
-    if (isSaveiro || isMustang) paintVehicle(v, save.paint);
+    if (isMustang) paintVehicle(v, save.paint);
     vehicles.push(v);
     return v;
   }
@@ -3960,14 +3966,8 @@
     }
   })();
 
-  // --- Seletor de Personagens Jogáveis no Lobby 3D ---
+  // --- Seletor de Personagens Jogáveis no Lobby 3D (somente Cool Man disponível ao jogador) ---
   const PLAYABLE_CHARS = {
-    npc1: { label: 'NPC 1', path: 'models/chars/npc_outer_plane.glb', kind: 'npc1', armRestZ: 0.38 },
-    npc2: { label: 'NPC 2', path: 'models/chars/doa_npc_fighter.glb', kind: 'npc2' },
-    woman_walking: { label: 'Walking', path: 'models/chars/woman_walking.glb', kind: 'npc1', armRestZ: 0.04 },
-    indian_office_woman: { label: 'Office', path: 'models/chars/indian_office_woman.glb', kind: 'custom' },
-    cat_woman: { label: 'Cat Woman', path: 'models/chars/cat_woman.glb', kind: 'custom' },
-    lily: { label: 'Lily', path: 'models/chars/lily.glb', kind: 'custom' },
     cool_man: { label: 'Cool Man', path: 'models/chars/cool_man.glb', kind: 'custom' }
   };
   const playableCharCache = {};
@@ -4534,7 +4534,8 @@
   }
 
   async function selectPlayableCharacter(charId, silent) {
-    const info = PLAYABLE_CHARS[charId] || PLAYABLE_CHARS.npc1;
+    charId = 'cool_man';
+    const info = PLAYABLE_CHARS.cool_man;
     if (playerCharLoading) return;
     save.playerChar = charId;
     persistSave();
@@ -5102,7 +5103,7 @@
     if (lobbyGarageDrawer) lobbyGarageDrawer.classList.add('hidden');
     ui.modalOverlay.classList.add('hidden');
     ui.hud.classList.remove('hidden');
-    showToast('🇧🇷 Bem-vindo! Saveiro e Mustang GTD na rua!', 3200);
+    showToast('🇧🇷 Bem-vindo! VW Pickup Azul e Mustang GTD na rua!', 3200);
   };
 
   window.togglePauseMenu = () => {
@@ -5438,7 +5439,7 @@
 
   if (el('phCallMustang')) el('phCallMustang').onclick = () => deliverPhoneCar('ford_mustang_gtd', '🏎️ Ford Mustang GTD');
   if (el('phCallLexus')) el('phCallLexus').onclick = () => deliverPhoneCar('lexus_lc_500_wald', '🏁 Lexus LC 500 Wald');
-  if (el('phCallSaveiro')) el('phCallSaveiro').onclick = () => deliverPhoneCar('volkswagen_saveiro', '🛻 VW Saveiro');
+  if (el('phCallSaveiro')) el('phCallSaveiro').onclick = () => deliverPhoneCar('volkswagen_saveiro', '🛻 VW Pickup Azul');
   if (el('phCallGol')) el('phCallGol').onclick = () => deliverPhoneCar('car_gol', '🚗 VW Gol Quadrado');
   if (el('phCallPm')) el('phCallPm').onclick = () => deliverPhoneCar('car_pm', '🚓 Viatura PM-BR');
 
@@ -5536,10 +5537,7 @@
   }
   if (el('btnHouseWardrobe')) {
     el('btnHouseWardrobe').onclick = () => {
-      const charKeys = Object.keys(PLAYABLE_CHARS);
-      const curIdx = Math.max(0, charKeys.indexOf(player.charId || 'npc1'));
-      const nextKey = charKeys[(curIdx + 1) % charKeys.length];
-      selectPlayableCharacter(nextKey, false);
+      selectPlayableCharacter('cool_man', false);
     };
   }
   if (el('btnHouseSpawnCar')) {
@@ -5644,11 +5642,12 @@
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
       ui.loadFill.style.width = '45%';
 
-      const [npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
+        loadGLB('models/chars/cool_man.glb'),
         loadGLB('models/chars/npc_outer_plane.glb'),
         loadGLB('models/chars/doa_npc_fighter.glb'),
         loadGLB('models/vehicles/traffic_rider_npc_vehicles.glb'),
-        loadGLB('models/vehicles/volkswagen_saveiro.glb'),
+        loadGLB('models/vehicles/vw_pickup_azul.glb'),
         loadGLB('models/vehicles/ford_mustang_gtd.glb'),
         loadGLB('models/vehicles/lexus_lc_500_wald.glb'),
         loadGLB('models/vehicles/car_gol.glb'),
@@ -5667,7 +5666,8 @@
       mergeStaticMeshesByMaterial(golScene, carKeep);
       mergeStaticMeshesByMaterial(pmScene, carKeep);
 
-      // Desativa castShadow na NPC DOA (75 meshes) para evitar 75 draw calls extras no shadow map
+      // Desativa castShadow nas NPCs do Job para economizar draw calls no shadow map
+      npcJobScene.traverse((o) => { if (o.isMesh) o.castShadow = false; });
       npcDoaScene.traverse((o) => { if (o.isMesh) o.castShadow = false; });
 
       vehicleTemplates = {
@@ -5683,19 +5683,19 @@
         if (tt && tt.mesh) tt.mesh.traverse((o) => { if (o.isMesh) o.castShadow = false; });
       });
       npcTemplate = null;
+      // NPC 1 (npc_outer_plane.glb) e NPC 2 (doa_npc_fighter.glb) revezam no posto do Job!
+      npcJobTemplate = npcJobScene;
       npcDoaTemplate = wrapDoaNpcScene(npcDoaScene);
-      npcJobTemplate = npcDoaTemplate;
       buildRoadCells();
 
-      // Personagem Principal (NPC 1 por padrão, ou o salvo no Lobby 3D!)
-      playableCharCache.npc1 = npcJobScene;
+      // Personagem Principal fixo no Cool Man (demais personagens ocultos do jogador)
+      const coolManBuilt = normalizeCustomCharScene(coolManScene, 1.68);
+      playableCharCache.cool_man = coolManBuilt;
       const sp = mapManifest.spawn;
       const groundY = getGroundHeight(sp.x, sp.z) ?? sp.y;
       player.pos.set(sp.x, groundY + 0.1, sp.z);
-      applyPlayerMeshObject('npc1', npcJobScene);
-      if (save.playerChar && save.playerChar !== 'npc1' && PLAYABLE_CHARS[save.playerChar]) {
-        selectPlayableCharacter(save.playerChar, true);
-      }
+      applyPlayerMeshObject('cool_man', coolManBuilt);
+      requestAnimationFrame(() => captureChar3DThumb('cool_man'));
 
       ui.loadStatus.textContent = 'Carregando cidade completa (0/' + mapManifest.chunks.length + ')...';
       ui.loadFill.style.width = '55%';
@@ -5798,9 +5798,24 @@
         }).catch((e) => console.warn("McDonald's GLB indisponível:", e));
       })();
 
-      // NPC 2 (doa_npc_fighter.glb) na calçada ao lado da Central Delivery!
-      const jobNpc = spawnNPC(jobX + 0.4, jobY, jobZ + 2.4, true, { doa: true });
-      if (jobNpc) { jobNpc.yaw = Math.PI * 0.5; jobNpc.mesh.rotation.y = jobNpc.yaw; }
+      // Revezamento automático da NPC do Job na Central Delivery entre NPC 1 (npc_outer_plane) e NPC 2 (doa_npc_fighter)
+      jobNpcSwapFn = (turn) => {
+        if (jobNpcRef) {
+          if (jobNpcRef.mesh && jobNpcRef.mesh.parent) jobNpcRef.mesh.parent.remove(jobNpcRef.mesh);
+          const idx = npcs.indexOf(jobNpcRef);
+          if (idx >= 0) npcs.splice(idx, 1);
+          jobNpcRef = null;
+        }
+        const useDoa = (turn === 2);
+        const spawned = spawnNPC(jobX + 0.4, jobY, jobZ + 2.4, true, { doa: useDoa });
+        if (spawned) {
+          spawned.yaw = Math.PI * 0.5;
+          spawned.mesh.rotation.y = spawned.yaw;
+        }
+      };
+      save.jobNpcTurn = (save.jobNpcTurn === 1 ? 2 : 1);
+      persistSave();
+      jobNpcSwapFn(save.jobNpcTurn);
 
       // Sincroniza pills do Lobby com o save
       document.querySelectorAll('#car-pills .pill-btn').forEach((b) => {
@@ -5950,6 +5965,15 @@
       updateChunkStreaming(px, pz);
       for (const mb of mcBuildings) {
         mb.mesh.visible = ((mb.x - px) ** 2 + (mb.z - pz) ** 2) < (240 * 240);
+      }
+      if (jobNpcSwapFn && gameMode === 'playing') {
+        jobNpcShiftTimer += 0.45;
+        if (jobNpcShiftTimer >= 75 && jobNpcRef && Math.hypot(px - jobNpcRef.homePos.x, pz - jobNpcRef.homePos.z) > 22) {
+          jobNpcShiftTimer = 0;
+          save.jobNpcTurn = (save.jobNpcTurn === 1 ? 2 : 1);
+          persistSave();
+          jobNpcSwapFn(save.jobNpcTurn);
+        }
       }
     }
 

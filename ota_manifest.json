@@ -1,20 +1,20 @@
 {
-  "otaVersion": 20,
+  "otaVersion": 21,
   "minApkCodeForOta": 42,
-  "changelog": "• Corrigido bug visual de transparência/Z-sorting do McDonald's 3D (paredes agora 100% sólidas), proporção real para o carro caber folgado no Drive-Thru (3.9m x 2.53m) e entrada virada direto para a Av. Sul com anel luminoso",
-  "totalBytes": 11168795,
+  "changelog": "• Saveiro vermelha removida e substituída pela nova VW Pickup Azul (4 rodas independentes, portas articuladas e mesma física, velocidade 270 km/h e som V8 do Lexus LC 500 Wald)\n• Personagem padrão fixado no Cool Man (outros personagens ocultos da seleção)\n• NPC do Job na Central Delivery agora se reveza automaticamente entre NPC 1 e NPC 2",
+  "totalBytes": 12998298,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "c66e0bb914d298c377db601dafd54422ebe5ef0e859e049c8f5aa1895db33c87",
-      "size": 46516
+      "sha256": "3f700d07f91257bba6fa8157deadd2202325fd9a7ecd95c6adc547533a020334",
+      "size": 45507
     },
     "js/game.js": {
-      "sha256": "8bef55c02de1ff3d935b92174831f96b64649415567b334f2674ca9dabacb1a2",
-      "size": 382618
+      "sha256": "3cb705d19cf2ebfa448953d82bf51318db60a3395fe46490f7635e5afc038f8a",
+      "size": 383186
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -39,6 +39,10 @@
     "models/props/mcdonalds_drivethru.glb": {
       "sha256": "a4fc79a7e6a74a4f42192fca4d855e642a777f04696b909578a04b3b6e61c8ab",
       "size": 1223680
+    },
+    "models/vehicles/vw_pickup_azul.glb": {
+      "sha256": "844bffff3b8da3bc2a69dd2f56ec2c848ff278e925f0735b4d50dd7db12065a5",
+      "size": 1829944
     },
     "style.css": {
       "sha256": "34cf84dbae482ab5d8ce489d07af71c173c95f8ee6737f609a7e27529e7482c8",

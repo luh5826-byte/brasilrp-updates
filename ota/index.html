@@ -57,39 +57,9 @@
     <!-- Painel recolhível de Personagem / Veículo / Pintura (aberto ao tocar no botão de Mapa/Garagem) -->
     <div class="lobby-garage-drawer hidden" id="lobbyGarageDrawer">
       <div class="dock-group">
-        <span class="dock-label">PERSONAGEM (TOQUE PARA PRÉVIA 3D)</span>
+        <span class="dock-label">PERSONAGEM</span>
         <div class="char-grid" id="char-pills">
-          <div class="char-card active" data-char="npc1">
-            <div class="char-thumb-wrap"><img class="char-thumb" alt="NPC 1" /></div>
-            <div class="char-card-name">NPC 1</div>
-            <div class="char-card-tag">Clássica</div>
-          </div>
-          <div class="char-card" data-char="npc2">
-            <div class="char-thumb-wrap"><img class="char-thumb" alt="NPC 2" /></div>
-            <div class="char-card-name">NPC 2</div>
-            <div class="char-card-tag">Lutadora</div>
-          </div>
-          <div class="char-card" data-char="woman_walking">
-            <div class="char-thumb-wrap"><img class="char-thumb" alt="Walking" /></div>
-            <div class="char-card-name">Walking</div>
-            <div class="char-card-tag">Casual</div>
-          </div>
-          <div class="char-card" data-char="indian_office_woman">
-            <div class="char-thumb-wrap"><img class="char-thumb" alt="Office" /></div>
-            <div class="char-card-name">Office</div>
-            <div class="char-card-tag">Executiva</div>
-          </div>
-          <div class="char-card" data-char="cat_woman">
-            <div class="char-thumb-wrap"><img class="char-thumb" alt="Cat Woman" /></div>
-            <div class="char-card-name">Cat Woman</div>
-            <div class="char-card-tag">Felina</div>
-          </div>
-          <div class="char-card" data-char="lily">
-            <div class="char-thumb-wrap"><img class="char-thumb" alt="Lily" /></div>
-            <div class="char-card-name">Lily</div>
-            <div class="char-card-tag">Praia</div>
-          </div>
-          <div class="char-card" data-char="cool_man">
+          <div class="char-card active" data-char="cool_man">
             <div class="char-thumb-wrap"><img class="char-thumb" alt="Cool Man" /></div>
             <div class="char-card-name">Cool Man</div>
             <div class="char-card-tag">Urbano</div>
@@ -99,7 +69,7 @@
       <div class="dock-group">
         <span class="dock-label">VEÍCULO INICIAL</span>
         <div class="pill-row" id="car-pills">
-          <div class="pill-btn active" data-car="volkswagen_saveiro">VW Saveiro</div>
+          <div class="pill-btn active" data-car="volkswagen_saveiro">VW Pickup Azul</div>
           <div class="pill-btn" data-car="ford_mustang_gtd">Mustang GTD</div>
           <div class="pill-btn" data-car="lexus_lc_500_wald">Lexus LC 500</div>
           <div class="pill-btn" data-car="car_gol">Gol</div>
@@ -197,6 +167,13 @@
         <div class="config-group config-group-full">
           <div class="config-title">LOG DE ATUALIZAÇÕES</div>
           <div class="changelog-list">
+            <div class="changelog-entry">
+              <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #21</span></div>
+              <ul class="changelog-items">
+                <li>Removida a Saveiro vermelha e adicionada a nova VW Pickup Azul com 4 rodas independentes, portas articuladas e mesma física, motor V8 e velocidade (270 km/h) do Lexus LC 500 Wald</li>
+                <li>Personagem padrão definido como Cool Man (demais personagens ocultos na seleção) e revezamento automático entre NPC 1 e NPC 2 na Central Delivery</li>
+              </ul>
+            </div>
             <div class="changelog-entry">
               <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #20</span></div>
               <ul class="changelog-items">
@@ -597,7 +574,7 @@
         <div class="ifruit-list">
           <button class="phone-app" id="phCallLexus"><span class="ico">🏁</span><div><b>Lexus LC 500 Wald</b><small>V8 477cv • 270 km/h</small></div></button>
           <button class="phone-app" id="phCallMustang"><span class="ico">🏎️</span><div><b>Ford Mustang GTD</b><small>Supercharged • 296 km/h</small></div></button>
-          <button class="phone-app" id="phCallSaveiro"><span class="ico">🛻</span><div><b>VW Saveiro Cross</b><small>Rebaixada • Utilitária</small></div></button>
+          <button class="phone-app" id="phCallSaveiro"><span class="ico">🛻</span><div><b>VW Pickup Azul</b><small>V8 Muscle • 270 km/h</small></div></button>
           <button class="phone-app" id="phCallGol"><span class="ico">🚗</span><div><b>VW Gol Quadrado</b><small>Clássico BR • Turbo</small></div></button>
           <button class="phone-app" id="phCallPm"><span class="ico">🚓</span><div><b>Viatura PM-BR</b><small>Giroflex &amp; Sirene Tática</small></div></button>
         </div>
@@ -704,7 +681,7 @@
       <div class="fullmap-legend">
         <span><b style="color:#ffffff">▲</b> Você</span>
         <span><b style="color:#ffd43b">🏠</b> Minha Casa</span>
-        <span><b style="color:#00e676">●</b> Saveiro / Job</span>
+        <span><b style="color:#00e676">●</b> Pickup Azul / Job</span>
         <span><b style="color:#ff1744">●</b> Mustang / Banco</span>
         <span><b style="color:#d500f9">━━</b> Rota GPS</span>
       </div>
