@@ -994,15 +994,29 @@
 
   const trafficLightGroups = { nsMats: null, ewMats: null };
 
+  const streetLampState = {
+    bulbMat: new THREE.MeshBasicMaterial({ color: 0x3a3f47, toneMapped: false }),
+    haloMat: new THREE.MeshBasicMaterial({
+      color: 0xffd27d,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    }),
+    nightFactor: 0
+  };
+
   async function setupTrafficLightsAndCrosswalks() {
     let nativeLights = [];
     try {
-      const res = await fetch('assets/models/map/traffic_lights.json');
+      const res = await fetch('models/map/traffic_lights.json');
       if (res.ok) nativeLights = await res.json();
     } catch (e) {
       console.warn('Falha ao carregar traffic_lights.json:', e);
     }
-    if (!Array.isArray(nativeLights) || nativeLights.length === 0) return;
+    if (!Array.isArray(nativeLights)) nativeLights = [];
 
     const nsMats = {
       r: new THREE.MeshBasicMaterial({ color: 0xff2244, toneMapped: false }),
@@ -1019,7 +1033,7 @@
 
     const nsLights = nativeLights.filter((l) => l.axis === 'NS');
     const ewLights = nativeLights.filter((l) => l.axis === 'EW');
-    const lensGeo = new THREE.SphereGeometry(0.105, 10, 8);
+    const lensGeo = new THREE.SphereGeometry(0.135, 10, 8);
     const offsetsX = [-0.25, 0.25];
     const offsetsZ = [-0.155, 0.155];
 
@@ -1078,7 +1092,11 @@
     const armGeo = new THREE.BoxGeometry(0.95, 0.12, 0.16);
     armGeo.translate(0.45, 4.25, 0);
     const poleMat = new THREE.MeshLambertMaterial({ color: 0x5f6b7a });
-    const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff3b0 });
+    const lampMat = streetLampState.bulbMat;
+    const lampHaloGeo = new THREE.ConeGeometry(1.85, 4.15, 10, 1, true);
+    lampHaloGeo.translate(0, -2.075, 0);
+    const lampPoolGeo = new THREE.CircleGeometry(2.6, 12);
+    lampPoolGeo.rotateX(-Math.PI / 2);
 
     const coneGeo = new THREE.ConeGeometry(0.24, 0.72, 7);
     coneGeo.translate(0, 0.36, 0);
@@ -1115,9 +1133,17 @@
         grp.add(new THREE.Mesh(poleGeo, poleMat));
         const arm = new THREE.Mesh(armGeo, poleMat);
         grp.add(arm);
-        const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.14), lampMat);
+        const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.09, 0.16), lampMat);
         bulb.position.set(0.75, 4.18, 0);
         grp.add(bulb);
+        const beam = new THREE.Mesh(lampHaloGeo, streetLampState.haloMat);
+        beam.position.set(0.75, 4.16, 0);
+        beam.name = 'PoleLightBeam';
+        grp.add(beam);
+        const pool = new THREE.Mesh(lampPoolGeo, streetLampState.haloMat);
+        pool.position.set(0.75, 0.06, 0);
+        pool.name = 'PoleLightPool';
+        grp.add(pool);
       } else if (kind === 'cone') {
         grp.add(new THREE.Mesh(coneGeo, coneMat));
       } else if (kind === 'hydrant') {
@@ -1291,14 +1317,14 @@
     else { nsState = 'RED'; ewState = 'YELLOW'; }
 
     if (trafficLightGroups.nsMats) {
-      trafficLightGroups.nsMats.r.color.setHex(nsState === 'RED' ? 0xff2244 : 0x180507);
-      trafficLightGroups.nsMats.y.color.setHex(nsState === 'YELLOW' ? 0xffee00 : 0x1a1500);
-      trafficLightGroups.nsMats.g.color.setHex(nsState === 'GREEN' ? 0x00ff88 : 0x021a0c);
+      trafficLightGroups.nsMats.r.color.setHex(nsState === 'RED' ? 0xff2244 : 0x1a0608);
+      trafficLightGroups.nsMats.y.color.setHex(nsState === 'YELLOW' ? 0xffbe00 : 0x1f1700);
+      trafficLightGroups.nsMats.g.color.setHex(nsState === 'GREEN' ? 0x00ff88 : 0x031c0e);
     }
     if (trafficLightGroups.ewMats) {
-      trafficLightGroups.ewMats.r.color.setHex(ewState === 'RED' ? 0xff2244 : 0x180507);
-      trafficLightGroups.ewMats.y.color.setHex(ewState === 'YELLOW' ? 0xffee00 : 0x1a1500);
-      trafficLightGroups.ewMats.g.color.setHex(ewState === 'GREEN' ? 0x00ff88 : 0x021a0c);
+      trafficLightGroups.ewMats.r.color.setHex(ewState === 'RED' ? 0xff2244 : 0x1a0608);
+      trafficLightGroups.ewMats.y.color.setHex(ewState === 'YELLOW' ? 0xffbe00 : 0x1f1700);
+      trafficLightGroups.ewMats.g.color.setHex(ewState === 'GREEN' ? 0x00ff88 : 0x031c0e);
     }
     for (const tl of trafficLights) {
       tl.state = tl.axis === 'NS' ? nsState : ewState;
@@ -1319,6 +1345,27 @@
     return roadGrid[gy * N + gx];
   }
 
+  function snapNodeToNearestRoad(gx0, gy0, N, maxR = 75) {
+    if (roadGrid[gy0 * N + gx0] === 1) return [gx0, gy0];
+    let best = null;
+    let bestD2 = 1e9;
+    for (let r = 1; r <= maxR; r++) {
+      const yMin = Math.max(0, gy0 - r), yMax = Math.min(N - 1, gy0 + r);
+      const xMin = Math.max(0, gx0 - r), xMax = Math.min(N - 1, gx0 + r);
+      for (let y = yMin; y <= yMax; y++) {
+        for (let x = xMin; x <= xMax; x++) {
+          if (y !== yMin && y !== yMax && x !== xMin && x !== xMax) continue;
+          if (roadGrid[y * N + x] === 1) {
+            const d2 = (x - gx0) * (x - gx0) + (y - gy0) * (y - gy0);
+            if (d2 < bestD2) { bestD2 = d2; best = [x, y]; }
+          }
+        }
+      }
+      if (best) return best;
+    }
+    return [gx0, gy0];
+  }
+
   function computeGpsRoute(startX, startZ, endX, endZ) {
     if (!colMeta || !roadGrid) return [{ x: startX, z: startZ }, { x: endX, z: endZ }];
     const N = roadGridN;
@@ -1335,8 +1382,10 @@
       z: -(colMeta.minY + (1.0 - (gy + 0.5) / N) * worldH)
     });
 
-    const [sx, sy] = toNode(startX, startZ);
-    const [tx, ty] = toNode(endX, endZ);
+    const rawStart = toNode(startX, startZ);
+    const rawEnd = toNode(endX, endZ);
+    const [sx, sy] = snapNodeToNearestRoad(rawStart[0], rawStart[1], N, 75);
+    const [tx, ty] = snapNodeToNearestRoad(rawEnd[0], rawEnd[1], N, 75);
     const startIdx = sy * N + sx;
     const targetIdx = ty * N + tx;
     if (startIdx === targetIdx) return [{ x: startX, z: startZ }, { x: endX, z: endZ }];
@@ -1386,7 +1435,7 @@
     let found = false;
     let iters = 0;
 
-    while (heapIdx.length > 0 && iters < 240000) {
+    while (heapIdx.length > 0 && iters < 320000) {
       iters++;
       const cur = popHeap();
       if (cur === targetIdx) { found = true; break; }
@@ -1401,14 +1450,17 @@
         const nxt = ny * N + nx;
         if (closed[nxt]) continue;
         const cell = roadGrid[nxt];
-        // 0 = água (só entra se for o próprio destino), 1 = rua (custo 1), 2 = terreno/prédio (custo alto 14)
-        if (cell === 0 && nxt !== targetIdx) continue;
-        const stepMult = cell === 1 ? 1.0 : (cell === 2 ? 14.0 : 50.0);
+        if (cell !== 1 && nxt !== targetIdx) {
+          if (cell !== 2) continue;
+        }
+        // Prioriza estritamente o miolo asfaltado das ruas (driveableGrid===2 -> custo 1.0, borda rua -> 1.8, calçada -> 28)
+        const isCore = driveableGrid && driveableGrid[nxt] === 2;
+        const stepMult = cell === 1 ? (isCore ? 1.0 : 1.8) : 28.0;
         const tentG = gScore[cur] + dcost[i] * stepMult;
         if (tentG < gScore[nxt]) {
           gScore[nxt] = tentG;
           prev[nxt] = cur;
-          pushHeap(nxt, tentG + Math.hypot(tx - nx, ty - ny) * 1.15);
+          pushHeap(nxt, tentG + Math.hypot(tx - nx, ty - ny) * 1.05);
         }
       }
     }
@@ -1423,17 +1475,14 @@
     }
     rawNodes.reverse();
 
-    // Suavização respeitando estritamente células de rua/terreno (nunca pula por cima de água ou quarteirão)
-    const hasLOS = (a, b) => {
+    // Suavização estrita dentro do asfalto (jamais atravessa quarteirão ou calçada)
+    const hasRoadLOS = (a, b) => {
       const steps = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])) * 2;
       if (steps <= 1) return true;
-      const cStart = roadGrid[a[1] * N + a[0]];
       for (let s = 1; s < steps; s++) {
         const x = Math.round(a[0] + ((b[0] - a[0]) * s) / steps);
         const y = Math.round(a[1] + ((b[1] - a[1]) * s) / steps);
-        const c = roadGrid[y * N + x];
-        if (c === 0) return false;
-        if (cStart === 1 && c !== 1) return false;
+        if (roadGrid[y * N + x] !== 1) return false;
       }
       return true;
     };
@@ -1441,25 +1490,172 @@
     const smoothed = [rawNodes[0]];
     let anchor = 0;
     while (anchor < rawNodes.length - 1) {
-      let far = Math.min(rawNodes.length - 1, anchor + 14);
-      while (far > anchor + 1 && !hasLOS(rawNodes[anchor], rawNodes[far])) far--;
+      let far = Math.min(rawNodes.length - 1, anchor + 10);
+      while (far > anchor + 1 && !hasRoadLOS(rawNodes[anchor], rawNodes[far])) far--;
       smoothed.push(rawNodes[far]);
       anchor = far;
     }
 
-    const pts = [{ x: startX, z: startZ }];
-    for (let i = 1; i < smoothed.length - 1; i++) {
+    const pts = [];
+    const firstRoad = toWorld(smoothed[0][0], smoothed[0][1]);
+    if (Math.hypot(firstRoad.x - startX, firstRoad.z - startZ) > 3.0) {
+      pts.push({ x: startX, z: startZ });
+    }
+    for (let i = 0; i < smoothed.length; i++) {
       pts.push(toWorld(smoothed[i][0], smoothed[i][1]));
     }
-    pts.push({ x: endX, z: endZ });
+    const lastPt = pts[pts.length - 1];
+    if (!lastPt || Math.hypot(lastPt.x - endX, lastPt.z - endZ) > 2.5) {
+      pts.push({ x: endX, z: endZ });
+    }
     return pts;
   }
 
+  const GPS_CHEVRON_MAX = 22;
+  let gpsChevronInst = null;
+  let gpsChevronMat = null;
+  function ensureGpsChevronMesh() {
+    if (gpsChevronInst) return;
+    // Geometria em formato de seta/chevron (>) apontando para +Z
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0.95);
+    shape.lineTo(0.85, -0.45);
+    shape.lineTo(0.42, -0.45);
+    shape.lineTo(0, 0.25);
+    shape.lineTo(-0.42, -0.45);
+    shape.lineTo(-0.85, -0.45);
+    shape.closePath();
+    const geo = new THREE.ShapeGeometry(shape);
+    geo.rotateX(Math.PI / 2);
+    gpsChevronMat = new THREE.MeshBasicMaterial({
+      color: 0xd500f9,
+      transparent: true,
+      opacity: 0.88,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
+    gpsChevronInst = new THREE.InstancedMesh(geo, gpsChevronMat, GPS_CHEVRON_MAX);
+    gpsChevronInst.frustumCulled = false;
+    gpsChevronInst.visible = false;
+    scene.add(gpsChevronInst);
+  }
+
+  function updateGpsRoadIndicators() {
+    const banner = el('gpsHudBanner');
+    if (!gpsRoute.active || !gpsRoute.waypoints || gpsRoute.waypoints.length < 2) {
+      if (gpsChevronInst) gpsChevronInst.visible = false;
+      if (banner) banner.classList.add('hidden');
+      return;
+    }
+    ensureGpsChevronMesh();
+    const refPos = player.inCar ? player.inCar.pos : player.pos;
+    const wps = gpsRoute.waypoints;
+
+    // Acha o segmento mais próximo do jogador na rota
+    let bestSeg = 0;
+    let bestDistSq = 1e12;
+    let bestT = 0;
+    for (let i = 0; i < wps.length - 1; i++) {
+      const ax = wps[i].x, az = wps[i].z;
+      const bx = wps[i + 1].x, bz = wps[i + 1].z;
+      const vx = bx - ax, vz = bz - az;
+      const lenSq = vx * vx + vz * vz || 1e-6;
+      const t = Math.max(0, Math.min(1, ((refPos.x - ax) * vx + (refPos.z - az) * vz) / lenSq));
+      const px = ax + vx * t, pz = az + vz * t;
+      const dSq = (refPos.x - px) * (refPos.x - px) + (refPos.z - pz) * (refPos.z - pz);
+      if (dSq < bestDistSq) { bestDistSq = dSq; bestSeg = i; bestT = t; }
+    }
+
+    // Calcula distância restante total rua por rua e próxima curva
+    let remDist = Math.hypot(
+      wps[bestSeg + 1].x - (wps[bestSeg].x + (wps[bestSeg + 1].x - wps[bestSeg].x) * bestT),
+      wps[bestSeg + 1].z - (wps[bestSeg].z + (wps[bestSeg + 1].z - wps[bestSeg].z) * bestT)
+    );
+    for (let i = bestSeg + 1; i < wps.length - 1; i++) {
+      remDist += Math.hypot(wps[i + 1].x - wps[i].x, wps[i + 1].z - wps[i].z);
+    }
+
+    let turnIcon = '⬆';
+    if (bestSeg + 2 < wps.length) {
+      const d1x = wps[bestSeg + 1].x - wps[bestSeg].x;
+      const d1z = wps[bestSeg + 1].z - wps[bestSeg].z;
+      const distToCorner = Math.hypot(wps[bestSeg + 1].x - refPos.x, wps[bestSeg + 1].z - refPos.z);
+      if (distToCorner < 48) {
+        const d2x = wps[bestSeg + 2].x - wps[bestSeg + 1].x;
+        const d2z = wps[bestSeg + 2].z - wps[bestSeg + 1].z;
+        const a1 = Math.atan2(d1x, d1z);
+        const a2 = Math.atan2(d2x, d2z);
+        let da = a2 - a1;
+        while (da > Math.PI) da -= Math.PI * 2;
+        while (da < -Math.PI) da += Math.PI * 2;
+        if (da > 0.42) turnIcon = '↰';
+        else if (da < -0.42) turnIcon = '↱';
+      }
+    }
+
+    if (banner) {
+      banner.classList.remove('hidden');
+      const lblEl = el('gpsHudLabel');
+      const dstEl = el('gpsHudDist');
+      const arrEl = el('gpsTurnArrow');
+      if (lblEl) lblEl.textContent = gpsRoute.label || 'Destino GPS';
+      if (dstEl) dstEl.textContent = remDist >= 1000 ? (remDist / 1000).toFixed(2) + ' km' : Math.round(remDist) + ' m';
+      if (arrEl) arrEl.textContent = turnIcon;
+    }
+
+    // Posiciona 22 chevrons animados ao longo dos próximos ~95m da rota sobre o asfalto!
+    const dummy = new THREE.Object3D();
+    const pulseShift = ((performance.now() * 0.0045) % 1.0) * 4.2;
+    let segIdx = bestSeg;
+    let segX = wps[bestSeg].x + (wps[bestSeg + 1].x - wps[bestSeg].x) * bestT;
+    let segZ = wps[bestSeg].z + (wps[bestSeg + 1].z - wps[bestSeg].z) * bestT;
+    let stepNeeded = 3.5 + pulseShift;
+    let count = 0;
+
+    while (segIdx < wps.length - 1 && count < GPS_CHEVRON_MAX) {
+      const bx = wps[segIdx + 1].x, bz = wps[segIdx + 1].z;
+      const dx = bx - segX, dz = bz - segZ;
+      const segRem = Math.hypot(dx, dz);
+      if (segRem >= stepNeeded && segRem > 0.01) {
+        const r = stepNeeded / segRem;
+        segX += dx * r;
+        segZ += dz * r;
+        const gy = getWalkableGround(segX, segZ, refPos.y, 3.5) ?? refPos.y;
+        const yaw = Math.atan2(dx, dz);
+        dummy.position.set(segX, gy + 0.11, segZ);
+        dummy.rotation.set(0, yaw, 0);
+        const sc = player.inCar ? 1.15 : 0.82;
+        dummy.scale.set(sc, 1, sc);
+        dummy.updateMatrix();
+        gpsChevronInst.setMatrixAt(count, dummy.matrix);
+        count++;
+        stepNeeded = 4.4;
+      } else {
+        stepNeeded -= segRem;
+        segIdx++;
+        if (segIdx < wps.length - 1) {
+          segX = wps[segIdx].x;
+          segZ = wps[segIdx].z;
+        }
+      }
+    }
+    gpsChevronInst.count = count;
+    gpsChevronInst.visible = count > 0;
+    if (count > 0) {
+      gpsChevronMat.color.setHex(player.inCar ? 0x00e5ff : 0xd500f9);
+      gpsChevronInst.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   function setGpsDestination(wx, wz, label = 'Destino GPS') {
-    const gy = getGroundHeight(wx, wz) ?? player.pos.y;
+    const gy = getWalkableGround(wx, wz, player.pos.y, 25.0) ?? getGroundHeight(wx, wz) ?? player.pos.y;
     gpsRoute.active = true;
+    gpsRoute.label = label;
     gpsRoute.target.set(wx, gy, wz);
-    gpsRoute.waypoints = computeGpsRoute(player.pos.x, player.pos.z, wx, wz);
+    const refP = player.inCar ? player.inCar.pos : player.pos;
+    gpsRoute.waypoints = computeGpsRoute(refP.x, refP.z, wx, wz);
     if (!gpsRoute.beacon) {
       gpsRoute.beacon = new THREE.Mesh(
         new THREE.CylinderGeometry(1.8, 1.8, 30, 14, 1, true),
@@ -1469,6 +1665,7 @@
     }
     gpsRoute.beacon.position.set(wx, gy + 14, wz);
     gpsRoute.beacon.visible = true;
+    updateGpsRoadIndicators();
     showToast(`📍 ${label} marcado no GPS!`);
   }
 
@@ -1476,6 +1673,8 @@
     gpsRoute.active = false;
     gpsRoute.waypoints = [];
     if (gpsRoute.beacon) gpsRoute.beacon.visible = false;
+    if (gpsChevronInst) gpsChevronInst.visible = false;
+    if (el('gpsHudBanner')) el('gpsHudBanner').classList.add('hidden');
   }
 
   function getCellRaw(ix, iy) {
@@ -1698,8 +1897,43 @@
     return anyHit;
   }
 
+  // Amostragem bilinear contínua do terreno/escadarias para eliminar flutuação em rampas e degraus
+  function sampleCellWalkableH(ix, iy, curY, maxStep) {
+    if (!colMeta) return null;
+    const uf = getUnderFloorAt(ix, iy, curY, maxStep);
+    const raw = getCellRaw(ix, iy);
+    const topH = (raw !== -32768 && raw < 29500) ? raw * 0.01 : null;
+    if (topH !== null && topH - curY <= maxStep) {
+      if (uf !== null && Math.abs(uf - curY) < Math.abs(topH - curY) - 0.35) return uf;
+      return topH;
+    }
+    if (uf !== null) return uf;
+    return null;
+  }
+
   function getWalkableGround(x, z, curY, maxStep = 1.25) {
     const outside = isOutsideIsland(x, z);
+    if (colMeta && colGrid) {
+      const fx = (x - colMeta.minX) / colMeta.step - 0.5;
+      const fy = (-z - colMeta.minY) / colMeta.step - 0.5;
+      const ix0 = Math.floor(fx);
+      const iy0 = Math.floor(fy);
+      const tx = fx - ix0;
+      const ty = fy - iy0;
+      const h00 = sampleCellWalkableH(ix0, iy0, curY, maxStep);
+      const h10 = sampleCellWalkableH(ix0 + 1, iy0, curY, maxStep);
+      const h01 = sampleCellWalkableH(ix0, iy0 + 1, curY, maxStep);
+      const h11 = sampleCellWalkableH(ix0 + 1, iy0 + 1, curY, maxStep);
+      if (h00 !== null && h10 !== null && h01 !== null && h11 !== null) {
+        const maxH = Math.max(h00, h10, h01, h11);
+        const minH = Math.min(h00, h10, h01, h11);
+        if (maxH - minH <= 1.45) {
+          const hx0 = h00 + (h10 - h00) * tx;
+          const hx1 = h01 + (h11 - h01) * tx;
+          return hx0 + (hx1 - hx0) * ty;
+        }
+      }
+    }
     const gy = getGroundHeight(x, z);
     if (gy === null) {
       if (outside) return null;
@@ -1707,7 +1941,6 @@
       return uf !== null ? uf : Math.max(0.05, curY);
     }
     if (gy - curY > maxStep) {
-      // Embaixo de viaduto/ponte/marquise: usa o piso real inferior da camada de colisão
       const uf = getUnderFloorWorld(x, z, curY, maxStep);
       if (uf !== null) return uf;
       if (getRoadCellAt(x, z) === 1) return Math.max(0.05, curY);
@@ -1726,6 +1959,16 @@
       return outside ? null : Math.max(0.05, curY);
     }
     return gy;
+  }
+
+  // Escolhe sempre o piso térreo real ao spawnar carros/NPCs (evita nascer flutuando em árvores, marquises ou escadarias)
+  function getSafeGroundForSpawn(x, z, fallbackY = 0.05) {
+    const uf = getUnderFloorWorld(x, z, 0.15, 60.0, 2.0);
+    const top = getGroundHeight(x, z);
+    if (uf !== null && top !== null && top - uf > 1.7) return uf;
+    if (top !== null && top < 45) return top;
+    if (uf !== null) return uf;
+    return fallbackY;
   }
 
   // --- Partículas de Fumaça Drift & Motor Danificado ---
@@ -1928,33 +2171,221 @@
     return m;
   }
 
+  // Extrai portas articuladas (DoorL / DoorR) automaticamente da carroceria de modelos sem portas separadas (Mustang, Gol, PM)
+  function ensureArticulatedCarDoors(carRoot) {
+    if (!carRoot || carRoot.userData._doorsExtracted) return;
+    carRoot.userData._doorsExtracted = true;
+    let hasDoorL = false, hasDoorR = false;
+    carRoot.traverse((n) => {
+      if (n.name === 'DoorL') hasDoorL = true;
+      if (n.name === 'DoorR') hasDoorR = true;
+    });
+    if (hasDoorL && hasDoorR) return;
+
+    carRoot.updateMatrixWorld(true);
+    const invRoot = new THREE.Matrix4().copy(carRoot.matrixWorld).invert();
+    const chassisNode = carRoot.getObjectByName('Chassis') || carRoot;
+    chassisNode.updateMatrixWorld(true);
+
+    const hingeZ = 0.68;
+    const rearZ = -0.66;
+    const minY = 0.26;
+    const maxY = 1.24;
+    const minOuterX = 0.58;
+
+    const pivotL = new THREE.Group();
+    pivotL.name = 'DoorL';
+    pivotL.position.set(0.86, 0.65, hingeZ);
+    const pivotR = new THREE.Group();
+    pivotR.name = 'DoorR';
+    pivotR.position.set(-0.86, 0.65, hingeZ);
+    carRoot.add(pivotL, pivotR);
+    carRoot.updateMatrixWorld(true);
+    const invL = new THREE.Matrix4().copy(pivotL.matrixWorld).invert();
+    const invR = new THREE.Matrix4().copy(pivotR.matrixWorld).invert();
+
+    const candidateMeshes = [];
+    carRoot.traverse((m) => {
+      if (!m.isMesh || !m.geometry || !m.geometry.attributes.position) return;
+      const nm = (m.name || '').toLowerCase();
+      if (nm.includes('wheel') || nm.includes('rim') || nm.includes('steer') || nm.includes('int_') ||
+          nm.includes('head') || nm.includes('tail') || nm.includes('bumper') || nm.includes('plate') ||
+          nm.includes('siren') || nm.includes('light') || nm.includes('windshield')) return;
+      candidateMeshes.push(m);
+    });
+
+    const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+    let countL = 0, countR = 0;
+
+    candidateMeshes.forEach((mesh) => {
+      const geo = mesh.geometry;
+      const posAttr = geo.attributes.position;
+      const normAttr = geo.attributes.normal;
+      const uvAttr = geo.attributes.uv;
+      const idxAttr = geo.index;
+      const triCount = idxAttr ? (idxAttr.count / 3) : (posAttr.count / 3);
+      if (triCount < 2) return;
+
+      const toRoot = new THREE.Matrix4().multiplyMatrices(invRoot, mesh.matrixWorld);
+      const keepTris = [];
+      const leftTris = [];
+      const rightTris = [];
+
+      for (let t = 0; t < triCount; t++) {
+        const i0 = idxAttr ? idxAttr.getX(t * 3) : t * 3;
+        const i1 = idxAttr ? idxAttr.getX(t * 3 + 1) : t * 3 + 1;
+        const i2 = idxAttr ? idxAttr.getX(t * 3 + 2) : t * 3 + 2;
+        vA.fromBufferAttribute(posAttr, i0).applyMatrix4(toRoot);
+        vB.fromBufferAttribute(posAttr, i1).applyMatrix4(toRoot);
+        vC.fromBufferAttribute(posAttr, i2).applyMatrix4(toRoot);
+        const cx = (vA.x + vB.x + vC.x) / 3;
+        const cy = (vA.y + vB.y + vC.y) / 3;
+        const cz = (vA.z + vB.z + vC.z) / 3;
+        const spanZ = Math.max(vA.z, vB.z, vC.z) - Math.min(vA.z, vB.z, vC.z);
+        if (cz >= rearZ && cz <= hingeZ && cy >= minY && cy <= maxY && Math.abs(cx) >= minOuterX && spanZ < 1.65) {
+          if (cx > 0) leftTris.push([i0, i1, i2]);
+          else rightTris.push([i0, i1, i2]);
+        } else {
+          keepTris.push([i0, i1, i2]);
+        }
+      }
+
+      if (leftTris.length === 0 && rightTris.length === 0) return;
+
+      const buildSubGeo = (tris, xform) => {
+        const n = tris.length * 3;
+        const pArr = new Float32Array(n * 3);
+        const nArr = normAttr ? new Float32Array(n * 3) : null;
+        const uArr = uvAttr ? new Float32Array(n * 2) : null;
+        const nMat = xform ? new THREE.Matrix3().getNormalMatrix(xform) : null;
+        const tv = new THREE.Vector3();
+        let o = 0;
+        for (let i = 0; i < tris.length; i++) {
+          for (let k = 0; k < 3; k++) {
+            const vi = tris[i][k];
+            tv.fromBufferAttribute(posAttr, vi);
+            if (xform) tv.applyMatrix4(xform);
+            pArr[o * 3] = tv.x; pArr[o * 3 + 1] = tv.y; pArr[o * 3 + 2] = tv.z;
+            if (nArr) {
+              tv.fromBufferAttribute(normAttr, vi);
+              if (nMat) tv.applyMatrix3(nMat).normalize();
+              nArr[o * 3] = tv.x; nArr[o * 3 + 1] = tv.y; nArr[o * 3 + 2] = tv.z;
+            }
+            if (uArr) {
+              uArr[o * 2] = uvAttr.getX(vi);
+              uArr[o * 2 + 1] = uvAttr.getY(vi);
+            }
+            o++;
+          }
+        }
+        const ng = new THREE.BufferGeometry();
+        ng.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
+        if (nArr) ng.setAttribute('normal', new THREE.BufferAttribute(nArr, 3));
+        else ng.computeVertexNormals();
+        if (uArr) ng.setAttribute('uv', new THREE.BufferAttribute(uArr, 2));
+        return ng;
+      };
+
+      if (leftTris.length > 0) {
+        const mToL = new THREE.Matrix4().multiplyMatrices(invL, mesh.matrixWorld);
+        pivotL.add(new THREE.Mesh(buildSubGeo(leftTris, mToL), mesh.material));
+        countL += leftTris.length;
+      }
+      if (rightTris.length > 0) {
+        const mToR = new THREE.Matrix4().multiplyMatrices(invR, mesh.matrixWorld);
+        pivotR.add(new THREE.Mesh(buildSubGeo(rightTris, mToR), mesh.material));
+        countR += rightTris.length;
+      }
+      if (keepTris.length > 0) {
+        mesh.geometry = buildSubGeo(keepTris, null);
+      } else {
+        mesh.visible = false;
+      }
+    });
+
+    // Painel escuro interno da soleira/porta para não ver vazio quando a porta abrir
+    const trimMat = new THREE.MeshLambertMaterial({ color: 0x14171f, side: THREE.DoubleSide });
+    if (countL > 0) {
+      const innerL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.56, 1.24), trimMat);
+      innerL.position.set(-0.04, -0.10, -0.64);
+      pivotL.add(innerL);
+    }
+    if (countR > 0) {
+      const innerR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.56, 1.24), trimMat);
+      innerR.position.set(0.04, -0.10, -0.64);
+      pivotR.add(innerR);
+    }
+  }
+
+  let _headBeamGeo = null;
+  let _flareQuadGeo = null;
   function setupCarHierarchy(carObj, forwardPlusZ) {
     const parts = {
       chassis: null, doorL: null, doorR: null, steeringWheel: null,
+      doorLSign: -1, doorRSign: 1,
       wheels: [], lightB: null, lightR: null,
-      headMats: [], tailMats: [], intLightMats: [], paintMats: []
+      headMats: [], tailMats: [], intLightMats: [], paintMats: [],
+      headLightGroup: new THREE.Group(),
+      tailLightGroup: new THREE.Group(),
+      tailMat: null,
+      driverSeatOffset: new THREE.Vector3(0.36, 0.12, -0.05)
     };
+
+    carObj.updateMatrixWorld(true);
+    const invRoot = new THREE.Matrix4().copy(carObj.matrixWorld).invert();
+    const rootBox = new THREE.Box3().setFromObject(carObj);
+    const headPositions = [];
+    const tailPositions = [];
+    const _wp = new THREE.Vector3();
 
     const wheelNodes = [];
     carObj.traverse((c) => {
       if (c.name === 'Chassis') parts.chassis = c;
       if (c.name === 'DoorL') parts.doorL = c;
       if (c.name === 'DoorR') parts.doorR = c;
-      if (c.name === 'SteeringWheel') {
-        parts.steeringWheel = c;
-        parts.steeringInitQ = c.quaternion.clone();
+      if (c.name === 'SteeringWheel' || /^STEER_HR/i.test(c.name)) {
+        if (!parts.steeringWheel) {
+          parts.steeringWheel = c;
+          parts.steeringInitQ = c.quaternion.clone();
+        }
       }
       if (c.name === 'LightBlue') parts.lightB = c;
       if (c.name === 'LightRed') parts.lightR = c;
       if (['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR'].includes(c.name)) wheelNodes.push(c);
+
+      if (c.name === 'HeadL' || c.name === 'HeadR') {
+        c.getWorldPosition(_wp); _wp.applyMatrix4(invRoot);
+        headPositions.push(_wp.clone());
+      }
+      if (c.name === 'TailL' || c.name === 'TailR') {
+        c.getWorldPosition(_wp); _wp.applyMatrix4(invRoot);
+        tailPositions.push(_wp.clone());
+      }
+
       if (c.isMesh && c.material) {
         const isArr = Array.isArray(c.material);
         const mats = isArr ? c.material : [c.material];
         const newMats = mats.map((m) => {
           if (!m) return m;
-          if (m.name.includes('Headlight')) parts.headMats.push(m);
-          if (m.name.includes('Taillight')) parts.tailMats.push(m);
-          if (m.name.includes('InteriorLight')) parts.intLightMats.push(m);
+          const mn = (m.name || '').toLowerCase();
+          if (mn.includes('headlight') || mn.includes('vehiclelight')) {
+            const hm = m.clone();
+            if (hm.emissive) hm.emissive.setHex(0xfff4d2);
+            parts.headMats.push(hm);
+            return hm;
+          }
+          if (mn.includes('taillight') || mn.includes('red_glass') || mn.includes('light_glass_red')) {
+            const tm = m.clone();
+            if (tm.emissive) tm.emissive.setHex(0xff1a1a);
+            parts.tailMats.push(tm);
+            return tm;
+          }
+          if (mn.includes('interiorlight')) {
+            const im = m.clone();
+            if (im.emissive) im.emissive.setHex(0xffe4a8);
+            parts.intLightMats.push(im);
+            return im;
+          }
           if (m.name.includes('SaveiroPaintMat') || m.name.includes('MustangPaintMat') || m.name.includes('CarBody')) {
             const cloned = m.clone();
             parts.paintMats.push(cloned);
@@ -1965,6 +2396,97 @@
         c.material = isArr ? newMats : newMats[0];
       }
     });
+
+    // Calcula sinal automático de abertura para FORA de DoorL e DoorR (funciona em todos os 5 carros!)
+    const computeOutwardSign = (doorObj) => {
+      if (!doorObj) return 0;
+      const db = new THREE.Box3().setFromObject(doorObj);
+      const dc = new THREE.Vector3();
+      db.getCenter(dc); dc.applyMatrix4(invRoot);
+      const dp = new THREE.Vector3();
+      doorObj.getWorldPosition(dp); dp.applyMatrix4(invRoot);
+      const dz = dc.z - dp.z; // normalmente < 0 (dobradiça na frente, porta vai para trás)
+      const sideX = dc.x >= 0 ? 1 : -1;
+      // x' = x + z * sin(ry) => para |x'| crescer no sinal sideX, sin(ry) deve ter sinal = sideX * sign(dz)
+      return (dz <= 0 ? -sideX : sideX);
+    };
+    if (parts.doorL) parts.doorLSign = computeOutwardSign(parts.doorL);
+    if (parts.doorR) parts.doorRSign = computeOutwardSign(parts.doorR);
+
+    // Determina posição do assento do motorista a partir do volante real
+    if (parts.steeringWheel) {
+      parts.steeringWheel.getWorldPosition(_wp);
+      _wp.applyMatrix4(invRoot);
+      parts.driverSeatOffset.set(_wp.x, Math.max(0.08, _wp.y - 0.72), _wp.z - 0.42);
+    }
+
+    // Posições exatas das 2 lentes dos faróis dianteiros e 2 lanternas traseiras
+    const fSign = forwardPlusZ ? 1 : -1;
+    const frontZ = (fSign > 0 ? rootBox.max.z : rootBox.min.z) - fSign * 0.08;
+    const rearZ = (fSign > 0 ? rootBox.min.z : rootBox.max.z) + fSign * 0.06;
+    const halfW = Math.max(0.55, (rootBox.max.x - rootBox.min.x) * 0.34);
+    const hL = headPositions.length >= 2 ? headPositions[0] : new THREE.Vector3(halfW, 0.64, frontZ);
+    const hR = headPositions.length >= 2 ? headPositions[1] : new THREE.Vector3(-halfW, 0.64, frontZ);
+    const tL = tailPositions.length >= 2 ? tailPositions[0] : new THREE.Vector3(halfW, 0.68, rearZ);
+    const tR = tailPositions.length >= 2 ? tailPositions[1] : new THREE.Vector3(-halfW, 0.68, rearZ);
+    parts.headMidLocal = new THREE.Vector3((hL.x + hR.x) * 0.5, (hL.y + hR.y) * 0.5, (hL.z + hR.z) * 0.5);
+
+    if (!_headBeamGeo) {
+      _headBeamGeo = new THREE.ConeGeometry(0.95, 7.5, 12, 1, true);
+      // Ápice do cone na lente do farol (0,0,0), abrindo para +Z
+      _headBeamGeo.translate(0, -3.75, 0);
+      _headBeamGeo.rotateX(-Math.PI / 2);
+      _flareQuadGeo = new THREE.CircleGeometry(0.18, 12);
+    }
+    const headBeamMat = new THREE.MeshBasicMaterial({
+      color: 0xfff6d8,
+      transparent: true,
+      opacity: 0.19,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
+    const headFlareMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
+    parts.tailMat = new THREE.MeshBasicMaterial({
+      color: 0xff1722,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
+
+    [hL, hR].forEach((hp) => {
+      const beam = new THREE.Mesh(_headBeamGeo, headBeamMat);
+      beam.position.copy(hp);
+      beam.rotation.x = 0.08 * fSign;
+      if (fSign < 0) beam.rotation.y = Math.PI;
+      parts.headLightGroup.add(beam);
+
+      const flare = new THREE.Mesh(_flareQuadGeo, headFlareMat);
+      flare.position.set(hp.x, hp.y, hp.z + fSign * 0.03);
+      parts.headLightGroup.add(flare);
+    });
+    [tL, tR].forEach((tp) => {
+      const tf = new THREE.Mesh(_flareQuadGeo, parts.tailMat);
+      tf.scale.set(1.15, 0.65, 1);
+      tf.position.set(tp.x, tp.y, tp.z - fSign * 0.03);
+      parts.tailLightGroup.add(tf);
+    });
+
+    const attachTarget = parts.chassis || carObj;
+    attachTarget.add(parts.headLightGroup);
+    attachTarget.add(parts.tailLightGroup);
 
     wheelNodes.forEach((wn) => {
       const parent = wn.parent;
@@ -2185,7 +2707,8 @@
     const isSaveiro = typeKey === 'volkswagen_saveiro';
     const isMustang = typeKey === 'ford_mustang_gtd';
     const isLexus = typeKey === 'lexus_lc_500_wald';
-    const forwardPlusZ = isSaveiro || isMustang || isLexus;
+    // Todos os 5 veículos (Saveiro, Mustang, Lexus, Gol e PM) têm a frente real em +Z!
+    const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
 
     const v = {
@@ -2869,6 +3392,7 @@
       input.interiorYaw = 0;
       input.interiorPitch = -0.10;
     }
+    if (player.inCar && player.mesh) player.mesh.visible = !player.firstPersonCar;
     ui.btnCarCam.classList.toggle('on', player.firstPersonCar);
     showToast(player.firstPersonCar ? '📷 Câmera: Interior 360° (arraste para olhar)' : '📷 Câmera: Externa');
   };
@@ -2881,7 +3405,8 @@
     setSpin360Mode(false);
     if (ui.btnSpinPlayer) ui.btnSpinPlayer.classList.add('hidden');
     if (ui.btnFrontCam) ui.btnFrontCam.classList.add('hidden');
-    player.mesh.visible = false;
+    // Motorista visível sentado no banco ao volante (oculta apenas se ativar câmera de 1ª pessoa)
+    if (player.mesh) player.mesh.visible = !player.firstPersonCar;
     car.doorsOpen = true;
     car.doorAutoTimer = 1.4;
     ui.footControls.classList.add('hidden');
@@ -2906,12 +3431,17 @@
     ui.screenFx.classList.remove('nitro-active');
     car.doorsOpen = true;
     car.doorAutoTimer = 1.6;
-    const sideX = Math.cos(car.yaw) * 2.1;
-    const sideZ = -Math.sin(car.yaw) * 2.1;
-    player.pos.set(car.pos.x - sideX, car.pos.y + 0.4, car.pos.z - sideZ);
+    const driverSideSign = (car.parts && car.parts.driverSeatOffset && car.parts.driverSeatOffset.x >= 0) ? 1 : -1;
+    const sideX = Math.cos(car.yaw) * 2.05 * driverSideSign;
+    const sideZ = -Math.sin(car.yaw) * 2.05 * driverSideSign;
+    player.pos.set(car.pos.x + sideX, car.pos.y + 0.35, car.pos.z + sideZ);
     resolveMapWallCollision(player.pos, 0.55);
-    player.mesh.position.copy(player.pos);
-    player.mesh.visible = true;
+    if (player.mesh) {
+      player.mesh.scale.setScalar(1);
+      player.mesh.position.copy(player.pos);
+      player.mesh.rotation.set(0, player.yaw + Math.PI, 0);
+      player.mesh.visible = true;
+    }
     ui.carControls.classList.add('hidden');
     ui.footControls.classList.remove('hidden');
     ui.speedBox.classList.add('hidden');
@@ -2940,6 +3470,8 @@
       el('bankModal').classList.remove('hidden');
     } else if (nearestProp.type === 'job') {
       el('jobModal').classList.remove('hidden');
+    } else if (nearestProp.type === 'safehouse') {
+      el('safehouseModal').classList.remove('hidden');
     } else if (nearestProp.type === 'mcdonalds') {
       if (save.cash >= 25) {
         save.cash -= 25;
@@ -2960,22 +3492,88 @@
     activeEl.classList.add('active');
   }
 
-  function applyEnv(env) {
-    if (env === 'night') {
-      scene.background.setHex(0x0b1222); scene.fog.color.setHex(0x0b1222);
-      hemiLight.intensity = 0.42; sunLight.intensity = 0.34;
-      renderer.toneMappingExposure = 1.02;
-      ui.clockText.textContent = '22:30'; el('phoneTime').textContent = '22:30';
-    } else if (env === 'sunset') {
-      scene.background.setHex(0xd97a54); scene.fog.color.setHex(0xd97a54);
-      hemiLight.intensity = 0.72; sunLight.intensity = 1.12;
-      renderer.toneMappingExposure = 1.12;
-      ui.clockText.textContent = '17:45'; el('phoneTime').textContent = '17:45';
+  // --- CICLO AUTOMÁTICO DE ILUMINAÇÃO 24H (MANHÃ, DIA, TARDE & NOITE) ---
+  let gameClockHours = 8.5; // começa às 08:30 da manhã
+  let envMode = 'auto';
+  const _cSkyA = new THREE.Color(), _cSkyB = new THREE.Color();
+  const _cSunA = new THREE.Color(), _cSunB = new THREE.Color();
+
+  const DAY_KEYFRAMES = [
+    { h: 0.0,  sky: 0x070c18, sun: 0x6b8cff, hemi: 0.36, sunI: 0.28, exp: 0.98, night: 1.0 },
+    { h: 5.2,  sky: 0x16223d, sun: 0x8fa8ff, hemi: 0.42, sunI: 0.35, exp: 1.00, night: 0.85 },
+    { h: 6.8,  sky: 0xe89b72, sun: 0xffb878, hemi: 0.62, sunI: 0.92, exp: 1.08, night: 0.15 },
+    { h: 9.0,  sky: 0x6db3f2, sun: 0xfff6e5, hemi: 0.66, sunI: 1.18, exp: 1.06, night: 0.0 },
+    { h: 15.8, sky: 0x6db3f2, sun: 0xfff4de, hemi: 0.66, sunI: 1.16, exp: 1.06, night: 0.0 },
+    { h: 17.8, sky: 0xd97a54, sun: 0xff8c42, hemi: 0.70, sunI: 1.08, exp: 1.12, night: 0.35 },
+    { h: 19.3, sky: 0x182038, sun: 0x7c98ff, hemi: 0.44, sunI: 0.38, exp: 1.02, night: 0.92 },
+    { h: 24.0, sky: 0x070c18, sun: 0x6b8cff, hemi: 0.36, sunI: 0.28, exp: 0.98, night: 1.0 }
+  ];
+
+  function applyLightingForHour(hr) {
+    const h = ((hr % 24) + 24) % 24;
+    let k0 = DAY_KEYFRAMES[0], k1 = DAY_KEYFRAMES[1];
+    for (let i = 0; i < DAY_KEYFRAMES.length - 1; i++) {
+      if (h >= DAY_KEYFRAMES[i].h && h <= DAY_KEYFRAMES[i + 1].h) {
+        k0 = DAY_KEYFRAMES[i];
+        k1 = DAY_KEYFRAMES[i + 1];
+        break;
+      }
+    }
+    const span = Math.max(0.001, k1.h - k0.h);
+    const t = Math.max(0, Math.min(1, (h - k0.h) / span));
+    _cSkyA.setHex(k0.sky); _cSkyB.setHex(k1.sky);
+    _cSkyA.lerp(_cSkyB, t);
+    scene.background.copy(_cSkyA);
+    scene.fog.color.copy(_cSkyA);
+
+    _cSunA.setHex(k0.sun); _cSunB.setHex(k1.sun);
+    sunLight.color.copy(_cSunA.lerp(_cSunB, t));
+    hemiLight.intensity = k0.hemi + (k1.hemi - k0.hemi) * t;
+    sunLight.intensity = k0.sunI + (k1.sunI - k0.sunI) * t;
+    renderer.toneMappingExposure = k0.exp + (k1.exp - k0.exp) * t;
+
+    const nf = k0.night + (k1.night - k0.night) * t;
+    streetLampState.nightFactor = nf;
+    if (nf > 0.08) {
+      streetLampState.bulbMat.color.setHex(0xffe9a6);
+      streetLampState.haloMat.opacity = 0.26 * nf;
     } else {
-      scene.background.setHex(0x6db3f2); scene.fog.color.setHex(0x6db3f2);
-      hemiLight.intensity = 0.62; sunLight.intensity = 1.18;
-      renderer.toneMappingExposure = 1.06;
-      ui.clockText.textContent = '12:00'; el('phoneTime').textContent = '12:00';
+      streetLampState.bulbMat.color.setHex(0x464d57);
+      streetLampState.haloMat.opacity = 0.0;
+    }
+
+    const hh = String(Math.floor(h)).padStart(2, '0');
+    const mm = String(Math.floor((h % 1) * 60)).padStart(2, '0');
+    const timeStr = `${hh}:${mm}`;
+    if (ui.clockText && ui.clockText.textContent !== timeStr) {
+      ui.clockText.textContent = timeStr;
+      const pt = el('phoneTime');
+      if (pt) pt.textContent = timeStr;
+      const wIco = el('phWeatherIco');
+      const wLbl = el('phWeatherLbl');
+      if (wIco && wLbl) {
+        if (h >= 5.5 && h < 9.0) { wIco.textContent = '🌅'; wLbl.textContent = 'Manhã'; }
+        else if (h >= 9.0 && h < 16.2) { wIco.textContent = '☀️'; wLbl.textContent = 'Dia Limpo'; }
+        else if (h >= 16.2 && h < 19.0) { wIco.textContent = '🌇'; wLbl.textContent = 'Fim de Tarde'; }
+        else { wIco.textContent = '🌙'; wLbl.textContent = 'Noite'; }
+      }
+    }
+  }
+
+  function applyEnv(env) {
+    envMode = env || 'auto';
+    if (envMode === 'night') gameClockHours = 22.5;
+    else if (envMode === 'sunset') gameClockHours = 17.75;
+    else if (envMode === 'morning') gameClockHours = 7.5;
+    else if (envMode === 'day') gameClockHours = 12.0;
+    applyLightingForHour(gameClockHours);
+  }
+
+  function updateDayNightCycle(dt) {
+    if (envMode === 'auto') {
+      // 1 hora do jogo a cada 18s reais (~7.2 min para 24h completas)
+      gameClockHours = (gameClockHours + dt / 18.0) % 24.0;
+      applyLightingForHour(gameClockHours);
     }
   }
 
@@ -3019,9 +3617,10 @@
 
   // Restaura preferências salvas ao iniciar
   (function restoreSavedSettings() {
-    const envBtn = document.querySelector(`#env-pills .pill-btn[data-env="${save.env || 'day'}"]`);
+    const envVal = (!save.env || save.env === 'day') ? 'auto' : save.env;
+    const envBtn = document.querySelector(`#env-pills .pill-btn[data-env="${envVal}"]`);
     if (envBtn) setActivePill('#env-pills', envBtn);
-    applyEnv(save.env || 'day');
+    applyEnv(envVal);
 
     const qBtn = document.querySelector(`#gfx-quality-pills .pill-btn[data-quality="${save.gfxQuality || 'medium'}"]`);
     if (qBtn) setActivePill('#gfx-quality-pills', qBtn);
@@ -3099,6 +3698,27 @@
         const mats = Array.isArray(c.material) ? c.material : [c.material];
         mats.forEach((m) => {
           if (!m) return;
+          const mn = (m.name || '').toLowerCase();
+          if (m.map) { m.map.encoding = THREE.sRGBEncoding; m.map.needsUpdate = true; }
+          if (mn.includes('eye_occlusion') || mn.includes('tearline') || mn.includes('cornea')) {
+            m.transparent = true;
+            m.opacity = 0.0;
+            m.depthWrite = false;
+            return;
+          }
+          if (mn.includes('eyelash') || mn.includes('brow')) {
+            m.transparent = true;
+            m.alphaTest = 0.25;
+            m.depthWrite = false;
+            m.side = THREE.DoubleSide;
+            return;
+          }
+          if (mn.includes('glasses') || mn.includes('lens')) {
+            m.transparent = true;
+            m.opacity = 0.34;
+            m.depthWrite = false;
+            return;
+          }
           if (m.transparent && m.opacity === 0) m.opacity = 1;
         });
       }
@@ -3760,6 +4380,7 @@
     if (isOpen('creditsModal')) return { el: el('creditsModal'), closeBtn: el('btnCloseCredits') };
     if (isOpen('bankModal')) return { el: el('bankModal'), closeBtn: el('btnCloseBank') };
     if (isOpen('jobModal')) return { el: el('jobModal'), closeBtn: el('btnCloseJob') };
+    if (isOpen('safehouseModal')) return { el: el('safehouseModal'), closeBtn: el('btnCloseSafehouse') };
     if (isOpen('phoneModal')) return { el: el('phoneModal'), closeBtn: el('btnClosePhone') };
     if (isOpen('fullMapModal')) return { el: el('fullMapModal'), closeBtn: el('btnCloseFullMap'), isMap: true };
     if (isOpen('modal-overlay')) return { el: el('modal-overlay'), closeBtn: el('btnCloseSettings') };
@@ -4175,7 +4796,18 @@
   el('btnMenu').onclick = window.togglePauseMenu;
 
   // --- TELEFONE BRASIL RP ---
-  el('btnPhone').onclick = () => { AudioFX.ring(); el('phoneModal').classList.remove('hidden'); };
+  function openPhoneHome() {
+    document.querySelectorAll('#phoneModal .ifruit-screen').forEach((s) => s.classList.add('hidden'));
+    if (el('phScreenHome')) el('phScreenHome').classList.remove('hidden');
+    if (el('phBankBal')) el('phBankBal').textContent = Math.round(save.bank || 0).toLocaleString('pt-BR');
+    if (el('phCashBal')) el('phCashBal').textContent = Math.round(save.cash || 0).toLocaleString('pt-BR');
+  }
+
+  el('btnPhone').onclick = () => {
+    AudioFX.ring();
+    openPhoneHome();
+    el('phoneModal').classList.remove('hidden');
+  };
   el('btnCamMode').onclick = () => {
     if (player.inCar) {
       ui.btnCarCam.click();
@@ -4187,32 +4819,80 @@
     el('btnCamMode').textContent = player.firstPersonFoot ? '1ª' : '👁️';
     showToast(player.firstPersonFoot ? '👁️ Visão: 1ª Pessoa' : '👁️ Visão: 3ª Pessoa');
   };
+  // --- Efeitos Visuais de Impacto de Soco / Combate ---
+  const punchFxList = [];
+  const punchRingGeo = new THREE.RingGeometry(0.08, 0.34, 12);
+  function spawnPunchImpact(x, y, z, isKnockout) {
+    const mat = new THREE.MeshBasicMaterial({
+      color: isKnockout ? 0xff2a2a : 0xffd54f,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    });
+    const m = new THREE.Mesh(punchRingGeo, mat);
+    m.position.set(x, y, z);
+    m.lookAt(camera.position);
+    scene.add(m);
+    punchFxList.push({ mesh: m, mat, life: 0.28, maxLife: 0.28, ko: isKnockout });
+  }
+  function updatePunchFx(dt) {
+    for (let i = punchFxList.length - 1; i >= 0; i--) {
+      const fx = punchFxList[i];
+      fx.life -= dt;
+      if (fx.life <= 0) {
+        scene.remove(fx.mesh);
+        fx.mat.dispose();
+        punchFxList.splice(i, 1);
+        continue;
+      }
+      const p = 1.0 - fx.life / fx.maxLife;
+      const sc = 1.0 + p * (fx.ko ? 2.6 : 1.7);
+      fx.mesh.scale.setScalar(sc);
+      fx.mesh.lookAt(camera.position);
+      fx.mat.opacity = (1.0 - p) * 0.9;
+    }
+  }
+
   if (el('btnPunch')) {
     let lastPunchMs = 0;
+    let comboStep = 0;
     el('btnPunch').onclick = () => {
       if (player.inCar || gameMode !== 'playing') return;
       const now = performance.now();
-      if (now - lastPunchMs < 280) return;
+      if (now - lastPunchMs < 250) return;
+      if (now - lastPunchMs > 1200) comboStep = 0;
+      else comboStep = (comboStep + 1) % 3;
       lastPunchMs = now;
-      player.punchAnim = 0.24;
-      vibrate(25);
-      AudioFX.beep(180, 0.06, 'triangle', 0.12);
 
-      const fwdX = Math.sin(player.yaw);
-      const fwdZ = Math.cos(player.yaw);
+      player.punchCombo = comboStep; // 0 = Jab Dir, 1 = Direto Esq, 2 = Gancho Forte!
+      player.punchAnim = comboStep === 2 ? 0.34 : 0.26;
+      vibrate(comboStep === 2 ? 40 : 22);
+      AudioFX.beep(comboStep === 2 ? 140 : 190, 0.06, 'triangle', 0.14);
+
+      // Em player.mesh, a frente real do deslocamento é (-sin(player.yaw), -cos(player.yaw))!
+      const fwdX = -Math.sin(player.yaw);
+      const fwdZ = -Math.cos(player.yaw);
+      // Leve avanço físico no golpe (lunge estilo GTA)
+      player.velX = (player.velX || 0) + fwdX * (comboStep === 2 ? 3.2 : 1.8);
+      player.velZ = (player.velZ || 0) + fwdZ * (comboStep === 2 ? 3.2 : 1.8);
+
       let hitSomething = false;
 
-      // 1. Dano e knockback em NPCs à frente / próximos
+      // 1. Dano, stagger, fuga/revide e nocaute em NPCs à frente
       for (const n of npcs) {
         if (n.dead) continue;
         const dx = n.pos.x - player.pos.x;
         const dz = n.pos.z - player.pos.z;
         const d = Math.hypot(dx, dz);
-        if (d > 2.35 || Math.abs(n.pos.y - player.pos.y) > 2.0) continue;
+        if (d > 2.45 || Math.abs(n.pos.y - player.pos.y) > 2.0) continue;
         const dot = d > 0.01 ? (dx * fwdX + dz * fwdZ) / d : 1;
-        if (d > 1.0 && dot < 0.15) continue;
+        if (d > 0.95 && dot < 0.15) continue;
 
         if (n.isJobNpc) {
+          n.springVel = (n.springVel || 0) + 1.8;
           showToast('💃 Ei! Cuidado onde bate!');
           hitSomething = true;
           continue;
@@ -4220,34 +4900,51 @@
 
         const nx = d > 0.01 ? dx / d : fwdX;
         const nz = d > 0.01 ? dz / d : fwdZ;
-        n.hp = Math.max(0, n.hp - 34);
-        n.vel.set(nx * 6.5, 0, nz * 6.5);
-        n.velY = 2.4;
-        n.knockTimer = n.hp <= 0 ? 10.0 : 1.1;
-        hitSomething = true;
+        const dmg = comboStep === 2 ? 48 : 32;
+        n.hp = Math.max(0, n.hp - dmg);
+        const isKo = n.hp <= 0;
+        spawnPunchImpact(n.pos.x - nx * 0.25, n.pos.y + 1.25, n.pos.z - nz * 0.25, isKo);
 
-        if (n.hp <= 0 && !n.dead) {
+        if (isKo) {
           n.dead = true;
-          const loot = 20 + Math.floor(Math.random() * 45);
+          n.vel.set(nx * 6.8, 0, nz * 6.8);
+          n.velY = 2.6;
+          n.knockTimer = 9.5;
+          const loot = 25 + Math.floor(Math.random() * 50);
           save.cash += loot; persistSave(); refreshMoneyUI();
           player.wanted = Math.min(5, player.wanted + 1);
           player.wantedTimer = 25;
-          showToast(`👊 Nocaute! +R$ ${loot} | Procurado!`, 2400);
+          camShakeTimer = 0.22; camShakePower = 0.18;
+          showToast(`💥 NOCAUTE! +R$ ${loot} | Procurado!`, 2400);
         } else {
-          showToast(`👊 Soco! HP NPC: ${Math.round(n.hp)}%`, 1200);
+          // Stagger realista + reação (foge assustado ou parte pra briga!)
+          n.vel.set(nx * (comboStep === 2 ? 5.2 : 3.4), 0, nz * (comboStep === 2 ? 5.2 : 3.4));
+          n.velY = comboStep === 2 ? 1.6 : 0.6;
+          n.knockTimer = comboStep === 2 ? 0.95 : 0.42;
+          n.hitStagger = 0.55;
+          if (n.hostileToPlayer === undefined) n.hostileToPlayer = Math.random() < 0.35;
+          if (!n.hostileToPlayer) {
+            n.aiState = 'flee';
+            n.aiTimer = 5.5;
+            n.yaw = Math.atan2(-nx, -nz);
+          }
+          camShakeTimer = 0.12; camShakePower = 0.09;
+          showToast(`${comboStep === 2 ? '💥 Gancho!' : '👊 Soco!'} HP: ${Math.round(n.hp)}% ${n.hostileToPlayer ? '⚠️ Vai revidar!' : '🏃 Fugindo!'}`, 1300);
         }
+        hitSomething = true;
         break;
       }
 
-      // 2. Dano leve em carros estacionados próximos
+      // 2. Dano e impacto em carros estacionados próximos
       if (!hitSomething) {
         for (const v of vehicles) {
           const dx = v.pos.x - player.pos.x;
           const dz = v.pos.z - player.pos.z;
           const d = Math.hypot(dx, dz);
-          if (d < 2.65 && Math.abs(v.pos.y - player.pos.y) < 2.2) {
-            v.hp = Math.max(0, v.hp - 8);
-            v.roll = (v.roll || 0) + 0.05;
+          if (d < 2.85 && Math.abs(v.pos.y - player.pos.y) < 2.2) {
+            v.hp = Math.max(0, v.hp - (comboStep === 2 ? 12 : 7));
+            v.roll = (v.roll || 0) + (comboStep === 1 ? -0.07 : 0.07);
+            spawnPunchImpact(player.pos.x + fwdX * 1.1, player.pos.y + 1.0, player.pos.z + fwdZ * 1.1, false);
             hitSomething = true;
             showToast(`👊 Lataria atingida! (${Math.round(v.hp)}%)`, 1200);
             break;
@@ -4262,14 +4959,15 @@
           const dx = p.pos.x - player.pos.x;
           const dz = p.pos.z - player.pos.z;
           const d = Math.hypot(dx, dz);
-          if (d < 2.1 && Math.abs(p.pos.y - player.pos.y) < 2.2) {
+          if (d < 2.2 && Math.abs(p.pos.y - player.pos.y) < 2.2) {
             const nx = d > 0.01 ? dx / d : fwdX;
             const nz = d > 0.01 ? dz / d : fwdZ;
             p.state = 'falling';
             p.resetTimer = 18.0;
-            p.vel.set(nx * 5.2, 2.5, nz * 5.2);
+            p.vel.set(nx * 5.6, 2.6, nz * 5.6);
             p.fallAxis.set(nz, 0, -nx).normalize();
-            p.fallSpeed = 4.5;
+            p.fallSpeed = 4.8;
+            spawnPunchImpact(p.pos.x, p.pos.y + 0.9, p.pos.z, false);
             hitSomething = true;
             break;
           }
@@ -4278,7 +4976,7 @@
 
       if (hitSomething) {
         AudioFX.crash();
-        vibrate(50);
+        vibrate(comboStep === 2 ? 70 : 45);
       }
     };
   }
@@ -4366,38 +5064,91 @@
     showToast('💃 Chamando a garota do Job mais próxima! Ela está indo até você.', 3200);
   };
 
-  el('phCallMustang').onclick = () => {
-    el('phoneModal').classList.add('hidden');
-    const sx = player.pos.x + Math.sin(input.camYaw) * 5.0;
-    const sz = player.pos.z + Math.cos(input.camYaw) * 5.0;
-    const gy = getGroundHeight(sx, sz) ?? player.pos.y;
-    spawnVehicle('ford_mustang_gtd', sx, gy + 0.1, sz, input.camYaw);
-    AudioFX.beep(520, 0.12);
-    showToast('🏎️ Ford Mustang GTD entregue na rua!');
-  };
+  const SAFEHOUSE_POS = { x: -135.0, y: 0.02, z: -182.0, carX: -129.2, carZ: -182.0 };
 
-  if (el('phCallLexus')) {
-    el('phCallLexus').onclick = () => {
-      el('phoneModal').classList.add('hidden');
-      const sx = player.pos.x + Math.sin(input.camYaw) * 5.0;
-      const sz = player.pos.z + Math.cos(input.camYaw) * 5.0;
-      const gy = getGroundHeight(sx, sz) ?? player.pos.y;
-      spawnVehicle('lexus_lc_500_wald', sx, gy + 0.1, sz, input.camYaw);
-      AudioFX.beep(560, 0.12);
-      showToast('🏁 Lexus LC 500 Wald (Apex Circuit) entregue na rua!');
-    };
+  function deliverPhoneCar(typeKey, label) {
+    el('phoneModal').classList.add('hidden');
+    const refP = player.inCar ? player.inCar.pos : player.pos;
+    // Busca ponto asfaltado mais próximo para o carro nunca nascer em parede/escadaria/flutuando
+    let sx = refP.x - Math.sin(input.camYaw) * 5.2;
+    let sz = refP.z - Math.cos(input.camYaw) * 5.2;
+    if (colMeta && roadGrid) {
+      const N = roadGridN;
+      const worldW = colMeta.W * colMeta.step, worldH = colMeta.H * colMeta.step;
+      const gx0 = Math.max(0, Math.min(N - 1, Math.floor(((sx - colMeta.minX) / worldW) * N)));
+      const gy0 = Math.max(0, Math.min(N - 1, Math.floor((1.0 - (-sz - colMeta.minY) / worldH) * N)));
+      const [rx, ry] = snapNodeToNearestRoad(gx0, gy0, N, 28);
+      sx = colMeta.minX + ((rx + 0.5) / N) * worldW;
+      sz = -(colMeta.minY + (1.0 - (ry + 0.5) / N) * worldH);
+    }
+    const gy = getSafeGroundForSpawn(sx, sz, refP.y);
+    spawnVehicle(typeKey, sx, gy + 0.04, sz, input.camYaw + Math.PI);
+    AudioFX.beep(540, 0.12);
+    showToast(`${label} entregue na via!`);
   }
 
-  el('phCallSaveiro').onclick = () => {
-    el('phoneModal').classList.add('hidden');
-    const sx = player.pos.x + Math.sin(input.camYaw) * 5.0;
-    const sz = player.pos.z + Math.cos(input.camYaw) * 5.0;
-    const gy = getGroundHeight(sx, sz) ?? player.pos.y;
-    spawnVehicle('volkswagen_saveiro', sx, gy + 0.1, sz, input.camYaw);
-    AudioFX.beep(520, 0.12);
-    showToast('🛻 VW Saveiro entregue na rua!');
-  };
+  // Navegação interna de telas do Smartphone iFruit
+  document.querySelectorAll('#phoneModal [data-open]').forEach((btn) => {
+    btn.onclick = () => {
+      const targetId = btn.getAttribute('data-open');
+      document.querySelectorAll('#phoneModal .ifruit-screen').forEach((s) => s.classList.add('hidden'));
+      if (el(targetId)) el(targetId).classList.remove('hidden');
+      AudioFX.beep(680, 0.05, 'sine', 0.07);
+    };
+  });
+  document.querySelectorAll('#phoneModal [data-back]').forEach((btn) => {
+    btn.onclick = () => {
+      openPhoneHome();
+      AudioFX.beep(520, 0.05, 'sine', 0.07);
+    };
+  });
+  document.querySelectorAll('#phoneModal [data-set-env]').forEach((btn) => {
+    btn.onclick = () => {
+      const mode = btn.getAttribute('data-set-env');
+      save.env = mode;
+      persistSave();
+      applyEnv(mode);
+      const pill = document.querySelector(`#env-pills .pill-btn[data-env="${mode}"]`);
+      if (pill) setActivePill('#env-pills', pill);
+      el('phoneModal').classList.add('hidden');
+      showToast(`🌤️ Iluminação: ${btn.querySelector('b') ? btn.querySelector('b').textContent : mode}`);
+    };
+  });
 
+  if (el('phCallMustang')) el('phCallMustang').onclick = () => deliverPhoneCar('ford_mustang_gtd', '🏎️ Ford Mustang GTD');
+  if (el('phCallLexus')) el('phCallLexus').onclick = () => deliverPhoneCar('lexus_lc_500_wald', '🏁 Lexus LC 500 Wald');
+  if (el('phCallSaveiro')) el('phCallSaveiro').onclick = () => deliverPhoneCar('volkswagen_saveiro', '🛻 VW Saveiro');
+  if (el('phCallGol')) el('phCallGol').onclick = () => deliverPhoneCar('car_gol', '🚗 VW Gol Quadrado');
+  if (el('phCallPm')) el('phCallPm').onclick = () => deliverPhoneCar('car_pm', '🚓 Viatura PM-BR');
+
+  if (el('phGoHomeQuick')) {
+    el('phGoHomeQuick').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      setGpsDestination(SAFEHOUSE_POS.x, SAFEHOUSE_POS.z, '🏠 Minha Casa');
+      AudioFX.coin();
+    };
+  }
+  if (el('phGpsHome')) {
+    el('phGpsHome').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      setGpsDestination(SAFEHOUSE_POS.x, SAFEHOUSE_POS.z, '🏠 Minha Casa');
+      AudioFX.coin();
+    };
+  }
+  if (el('phGpsBank')) {
+    el('phGpsBank').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      setGpsDestination(-177.2, -173.0, '🏧 Caixa Banco 24h');
+      AudioFX.coin();
+    };
+  }
+  if (el('phGpsJob')) {
+    el('phGpsJob').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      setGpsDestination(-177.2, -185.0, '📦 Central Delivery');
+      AudioFX.coin();
+    };
+  }
   if (el('phGoMcEnter')) {
     el('phGoMcEnter').onclick = () => {
       el('phoneModal').classList.add('hidden');
@@ -4412,12 +5163,81 @@
       AudioFX.coin();
     };
   }
+  if (el('phGpsStadium')) {
+    el('phGpsStadium').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      setGpsDestination(-110.0, -985.0, '🏟️ Estádio Memorial');
+      AudioFX.coin();
+    };
+  }
+  if (el('phGpsAirport')) {
+    el('phGpsAirport').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      setGpsDestination(-552.0, -512.0, '✈️ Aeroporto Internacional');
+      AudioFX.coin();
+    };
+  }
+  if (el('phOpenFullMap')) {
+    el('phOpenFullMap').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      el('minimapBtn').click();
+    };
+  }
+  if (el('phOpenJobApp')) {
+    el('phOpenJobApp').onclick = () => {
+      el('phoneModal').classList.add('hidden');
+      el('jobModal').classList.remove('hidden');
+    };
+  }
 
   el('phOpenBank').onclick = () => {
     el('phoneModal').classList.add('hidden');
     refreshMoneyUI();
     el('bankModal').classList.remove('hidden');
   };
+
+  // --- Interações da Casa Própria (Safehouse) ---
+  if (el('btnCloseSafehouse')) el('btnCloseSafehouse').onclick = () => el('safehouseModal').classList.add('hidden');
+  if (el('btnHouseSleep')) {
+    el('btnHouseSleep').onclick = () => {
+      player.hp = 100;
+      player.stamina = 100;
+      player.wanted = 0;
+      player.wantedTimer = 0;
+      ui.hpFill.style.width = '100%';
+      ui.stamFill.style.width = '100%';
+      gameClockHours = (gameClockHours + 6.0) % 24.0;
+      applyLightingForHour(gameClockHours);
+      el('safehouseModal').classList.add('hidden');
+      AudioFX.coin();
+      showToast('🛏️ Descansou em casa! Vida 100%, Procurado limpo e +6h no relógio.');
+    };
+  }
+  if (el('btnHouseWardrobe')) {
+    el('btnHouseWardrobe').onclick = () => {
+      const charKeys = Object.keys(PLAYABLE_CHARS);
+      const curIdx = Math.max(0, charKeys.indexOf(player.charId || 'npc1'));
+      const nextKey = charKeys[(curIdx + 1) % charKeys.length];
+      selectPlayableCharacter(nextKey, false);
+    };
+  }
+  if (el('btnHouseSpawnCar')) {
+    el('btnHouseSpawnCar').onclick = () => {
+      const key = save.starterCar || 'lexus_lc_500_wald';
+      const gy = getSafeGroundForSpawn(SAFEHOUSE_POS.carX, SAFEHOUSE_POS.carZ, SAFEHOUSE_POS.y);
+      spawnVehicle(key, SAFEHOUSE_POS.carX, gy + 0.04, SAFEHOUSE_POS.carZ, 0);
+      el('safehouseModal').classList.add('hidden');
+      AudioFX.beep(580, 0.12);
+      showToast('🚗 Seu veículo foi estacionado na porta de casa!');
+    };
+  }
+  if (el('btnHouseBank')) {
+    el('btnHouseBank').onclick = () => {
+      el('safehouseModal').classList.add('hidden');
+      refreshMoneyUI();
+      el('bankModal').classList.remove('hidden');
+    };
+  }
 
   // Modais Banco & Delivery
   el('btnCloseBank').onclick = () => el('bankModal').classList.add('hidden');
@@ -4515,7 +5335,11 @@
         loadGLB('models/props/prop_job.glb')
       ]);
 
-      const carKeep = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'SteeringWheel', 'LightBlue', 'LightRed']);
+      const carKeep = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'SteeringWheel', 'LightBlue', 'LightRed', 'HeadL', 'HeadR', 'TailL', 'TailR']);
+      // Separa portas articuladas (DoorL e DoorR) no Mustang, Gol e Viatura PM antes de otimizar draw calls!
+      ensureArticulatedCarDoors(mustangScene);
+      ensureArticulatedCarDoors(golScene);
+      ensureArticulatedCarDoors(pmScene);
       mergeStaticMeshesByMaterial(saveiroScene, carKeep);
       mergeStaticMeshesByMaterial(mustangScene, carKeep);
       mergeStaticMeshesByMaterial(golScene, carKeep);
@@ -4556,19 +5380,53 @@
       await preloadAllMapChunks(sp.x, sp.z);
       updateChunkStreaming(sp.x, sp.z);
 
-      const atmY = getGroundHeight(sp.x + 8, sp.z - 6) ?? groundY;
-      atmScene.position.set(sp.x + 8, atmY, sp.z - 6);
+      // Caixa 24h e Central Delivery reposicionados em cima da CALÇADA real (fora da rua!) virados para a avenida
+      const atmX = -177.2, atmZ = -173.0;
+      const atmY = getSafeGroundForSpawn(atmX, atmZ, groundY);
+      atmScene.position.set(atmX, atmY, atmZ);
+      atmScene.rotation.y = Math.PI * 0.5;
       scene.add(atmScene);
       rpProps.push({ type: 'atm', label: 'Banco 24h', pos: atmScene.position, mesh: atmScene });
+      extraSolidBoxes.push({ minX: atmX - 0.75, maxX: atmX + 0.75, minZ: atmZ - 0.75, maxZ: atmZ + 0.75 });
 
-      const jobY = getGroundHeight(sp.x - 8, sp.z - 6) ?? groundY;
-      jobScene.position.set(sp.x - 8, jobY, sp.z - 6);
+      const jobX = -177.2, jobZ = -185.0;
+      const jobY = getSafeGroundForSpawn(jobX, jobZ, groundY);
+      jobScene.position.set(jobX, jobY, jobZ);
+      jobScene.rotation.y = Math.PI * 0.5;
       scene.add(jobScene);
       rpProps.push({ type: 'job', label: 'Central Delivery NPC', pos: jobScene.position, mesh: jobScene });
+      extraSolidBoxes.push({ minX: jobX - 0.85, maxX: jobX + 0.85, minZ: jobZ - 0.85, maxZ: jobZ + 0.85 });
 
-      // NPC 2 (doa_npc_fighter.glb) toma o lugar da NPC 1 como a NPC do Job!
-      const jobNpc = spawnNPC(sp.x - 4.2, groundY, sp.z - 4.8, true, { doa: true });
-      if (jobNpc) { jobNpc.yaw = 0.2; jobNpc.mesh.rotation.y = jobNpc.yaw; }
+      // Casa Própria do Protagonista (Safehouse RP com pórtico iluminado e vaga de garagem na frente!)
+      (function buildPlayerSafehouse() {
+        const hx = SAFEHOUSE_POS.x, hz = SAFEHOUSE_POS.z;
+        const hy = getSafeGroundForSpawn(hx, hz, groundY);
+        SAFEHOUSE_POS.y = hy;
+        const hGrp = new THREE.Group();
+        hGrp.position.set(hx, hy, hz);
+        const markerMat = new THREE.MeshBasicMaterial({
+          color: 0xffca28,
+          transparent: true,
+          opacity: 0.52,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 2.4, 18, 1, true), markerMat);
+        ring.position.y = 1.2;
+        hGrp.add(ring);
+        const pad = new THREE.Mesh(
+          new THREE.CircleGeometry(1.4, 20).rotateX(-Math.PI / 2),
+          new THREE.MeshBasicMaterial({ color: 0xffee58, transparent: true, opacity: 0.75, depthWrite: false })
+        );
+        pad.position.y = 0.05;
+        hGrp.add(pad);
+        scene.add(hGrp);
+        rpProps.push({ type: 'safehouse', label: 'Minha Casa', pos: hGrp.position, mesh: hGrp });
+      })();
+
+      // NPC 2 (doa_npc_fighter.glb) na calçada ao lado da Central Delivery!
+      const jobNpc = spawnNPC(jobX + 0.4, jobY, jobZ + 2.4, true, { doa: true });
+      if (jobNpc) { jobNpc.yaw = Math.PI * 0.5; jobNpc.mesh.rotation.y = jobNpc.yaw; }
 
       // Sincroniza pills do Lobby com o save
       document.querySelectorAll('#car-pills .pill-btn').forEach((b) => {
@@ -4578,11 +5436,11 @@
         s.classList.toggle('active', s.dataset.color === (save.paint || '#ffffff'));
       });
 
-      // Saveiro + Mustang GTD + Lexus LC 500 Wald alinhados na avenida aberta!
-      spawnVehicle(save.starterCar || 'volkswagen_saveiro', sp.x + 2.8, (getGroundHeight(sp.x + 2.8, sp.z + 6.0) ?? groundY) + 0.05, sp.z + 6.0, 0.0);
-      spawnVehicle('ford_mustang_gtd', sp.x - 2.8, (getGroundHeight(sp.x - 2.8, sp.z + 6.0) ?? groundY) + 0.05, sp.z + 6.0, 0.0);
-      spawnVehicle('lexus_lc_500_wald', sp.x - 2.8, (getGroundHeight(sp.x - 2.8, sp.z + 14.0) ?? groundY) + 0.05, sp.z + 14.0, 0.0);
-      spawnVehicle('car_pm', sp.x + 2.8, (getGroundHeight(sp.x + 2.8, sp.z + 14.0) ?? groundY) + 0.05, sp.z + 14.0, 0.0);
+      // Veículos alinhados ordenadamente nas faixas de estacionamento da avenida real (sem flutuar!)
+      spawnVehicle(save.starterCar || 'volkswagen_saveiro', -172.0, getSafeGroundForSpawn(-172.0, -173.0, groundY) + 0.03, -173.0, 0.0);
+      spawnVehicle('ford_mustang_gtd', -172.0, getSafeGroundForSpawn(-172.0, -180.5, groundY) + 0.03, -180.5, 0.0);
+      spawnVehicle('lexus_lc_500_wald', -172.0, getSafeGroundForSpawn(-172.0, -188.0, groundY) + 0.03, -188.0, 0.0);
+      spawnVehicle('car_pm', -172.0, getSafeGroundForSpawn(-172.0, -195.5, groundY) + 0.03, -195.5, 0.0);
 
       // Semáforos nativos do mapa funcionando + Tráfego de veículos
       await setupTrafficLightsAndCrosswalks();
@@ -4693,6 +5551,7 @@
     if (keys['KeyW']) jy -= 1;
     if (keys['KeyS']) jy += 1;
 
+    updateDayNightCycle(dt);
     if (!player.inCar) updatePlayer(dt, jx, jy);
     else updateDrivingApex(dt);
 
@@ -4700,6 +5559,9 @@
     updateTraffic(dt);
     updateTrafficLights(dt);
     updateVehiclesVisuals(dt);
+    if (player.inCar) updateSeatedDriverVisual();
+    updatePunchFx(dt);
+    updateGpsRoadIndicators();
     updateSmoke(dt);
     updateWaterWaves(now * 0.001);
     updateCamera(dt);
@@ -4719,6 +5581,86 @@
     renderer.render(scene, camera);
   }
 
+  // Atualiza posição e pose sentada do personagem dentro do carro (mãos ao volante!)
+  function updateSeatedDriverVisual() {
+    const car = player.inCar;
+    if (!car || !player.mesh) return;
+    player.mesh.visible = !player.firstPersonCar;
+    if (!player.mesh.visible) return;
+    const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
+    const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
+    const wx = car.pos.x + seat.x * cosY + seat.z * sinY;
+    const wz = car.pos.z - seat.x * sinY + seat.z * cosY;
+    player.mesh.scale.setScalar(0.84);
+    player.mesh.position.set(wx, car.pos.y + seat.y, wz);
+    player.mesh.rotation.set(car.pitch || 0, car.yaw, -(car.roll || 0));
+
+    const st = (car.steerAngle || 0) * 0.45;
+    if (player.isDoa && player.bones && player.bones['pelvis_07']) {
+      setBoneWorldDelta(player, 'leg_left_thigh_08', -1.32, 0, -0.18);
+      setBoneWorldDelta(player, 'leg_right_thigh_015', -1.32, 0, 0.18);
+      setBoneWorldDelta(player, 'leg_left_knee_09', 1.38, 0, 0);
+      setBoneWorldDelta(player, 'leg_right_knee_016', 1.38, 0, 0);
+      setBoneWorldDelta(player, 'arm_left_shoulder_2_0266', -0.95 + st, 0, -0.52);
+      setBoneWorldDelta(player, 'arm_right_shoulder_2_0292', -0.95 - st, 0, 0.52);
+      setBoneWorldDelta(player, 'arm_left_elbow_0267', -0.45, 0, 0);
+      setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.45, 0, 0);
+    } else if (player.isCustomChar && player.customRig) {
+      const r = player.customRig;
+      if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.32, 0, 0);
+      if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.32, 0, 0);
+      if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.36, 0, 0);
+      if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.36, 0, 0);
+      if (r.armL) setBoneWorldDelta(player, r.armL, -0.92 + st, 0, 0.12);
+      if (r.armR) setBoneWorldDelta(player, r.armR, -0.92 - st, 0, -0.12);
+      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.42, 0, 0);
+      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.42, 0, 0);
+    } else if (player.bones && player.bones.Hips) {
+      setBoneDelta(player, 'ThighL', -1.32, 0, 0);
+      setBoneDelta(player, 'ThighR', -1.32, 0, 0);
+      setBoneDelta(player, 'ShinL', 1.36, 0, 0);
+      setBoneDelta(player, 'ShinR', 1.36, 0, 0);
+      setBoneDelta(player, 'UpperArmL', -0.95 + st, 0, 0.22);
+      setBoneDelta(player, 'UpperArmR', -0.95 - st, 0, -0.22);
+      setBoneDelta(player, 'ForeArmL', -0.42, 0, 0.15);
+      setBoneDelta(player, 'ForeArmR', -0.42, 0, -0.15);
+    }
+  }
+
+  // Colisão OBB retangular orientada (impede atravessar capô, portas e porta-malas de veículos!)
+  function resolveEntityCarOBB(pos, radius, carPos, carYaw, halfW = 1.00, halfL = 2.28) {
+    if (Math.abs(pos.y - carPos.y) > 2.2) return false;
+    const dx = pos.x - carPos.x;
+    const dz = pos.z - carPos.z;
+    if (dx * dx + dz * dz > (halfL + radius + 0.6) * (halfL + radius + 0.6)) return false;
+    const cosY = Math.cos(carYaw), sinY = Math.sin(carYaw);
+    // Projeta no espaço local do carro (lx = lateral, lz = longitudinal)
+    const lx = dx * cosY - dz * sinY;
+    const lz = dx * sinY + dz * cosY;
+    const clx = Math.max(-halfW, Math.min(halfW, lx));
+    const clz = Math.max(-halfL, Math.min(halfL, lz));
+    let ox = lx - clx;
+    let oz = lz - clz;
+    const distSq = ox * ox + oz * oz;
+    if (distSq >= radius * radius) return false;
+    let nlx, nlz, pen;
+    if (distSq > 1e-6) {
+      const dist = Math.sqrt(distSq);
+      nlx = ox / dist;
+      nlz = oz / dist;
+      pen = radius - dist;
+    } else {
+      const penX = halfW - Math.abs(lx) + radius;
+      const penZ = halfL - Math.abs(lz) + radius;
+      if (penX < penZ) { nlx = lx >= 0 ? 1 : -1; nlz = 0; pen = penX; }
+      else { nlx = 0; nlz = lz >= 0 ? 1 : -1; pen = penZ; }
+    }
+    const wx = nlx * cosY + nlz * sinY;
+    const wz = -nlx * sinY + nlz * cosY;
+    pos.x += wx * pen;
+    pos.z += wz * pen;
+    return true;
+  }
   function updateWaterWaves(timeSec) {
     seaTex.offset.x = (timeSec * 0.022) % 1;
     seaTex.offset.y = (timeSec * 0.015) % 1;
@@ -4849,9 +5791,12 @@
     }
 
     if (player.punchAnim && player.punchAnim > 0) {
+      const maxDur = player.punchCombo === 2 ? 0.34 : 0.26;
       player.punchAnim = Math.max(0, player.punchAnim - dt);
-      const pT = Math.sin((player.punchAnim / 0.24) * Math.PI);
-      if (player.parts.ArmR) player.parts.ArmR.rotation.x = -1.65 * pT;
+      const pT = Math.sin((player.punchAnim / maxDur) * Math.PI);
+      const isLeft = player.punchCombo === 1;
+      if (player.parts.ArmR && !isLeft) player.parts.ArmR.rotation.x = -1.75 * pT;
+      if (player.parts.ArmL && isLeft) player.parts.ArmL.rotation.x = -1.75 * pT;
     }
 
     for (const n of npcs) {
@@ -4868,26 +5813,11 @@
     }
 
     for (const v of vehicles) {
-      const dx = player.pos.x - v.pos.x;
-      const dz = player.pos.z - v.pos.z;
-      const d = Math.hypot(dx, dz);
-      const minD = 1.65;
-      if (d > 0.001 && d < minD) {
-        const push = minD - d;
-        player.pos.x += (dx / d) * push;
-        player.pos.z += (dz / d) * push;
-      }
+      resolveEntityCarOBB(player.pos, 0.46, v.pos, v.yaw, 0.98, 2.28);
     }
 
     for (const tc of trafficCars) {
-      const dx = player.pos.x - tc.pos.x;
-      const dz = player.pos.z - tc.pos.z;
-      const d = Math.hypot(dx, dz);
-      const minD = tc.radius + 0.55;
-      if (d > 0.001 && d < minD) {
-        const push = minD - d;
-        player.pos.x += (dx / d) * push;
-        player.pos.z += (dz / d) * push;
+      if (resolveEntityCarOBB(player.pos, 0.46, tc.pos, tc.yaw, 0.98, Math.max(2.1, tc.radius * 1.15))) {
         if (tc.speed > 5.0) tc.speed *= 0.2;
       }
     }
@@ -5265,9 +6195,22 @@
       }
       v.mesh.rotation.y = v.yaw;
 
+      // Calcula inclinação real da rampa/escadaria sob as rodas dianteiras e traseiras para assentar 100% no chão!
+      const fs = v.forwardSign || 1;
+      const sinY = Math.sin(v.yaw);
+      const cosY = Math.cos(v.yaw);
+      if (v.grounded) {
+        const fh = getWalkableGround(v.pos.x + sinY * 1.35 * fs, v.pos.z + cosY * 1.35 * fs, v.pos.y, 1.4) ?? v.pos.y;
+        const rh = getWalkableGround(v.pos.x - sinY * 1.35 * fs, v.pos.z - cosY * 1.35 * fs, v.pos.y, 1.4) ?? v.pos.y;
+        const slopePitch = Math.max(-0.42, Math.min(0.42, -Math.atan2(fh - rh, 2.7) * fs));
+        v.slopePitch = (v.slopePitch || 0) + (slopePitch - (v.slopePitch || 0)) * Math.min(1, dt * 10);
+      } else {
+        v.slopePitch = (v.slopePitch || 0) * Math.max(0, 1 - dt * 4);
+      }
+
       if (v.parts.chassis) {
         v.parts.chassis.rotation.z = v.roll || 0;
-        v.parts.chassis.rotation.x = v.pitch || 0;
+        v.parts.chassis.rotation.x = (v.pitch || 0) + (v.slopePitch || 0);
       }
 
       if (v.doorAutoTimer > 0) {
@@ -5277,10 +6220,10 @@
           if (player.inCar === v) ui.btnCarDoors.classList.remove('on');
         }
       }
-      const targetDoor = v.doorsOpen ? 1.02 : 0.0;
-      v.doorAngle += (targetDoor - v.doorAngle) * Math.min(1, dt * 8);
-      if (v.parts.doorL) v.parts.doorL.rotation.y = -v.doorAngle;
-      if (v.parts.doorR) v.parts.doorR.rotation.y = v.doorAngle;
+      const targetDoor = v.doorsOpen ? 1.05 : 0.0;
+      v.doorAngle += (targetDoor - v.doorAngle) * Math.min(1, dt * 8.5);
+      if (v.parts.doorL) v.parts.doorL.rotation.y = (v.parts.doorLSign || -1) * v.doorAngle;
+      if (v.parts.doorR) v.parts.doorR.rotation.y = (v.parts.doorRSign || 1) * v.doorAngle;
 
       if (v.parts.steeringWheel) {
         _steerWheelQuat.setFromAxisAngle(_steerWheelAxis, v.steerAngle * 2.2);
@@ -5291,22 +6234,29 @@
         }
       }
 
-      const wheelSpin = v.speed * dt * 2.9 * (v.forwardSign || -1);
+      const wheelSpin = v.speed * dt * 2.9 * fs;
       v.parts.wheels.forEach((w) => {
         if (w.front) w.steerPivot.rotation.y = v.steerAngle * 0.34;
         w.spinObj.rotation.x = (w.spinObj.rotation.x + wheelSpin) % (Math.PI * 2);
       });
 
       const interiorLit = v.doorsOpen || (v === player.inCar && v.lightsOn);
-      const fs = v.forwardSign || -1;
-      const sinY = Math.sin(v.yaw);
-      const cosY = Math.cos(v.yaw);
+      const braking = (v === player.inCar) && (input.brake || keys['KeyS'] || keys['ArrowDown']);
+      if (v.parts.headLightGroup) v.parts.headLightGroup.visible = Boolean(v.lightsOn);
+      if (v.parts.tailLightGroup) {
+        v.parts.tailLightGroup.visible = Boolean(v.lightsOn || braking);
+        if (v.parts.tailMat) v.parts.tailMat.opacity = braking ? 0.98 : 0.58;
+      }
+
       if (v === player.inCar && v.lightsOn && window._sharedCarHeadSpot) {
         activeSpotUsed = true;
         const hs = window._sharedCarHeadSpot;
-        hs.position.set(v.pos.x + sinY * 1.9 * fs, v.pos.y + 0.72, v.pos.z + cosY * 1.9 * fs);
-        hs.target.position.set(v.pos.x + sinY * 20 * fs, v.pos.y + 0.1, v.pos.z + cosY * 20 * fs);
-        hs.intensity = 2.2;
+        const hm = v.parts.headMidLocal || { x: 0, y: 0.68, z: 2.0 * fs };
+        const hwx = v.pos.x + hm.x * cosY + hm.z * sinY;
+        const hwz = v.pos.z - hm.x * sinY + hm.z * cosY;
+        hs.position.set(hwx, v.pos.y + hm.y, hwz);
+        hs.target.position.set(hwx + sinY * 24 * fs, v.pos.y - 0.15, hwz + cosY * 24 * fs);
+        hs.intensity = 2.6 + streetLampState.nightFactor * 1.4;
       }
       if (interiorLit && (v === player.inCar || (gameMode === 'lobby' && v === vehicles[0])) && window._sharedCarDomeLight) {
         activeDomeUsed = true;
@@ -5314,9 +6264,8 @@
         dl.position.set(v.pos.x + sinY * 0.15 * fs, v.pos.y + 1.15, v.pos.z + cosY * 0.15 * fs);
         dl.intensity = 1.6;
       }
-      v.parts.headMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = v.lightsOn ? 2.5 : 0.1; });
-      const braking = (v === player.inCar) && (input.brake || keys['KeyS'] || keys['ArrowDown']);
-      v.parts.tailMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = braking ? 4.2 : (v.lightsOn ? 1.6 : 0.2); });
+      v.parts.headMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = v.lightsOn ? 2.8 : 0.05; });
+      v.parts.tailMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = braking ? 4.5 : (v.lightsOn ? 1.8 : 0.1); });
       v.parts.intLightMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = interiorLit ? 3.0 : 0.2; });
 
       if (v.type === 'car_pm' && v.parts.lightB && v.parts.lightR) {
@@ -5496,6 +6445,21 @@
     const eyeYaw = Math.sin(t * 0.9) * 0.12;
     setBoneWorldDelta(n, 'head_eyeball_left_0180', 0, eyeYaw, 0);
     setBoneWorldDelta(n, 'head_eyeball_right_0213', 0, eyeYaw, 0);
+
+    // Animação de Combo de Soco na Lutadora DOA (NPC 2)
+    if (n === player && n.punchAnim && n.punchAnim > 0) {
+      const maxDur = n.punchCombo === 2 ? 0.34 : 0.26;
+      const pT = Math.sin((n.punchAnim / maxDur) * Math.PI);
+      const isLeft = n.punchCombo === 1;
+      setBoneWorldDelta(n, 'spine_upper_025', 0.16 * pT, (isLeft ? -0.45 : 0.45) * pT, 0);
+      if (isLeft) {
+        setBoneWorldDelta(n, 'arm_left_shoulder_2_0266', -1.52 * pT, 0.16 * pT, -0.25);
+        setBoneWorldDelta(n, 'arm_left_elbow_0267', -0.22 * (1 - pT), 0, 0);
+      } else {
+        setBoneWorldDelta(n, 'arm_right_shoulder_2_0292', -1.58 * pT, -0.20 * pT, 0.25);
+        setBoneWorldDelta(n, 'arm_right_elbow_0293', (n.punchCombo === 2 ? -0.58 : -0.18) * pT, 0, 0);
+      }
+    }
   }
 
   function animateJobNpcBones(n, dt, isWalking) {
@@ -5614,6 +6578,20 @@
           n.bones[r.eyeR].scale.y = eyeScaleY;
           setBoneWorldDelta(n, r.eyeR, 0, eyeYaw, 0);
         }
+        // Animação de Combo de Soco nos ossos CustomRig (Cat Woman, Lily, Office, Cool Man)
+        if (n === player && n.punchAnim && n.punchAnim > 0) {
+          const maxDur = n.punchCombo === 2 ? 0.34 : 0.26;
+          const pT = Math.sin((n.punchAnim / maxDur) * Math.PI);
+          const isLeft = n.punchCombo === 1;
+          if (r.chest) setBoneWorldDelta(n, r.chest, 0.15 * pT, (isLeft ? -0.42 : 0.42) * pT, 0);
+          if (isLeft) {
+            if (r.armL) setBoneWorldDelta(n, r.armL, -1.48 * pT, 0.18 * pT, 0.10);
+            if (r.foreL) setBoneWorldDelta(n, r.foreL, -0.25 * (1 - pT), 0, 0);
+          } else {
+            if (r.armR) setBoneWorldDelta(n, r.armR, -1.55 * pT, -0.22 * pT, -0.10);
+            if (r.foreR) setBoneWorldDelta(n, r.foreR, (n.punchCombo === 2 ? -0.55 : -0.18) * pT, 0, 0);
+          }
+        }
         return;
       }
       if (n.mixer) {
@@ -5716,6 +6694,21 @@
       setBoneDelta(n, 'ForeArmL', (-0.36 + g1 * 0.14) * ib + (-elbowBase - Math.max(0, s) * (0.42 * mb + 0.24 * sb)) - 0.52 * ab, 0, 0.16);
       setBoneDelta(n, 'ForeArmR', (-0.34 - g2 * 0.12) * ib + (-elbowBase - Math.max(0, -s) * (0.42 * mb + 0.24 * sb)) - 0.52 * ab, 0, -0.16);
       setBoneDelta(n, 'Head', Math.sin(t * 1.5) * 0.05 * ib - 0.04 * mb - 0.06 * sb, Math.cos(t * 1.1) * 0.09 * ib + s * 0.03 * mb, Math.sin(t * 0.9) * 0.035 * ib);
+    }
+
+    // Animação de Combo de Soco nos ossos de 21-bones (NPC 1 / Walking)
+    if (n === player && n.punchAnim && n.punchAnim > 0) {
+      const maxDur = n.punchCombo === 2 ? 0.34 : 0.26;
+      const pT = Math.sin((n.punchAnim / maxDur) * Math.PI);
+      const isLeft = n.punchCombo === 1;
+      setBoneDelta(n, 'Chest', 0.16 * pT, (isLeft ? -0.45 : 0.45) * pT, 0);
+      if (isLeft) {
+        setBoneDelta(n, 'UpperArmL', -1.52 * pT, 0.15 * pT, armRestZ * 0.4);
+        setBoneDelta(n, 'ForeArmL', -0.22 * (1 - pT), 0, 0.12);
+      } else {
+        setBoneDelta(n, 'UpperArmR', -1.58 * pT, -0.18 * pT, -armRestZ * 0.4);
+        setBoneDelta(n, 'ForeArmR', (n.punchCombo === 2 ? -0.58 : -0.20) * pT, 0, -0.12);
+      }
     }
 
     // Olhos realistas + piscar sutil
@@ -5930,16 +6923,54 @@
         n.pos.x += n.vel.x * dt; n.pos.z += n.vel.z * dt;
         n.velY -= 20 * dt;
         n.pos.y += n.velY * dt;
-        n.vel.multiplyScalar(0.88);
+        n.vel.multiplyScalar(0.86);
         resolveMapWallCollision(n.pos, 0.5);
-        n.mesh.rotation.x = (n.dead || n.knockTimer > 0.5) ? Math.PI * 0.48 : 0;
-        n.mesh.rotation.z = 0;
+        if (n.dead) {
+          // Queda progressiva suave no chão
+          n.fallTilt = Math.min(Math.PI * 0.48, (n.fallTilt || 0) + dt * 5.5);
+          n.mesh.rotation.x = n.fallTilt;
+        } else {
+          // Stagger de impacto (curva o tronco para trás/lado sem virar tábua dura!)
+          const stg = Math.sin(Math.min(1, n.knockTimer / 0.6) * Math.PI);
+          n.mesh.rotation.x = -0.36 * stg;
+          n.mesh.rotation.z = 0.18 * stg;
+        }
         const gy = getWalkableGround(n.pos.x, n.pos.z, n.pos.y) ?? getGroundHeight(n.pos.x, n.pos.z);
-        if (gy !== null && gy >= -0.22 && n.pos.y <= gy + 0.12) { n.pos.y = gy + 0.12; n.velY = 0; }
+        if (gy !== null && gy >= -0.22 && n.pos.y <= gy + 0.06) { n.pos.y = gy; n.velY = 0; }
         continue;
       }
+      n.fallTilt = 0;
       n.mesh.rotation.x = 0;
       n.mesh.rotation.z = 0;
+
+      // Se o NPC ficou hostil após ser agredido, persegue o jogador e revida!
+      if (n.hostileToPlayer && !player.inCar && distP < 18) {
+        const hdx = player.pos.x - n.pos.x;
+        const hdz = player.pos.z - n.pos.z;
+        const hd = Math.hypot(hdx, hdz) || 1;
+        n.yaw = Math.atan2(-hdx, -hdz);
+        if (hd > 1.25) {
+          n.pos.x += (hdx / hd) * 3.1 * dt;
+          n.pos.z += (hdz / hd) * 3.1 * dt;
+          resolveMapWallCollision(n.pos, 0.55);
+          if (n.isCitizen && n.bones && n.bones.Hips) animateJobNpcBones(n, dt * 1.4, true);
+        } else {
+          n.attackCool = (n.attackCool || 0) - dt;
+          if (n.attackCool <= 0) {
+            n.attackCool = 1.15;
+            player.hp = Math.max(0, player.hp - 8);
+            ui.hpFill.style.width = player.hp + '%';
+            spawnPunchImpact(player.pos.x, player.pos.y + 1.2, player.pos.z, false);
+            AudioFX.crash();
+            vibrate(35);
+            if (player.hp <= 0) { respawnAtHospital('Nocauteado na briga de rua!'); return; }
+          }
+        }
+        const hgy = getWalkableGround(n.pos.x, n.pos.z, n.pos.y);
+        if (hgy !== null) n.pos.y = hgy;
+        n.mesh.rotation.y = n.yaw;
+        continue;
+      }
 
       // IA Autônoma: calçadas, faixas de pedestres, conversa entre si, famílias e fuga de acidentes!
       if (n.chatCooldown > 0) n.chatCooldown -= dt;
@@ -6805,8 +7836,15 @@
 
     rpProps.forEach((pr) => {
       const pt = toMini(pr.pos.x, pr.pos.z);
-      ctx.fillStyle = pr.type === 'atm' ? '#ff1744' : '#00e676';
-      ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2); ctx.fill();
+      if (pr.type === 'safehouse') {
+        ctx.fillStyle = '#ffd43b';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else {
+        ctx.fillStyle = pr.type === 'atm' ? '#ff1744' : '#00e676';
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2); ctx.fill();
+      }
     });
 
     if (gpsRoute.active) {
@@ -6887,8 +7925,15 @@
 
     rpProps.forEach((pr) => {
       const pt = toFull(pr.pos.x, pr.pos.z);
-      ctx.fillStyle = pr.type === 'atm' ? '#ff1744' : '#00e676';
-      ctx.beginPath(); ctx.arc(pt.x, pt.y, 5 / fullMapZoom, 0, Math.PI * 2); ctx.fill();
+      if (pr.type === 'safehouse') {
+        ctx.fillStyle = '#ffd43b';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.8 / fullMapZoom;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 6.5 / fullMapZoom, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else {
+        ctx.fillStyle = pr.type === 'atm' ? '#ff1744' : '#00e676';
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 5 / fullMapZoom, 0, Math.PI * 2); ctx.fill();
+      }
     });
 
     vehicles.forEach((v) => {

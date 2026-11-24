@@ -141,9 +141,10 @@
         <div class="config-group">
           <div class="config-title">AMBIENTAÇÃO &amp; CLIMA</div>
           <div class="pill-row" id="env-pills">
-            <div class="pill-btn active" data-env="day">DIA BRASIL</div>
-            <div class="pill-btn" data-env="sunset">GOLDEN HOUR</div>
-            <div class="pill-btn" data-env="night">NOITE NEON</div>
+            <div class="pill-btn active" data-env="auto">AUTO 24H</div>
+            <div class="pill-btn" data-env="day">DIA</div>
+            <div class="pill-btn" data-env="sunset">TARDE</div>
+            <div class="pill-btn" data-env="night">NOITE</div>
           </div>
         </div>
         <div class="config-group">
@@ -196,6 +197,15 @@
         <div class="config-group config-group-full">
           <div class="config-title">LOG DE ATUALIZAÇÕES</div>
           <div class="changelog-list">
+            <div class="changelog-entry">
+              <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #8</span></div>
+              <ul class="changelog-items">
+                <li>Semáforos (incluindo amarelo âmbar), postes de energia com luz noturna e feixes reais nos 2 faróis e lanternas dos veículos</li>
+                <li>Todos os 5 veículos agora abrem/fecham as portas, motorista aparece sentado ao volante e colisão retangular impede atravessar o carro</li>
+                <li>Ciclo automático de iluminação 24h (Manhã, Dia, Tarde e Noite), Casa Própria interativa, Caixa 24h/Job reposicionados na calçada</li>
+                <li>Novo Smartphone iFruit moderno, combo de socos com reações reais e Rota GPS rua por rua com setas 3D luminosas na pista</li>
+              </ul>
+            </div>
             <div class="changelog-entry">
               <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #7</span></div>
               <ul class="changelog-items">
@@ -299,6 +309,13 @@
           <div id="radioStationGenre" class="radio-genre">BAILE &bull; 130 BPM</div>
         </div>
       </div>
+      <div id="gpsHudBanner" class="gps-hud-banner hidden">
+        <span id="gpsTurnArrow" class="gps-turn-arrow">⬆</span>
+        <div>
+          <div id="gpsHudLabel" class="gps-hud-label">Destino GPS</div>
+          <div id="gpsHudDist" class="gps-hud-dist">0 m</div>
+        </div>
+      </div>
       <div id="missionBanner" class="mission-banner hidden">
         <span class="dot"></span>
         <span id="missionText">Entrega em andamento...</span>
@@ -326,7 +343,8 @@
           </div>
           <div class="meta-row">
             <span id="wantedStars" class="stars">☆☆☆☆☆</span>
-            <span id="clockText" class="clock">12:00</span>
+            <span id="clockText" class="clock">08:30</span>
+            <span class="meta-sep">•</span>
             <span id="fpsText" class="fps">60 FPS</span>
           </div>
         </div>
@@ -391,67 +409,130 @@
     </div>
   </div>
 
-  <!-- TELEFONE BRASIL RP (CHAMAR NPC DO JOB, CARROS, BANCO) -->
+  <!-- SMARTPHONE iFRUIT BRASIL RP (DESIGN MODERNO ESTILO iOS / GTA VI) -->
   <div id="phoneModal" class="modal hidden">
     <div class="phone-frame">
-      <div class="phone-notch"></div>
-      <div class="phone-header">
-        <span>📶 5G BRASIL RP</span>
-        <span id="phoneTime">12:00</span>
+      <div class="ifruit-statusbar">
+        <span class="ifruit-carrier">5G • BR</span>
+        <div class="ifruit-island"><span class="island-dot"></span><span id="phoneIslandText">Liberty BR</span></div>
+        <span class="ifruit-right-status"><b id="phoneTime">08:30</b> 🔋</span>
       </div>
-      <div class="phone-title">📱 SMARTPHONE RP</div>
-      <div class="phone-apps">
-        <button class="phone-app summon" id="phSummonNpc">
-          <span class="ico">💃</span>
-          <div>
-            <b>Chamar NPC do Job</b>
-            <small>A mais próxima vem até você</small>
+
+      <!-- TELA HOME DO CELULAR -->
+      <div id="phScreenHome" class="ifruit-screen">
+        <div class="ifruit-widget">
+          <div class="ifruit-w-left">
+            <span class="ifruit-w-tag">MAZE BANK • PIX</span>
+            <div class="ifruit-w-bal">R$ <span id="phBankBal">5.000</span></div>
+            <div class="ifruit-w-cash">Carteira: R$ <span id="phCashBal">1.500</span></div>
           </div>
-        </button>
-        <button class="phone-app car" id="phCallMustang">
-          <span class="ico">🏎️</span>
-          <div>
-            <b>Chamar Mustang GTD</b>
-            <small>Entregar Mustang Apex na rua</small>
+          <div class="ifruit-w-right">
+            <div class="ifruit-weather-ico" id="phWeatherIco">☀️</div>
+            <div class="ifruit-weather-lbl" id="phWeatherLbl">Manhã</div>
           </div>
-        </button>
-        <button class="phone-app saveiro" id="phCallSaveiro">
-          <span class="ico">🛻</span>
-          <div>
-            <b>Chamar VW Saveiro</b>
-            <small>Entregar Saveiro na rua</small>
-          </div>
-        </button>
-        <button class="phone-app car" id="phCallLexus">
-          <span class="ico">🏁</span>
-          <div>
-            <b>Chamar Lexus LC 500 Wald</b>
-            <small>Apex Circuit V8 477cv • 270 km/h</small>
-          </div>
-        </button>
-        <button class="phone-app job" id="phGoMcEnter">
-          <span class="ico">🍔</span>
-          <div>
-            <b>GPS: McDonald's (Salão)</b>
-            <small>Traçar rota até o restaurante</small>
-          </div>
-        </button>
-        <button class="phone-app summon" id="phGoMcDrive">
-          <span class="ico">🚗</span>
-          <div>
-            <b>GPS: McDonald's Drive-Thru</b>
-            <small>Traçar rota até o Drive-Thru</small>
-          </div>
-        </button>
-        <button class="phone-app bank" id="phOpenBank">
-          <span class="ico">🏦</span>
-          <div>
-            <b>App Banco 24h</b>
-            <small>Depositar e sacar dinheiro</small>
-          </div>
-        </button>
+        </div>
+
+        <div class="ifruit-grid">
+          <button class="ifruit-app-tile" data-open="phScreenCars">
+            <div class="ifruit-app-ico g-red">🏎️</div>
+            <span>Garagem</span>
+          </button>
+          <button class="ifruit-app-tile" data-open="phScreenGps">
+            <div class="ifruit-app-ico g-purple">🧭</div>
+            <span>GPS Rotas</span>
+          </button>
+          <button class="ifruit-app-tile" id="phGoHomeQuick">
+            <div class="ifruit-app-ico g-amber">🏠</div>
+            <span>Minha Casa</span>
+          </button>
+          <button class="ifruit-app-tile" id="phOpenBank">
+            <div class="ifruit-app-ico g-green">🏦</div>
+            <span>Banco 24h</span>
+          </button>
+          <button class="ifruit-app-tile" id="phSummonNpc">
+            <div class="ifruit-app-ico g-pink">💃</div>
+            <span>Contato VIP</span>
+          </button>
+          <button class="ifruit-app-tile" id="phOpenJobApp">
+            <div class="ifruit-app-ico g-teal">📦</div>
+            <span>Delivery</span>
+          </button>
+          <button class="ifruit-app-tile" data-open="phScreenTime">
+            <div class="ifruit-app-ico g-blue">🌤️</div>
+            <span>Clima/Hora</span>
+          </button>
+          <button class="ifruit-app-tile" id="phOpenFullMap">
+            <div class="ifruit-app-ico g-indigo">🗺️</div>
+            <span>Satélite</span>
+          </button>
+        </div>
       </div>
-      <button class="phone-close" id="btnClosePhone">FECHAR CELULAR</button>
+
+      <!-- SUB-TELA: GARAGEM DELIVERY (TODOS OS 5 VEÍCULOS) -->
+      <div id="phScreenCars" class="ifruit-screen hidden">
+        <div class="ifruit-subhead">
+          <button class="ifruit-back" data-back="phScreenHome">‹ Início</button>
+          <b>Entrega de Veículos</b>
+        </div>
+        <div class="ifruit-list">
+          <button class="phone-app" id="phCallLexus"><span class="ico">🏁</span><div><b>Lexus LC 500 Wald</b><small>V8 477cv • 270 km/h</small></div></button>
+          <button class="phone-app" id="phCallMustang"><span class="ico">🏎️</span><div><b>Ford Mustang GTD</b><small>Supercharged • 296 km/h</small></div></button>
+          <button class="phone-app" id="phCallSaveiro"><span class="ico">🛻</span><div><b>VW Saveiro Cross</b><small>Rebaixada • Utilitária</small></div></button>
+          <button class="phone-app" id="phCallGol"><span class="ico">🚗</span><div><b>VW Gol Quadrado</b><small>Clássico BR • Turbo</small></div></button>
+          <button class="phone-app" id="phCallPm"><span class="ico">🚓</span><div><b>Viatura PM-BR</b><small>Giroflex &amp; Sirene Tática</small></div></button>
+        </div>
+      </div>
+
+      <!-- SUB-TELA: GPS RÁPIDO RUA POR RUA -->
+      <div id="phScreenGps" class="ifruit-screen hidden">
+        <div class="ifruit-subhead">
+          <button class="ifruit-back" data-back="phScreenHome">‹ Início</button>
+          <b>Destinos GPS</b>
+        </div>
+        <div class="ifruit-list">
+          <button class="phone-app" id="phGpsHome"><span class="ico">🏠</span><div><b>Minha Casa (Safehouse)</b><small>Residência &amp; Garagem Privativa</small></div></button>
+          <button class="phone-app" id="phGpsBank"><span class="ico">🏧</span><div><b>Caixa Banco 24h</b><small>Calçada Central</small></div></button>
+          <button class="phone-app" id="phGpsJob"><span class="ico">📦</span><div><b>Central Delivery</b><small>Pegar entregas na cidade</small></div></button>
+          <button class="phone-app" id="phGoMcEnter"><span class="ico">🍔</span><div><b>McDonald's (Salão)</b><small>Recuperar energia (+50% HP)</small></div></button>
+          <button class="phone-app" id="phGoMcDrive"><span class="ico">🚗</span><div><b>McDonald's Drive-Thru</b><small>Atendimento rápido no carro</small></div></button>
+          <button class="phone-app" id="phGpsStadium"><span class="ico">🏟️</span><div><b>Estádio Memorial</b><small>Staunton Island Norte</small></div></button>
+          <button class="phone-app" id="phGpsAirport"><span class="ico">✈️</span><div><b>Aeroporto Internacional</b><small>Shoreside Vale</small></div></button>
+        </div>
+      </div>
+
+      <!-- SUB-TELA: CLIMA & HORÁRIO -->
+      <div id="phScreenTime" class="ifruit-screen hidden">
+        <div class="ifruit-subhead">
+          <button class="ifruit-back" data-back="phScreenHome">‹ Início</button>
+          <b>Iluminação &amp; Ciclo</b>
+        </div>
+        <div class="ifruit-list">
+          <button class="phone-app" data-set-env="auto"><span class="ico">🔄</span><div><b>Ciclo Automático 24h</b><small>Manhã → Dia → Tarde → Noite</small></div></button>
+          <button class="phone-app" data-set-env="morning"><span class="ico">🌅</span><div><b>Manhã (07:30)</b><small>Sol nascente suave</small></div></button>
+          <button class="phone-app" data-set-env="day"><span class="ico">☀️</span><div><b>Meio-Dia (12:00)</b><small>Céu azul aberto</small></div></button>
+          <button class="phone-app" data-set-env="sunset"><span class="ico">🌇</span><div><b>Fim de Tarde (17:45)</b><small>Golden Hour alaranjada</small></div></button>
+          <button class="phone-app" data-set-env="night"><span class="ico">🌙</span><div><b>Noite (22:30)</b><small>Postes e faróis acesos</small></div></button>
+        </div>
+      </div>
+
+      <button class="phone-close" id="btnClosePhone">
+        <span class="ifruit-home-bar"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL CASA PRÓPRIA / SAFEHOUSE -->
+  <div id="safehouseModal" class="modal hidden">
+    <div class="modal-card small-modal safehouse-card">
+      <div class="game-title" style="font-size:20px">🏠 MINHA RESIDÊNCIA</div>
+      <div class="game-subtitle" style="margin-bottom:10px">COBERTURA LIBERTY BR • GARAGEM &amp; GUARDA-ROUPA</div>
+      <div class="safehouse-actions">
+        <button id="btnHouseSleep" class="btn-primary" style="width:100%">🛏️ DESCANSAR (+100% VIDA &amp; +6H)</button>
+        <button id="btnHouseWardrobe" class="btn-secondary" style="width:100%">👕 TROCAR PERSONAGEM / ROUPA</button>
+        <button id="btnHouseSpawnCar" class="btn-secondary" style="width:100%">🚗 TRAZER MEU CARRO NA PORTA</button>
+        <button id="btnHouseBank" class="btn-secondary" style="width:100%">🔐 COFRE RESIDENCIAL (BANCO)</button>
+      </div>
+      <button id="btnCloseSafehouse" class="btn-secondary" style="width:100%;margin-top:10px">SAIR DA CASA</button>
     </div>
   </div>
 
@@ -502,6 +583,7 @@
       </div>
       <div class="fullmap-legend">
         <span><b style="color:#ffffff">▲</b> Você</span>
+        <span><b style="color:#ffd43b">🏠</b> Minha Casa</span>
         <span><b style="color:#00e676">●</b> Saveiro / Job</span>
         <span><b style="color:#ff1744">●</b> Mustang / Banco</span>
         <span><b style="color:#d500f9">━━</b> Rota GPS</span>

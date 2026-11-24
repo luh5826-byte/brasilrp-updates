@@ -1,32 +1,32 @@
 {
-  "otaVersion": 7,
+  "otaVersion": 8,
   "minApkCodeForOta": 42,
-  "changelog": "• Minimapa e Mapa Completo 100% reais: vista ortográfica renderizada diretamente dos 79 chunks 3D da cidade, com rotação e seta corrigidas\n• Malha viária (road_grid.bin) reconstruída da geometria real das ruas e calçadas\n• IA de tráfego refeita: carros seguem fielmente as pistas sem subir muretas ou bater em paredes",
-  "totalBytes": 7280475,
+  "changelog": "• Semáforos (incluindo amarelo âmbar), postes de energia com luz noturna e feixes reais nos 2 faróis e lanternas dos veículos\n• Todos os 5 veículos agora abrem/fecham as portas, motorista aparece sentado ao volante e colisão OBB impede atravessar partes do carro\n• Ciclo automático de iluminação 24h (Manhã, Dia, Tarde e Noite), Casa Própria interativa e Caixa 24h/Job reposicionados na calçada\n• Novo Smartphone iFruit moderno, combo de socos com reações reais e Rota GPS rua por rua nas 3 ilhas com setas 3D luminosas na pista",
+  "totalBytes": 7335847,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "f66a4de62e1bce7ff6633ad0be2ad6e920822ca5182d5c8b3f46f7b3c27d7dc9",
-      "size": 30769
+      "sha256": "07dda4db99bf48221470fbb86484c49b2c8d95f850b0bbd3473ce7bc15bd974a",
+      "size": 37467
     },
     "js/game.js": {
-      "sha256": "cc7ea1c944aab894eb418af72b7ff3834790182313712053ba3dc751cf88a486",
-      "size": 282634
+      "sha256": "2fa8f489511701c1a416187d8561d62cf0eed054e5045f0ec252998974f29b37",
+      "size": 327869
     },
     "models/map/collision_floor.bin": {
-      "sha256": "177f8fcf89f8ff3b5c4338fc41b05ab7fdae87a7aa19af72615f2e234d499956",
+      "sha256": "2a7a98d279bb8e7b5fdbe39c8723ae76131c419298230fd8cf2a3f4286bcd403",
       "size": 4959084
     },
     "models/map/road_grid.bin": {
-      "sha256": "27a2b404db13fe7973904979f2d24487585c4946695dcf3b137fe27f83dc49d7",
+      "sha256": "da821324dd6c3da171838b11339a9eda0fc7f828af03cfee491506b3d61893aa",
       "size": 1048576
     },
     "style.css": {
-      "sha256": "559f1dcd0c3957f983af90b50fd95bd1624258420402686daf7ec7eb72160a3d",
-      "size": 29211
+      "sha256": "58b5a31610e16e26c60da69a67e74625931713f6d5053e1965f5f8b806ad90b3",
+      "size": 32650
     }
   },
   "deleted": []
