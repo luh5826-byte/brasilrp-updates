@@ -453,7 +453,7 @@
     pmrem.dispose();
   })();
 
-  const camera = new THREE.PerspectiveCamera(66, window.innerWidth / window.innerHeight, 0.35, 280);
+  const camera = new THREE.PerspectiveCamera(66, window.innerWidth / window.innerHeight, 0.14, 280);
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -3023,10 +3023,12 @@
       doorAutoTimer: 0,
       lightsOn: true,
       sirenOn: false,
-      // VW Pickup Azul & Lexus LC 500 Wald com specs idênticas do Apex Circuit (270 km/h, accel 36.0, turnRate 2.09, V8 Muscle)
-      maxTopSpeedMs: isLexusSpec ? (270 / 3.6) : isMustang ? (296 / 3.6) : (175 / 3.6),
-      accelPower: isLexusSpec ? 36.0 : isMustang ? 34.0 : 22.0,
-      turnRate: isLexusSpec ? 2.09 : 2.15,
+      reverseHoldTimer: 0,
+      inReverseGear: false,
+      // Mobilidade calibrada e realista nas ruas (controle progressivo sem disparar excessivamente)
+      maxTopSpeedMs: isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : typeKey === 'car_pm' ? (168 / 3.6) : (145 / 3.6),
+      accelPower: isMustang ? 19.0 : isLexusSpec ? 17.5 : typeKey === 'car_pm' ? 16.5 : 14.5,
+      turnRate: isLexusSpec ? 1.92 : 1.98,
       soundProfile: isLexusSpec ? 'v8_muscle' : null
     };
     if (isMustang) paintVehicle(v, save.paint);
@@ -3548,10 +3550,10 @@
       player.yaw += dxNorm * 1.9;
       return;
     }
-    if (setManualTimer) camManualTimer = 2.6;
+    if (setManualTimer) camManualTimer = 4.5;
     input.camYaw -= dxNorm;
-    const freeFoot = !player.inCar && !player.firstPersonFoot;
-    input.camPitch = Math.max(freeFoot ? -0.22 : 0.05, Math.min(freeFoot ? 1.05 : 0.85, input.camPitch + dyNorm));
+    // Permite olhar de perto na altura da roda/placa (-0.22) até visão superior (1.15) sem bloqueio
+    input.camPitch = Math.max(-0.22, Math.min(1.15, input.camPitch + dyNorm));
     if (player.inCar && player.firstPersonCar) {
       input.interiorYaw -= dxNorm * 1.05;
       input.interiorPitch = Math.max(-0.85, Math.min(0.85, input.interiorPitch - dyNorm * 1.07));
@@ -3566,7 +3568,7 @@
         e.targetTouches[0].clientY - e.targetTouches[1].clientY
       );
       const delta = (pinchStartDist - curDist) * 0.025;
-      input.camZoomOffset = Math.max(-2.55, Math.min(7.5, pinchStartZoom + delta));
+      input.camZoomOffset = Math.max(-4.15, Math.min(8.5, pinchStartZoom + delta));
       return;
     }
     if (camTouchId === null && e.targetTouches.length === 1) {
@@ -4829,9 +4831,9 @@
       padState.menuFocusEl = null;
     }
 
-    // Analógico direito: câmera livre em 3ª pessoa, 360° e interior
+    // Analógico direito: câmera livre 360° completa (inclusive com veículo em movimento!) e interior
     if (rx !== 0 || ry !== 0) {
-      applyLookDelta(rx * 2.6 * pSens * dt, ry * 1.8 * pSens * dt, false);
+      applyLookDelta(rx * 3.4 * pSens * dt, ry * 2.1 * pSens * dt, true);
     }
 
     // Start (9) = Menu/Lobby | Select/Back (8) = Mapa Completo
@@ -4861,16 +4863,19 @@
         if (justPressed(15) && el('btnWeaponHud')) el('btnWeaponHud').click(); // D-Pad Dir = Equipamento
       } else {
         padState.steer = Math.max(-1, Math.min(1, lx * pSens));
-        padState.gas = val(7) > 0.15 || ly < -0.35; // RT ou Analógico Cima = Acelerar
+        const rtVal = val(7);
+        const stickGas = ly < -0.28 ? Math.min(1, (-ly - 0.28) / 0.72) : 0;
+        padState.gasAmount = Math.max(rtVal > 0.12 ? rtVal : 0, stickGas);
+        padState.gas = padState.gasAmount > 0.05; // RT progressivo ou Analógico Cima = Acelerar
         padState.brake = val(6) > 0.15 || ly > 0.35; // LT ou Analógico Baixo = Freio/Ré
         padState.drift = btn(0); // A = Freio de mão / Drift
         padState.nitro = btn(1) || btn(5); // B / RB = Nitro
         if (justPressed(2) && ui.btnCarCam) ui.btnCarCam.click(); // X = Câmera do carro
         if (justPressed(3)) exitVehicle(); // Y = Sair do carro
         if (justPressed(4) || justPressed(10)) { AudioFX.horn(); } // LB / L3 = Buzina
-        if (justPressed(11)) { // R3 = Alternar Zoom Perto / Normal / Longe
-          const zoomLevels = [-1.6, 0, 2.8, 5.5];
-          const curIdx = zoomLevels.findIndex((z) => Math.abs(input.camZoomOffset - z) < 0.8);
+        if (justPressed(11)) { // R3 = Alternar Zoom Detalhe Perto / Normal / Longe
+          const zoomLevels = [-3.8, -2.5, -1.2, 0, 2.8, 5.5];
+          const curIdx = zoomLevels.findIndex((z) => Math.abs(input.camZoomOffset - z) < 0.65);
           input.camZoomOffset = zoomLevels[(curIdx + 1) % zoomLevels.length];
         }
         if (justPressed(12) && ui.btnCarLights) ui.btnCarLights.click(); // D-Pad Cima = Faróis
@@ -5306,7 +5311,26 @@
   }
   if (ui.btnFrontCam) {
     ui.btnFrontCam.onclick = () => {
-      if (player.inCar) return;
+      if (player.inCar) {
+        player.firstPersonCar = false;
+        const fSign = player.inCar.forwardSign || 1;
+        const frontYaw = fSign > 0 ? player.inCar.yaw : (player.inCar.yaw + Math.PI);
+        const rearYaw = frontYaw + Math.PI;
+        let diff = frontYaw - input.camYaw;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        camManualTimer = 10.0;
+        if (Math.abs(diff) < 0.5) {
+          input.camYaw = rearYaw;
+          input.camPitch = 0.22;
+          showToast('🎥 Câmera: Traseira do veículo');
+        } else {
+          input.camYaw = frontYaw;
+          input.camPitch = 0.10;
+          showToast('🚘 Câmera: Frente / Detalhes do veículo');
+        }
+        return;
+      }
       ensureThirdPersonFoot();
       const frontYaw = player.yaw + Math.PI;
       let diff = frontYaw - input.camYaw;
@@ -5325,7 +5349,17 @@
   }
   if (ui.btnSpinPlayer) {
     ui.btnSpinPlayer.onclick = () => {
-      if (player.inCar) return;
+      if (player.inCar) {
+        player.firstPersonCar = false;
+        player.carFreeCam360 = !player.carFreeCam360;
+        if (player.carFreeCam360 && input.camZoomOffset > -1.0) input.camZoomOffset = -2.2;
+        showToast(
+          player.carFreeCam360
+            ? '🔄 Câmera 360° Livre ativada no veículo (sem puxar câmera ao andar; faça pinça para focar nos detalhes)'
+            : '🎥 Câmera automática atrás do veículo reativada'
+        );
+        return;
+      }
       ensureThirdPersonFoot();
       setSpin360Mode(!player.spin360Mode);
       showToast(
@@ -6596,28 +6630,72 @@
     }
     ui.screenFx.classList.toggle('nitro-active', car.nitroActive);
 
-    const topMs = car.nitroActive ? car.maxTopSpeedMs * 1.18 : car.maxTopSpeedMs;
+    const topMs = car.nitroActive ? car.maxTopSpeedMs * 1.22 : car.maxTopSpeedMs;
+    const throttleAmt = (padState.active && padState.gasAmount > 0.05 && !input.gas && !keys['KeyW'] && !keys['ArrowUp'])
+      ? padState.gasAmount
+      : (gas ? 1.0 : 0.0);
     let accelForce = 0;
+    let holdStopped = false;
     if (!car.broken) {
       if (gas) {
-        const speedRatio = Math.min(1, Math.max(0, forwardSpeed / topMs));
-        accelForce = car.accelPower * (1.0 - speedRatio * 0.62) * (car.nitroActive ? 1.55 : 1.0);
-      }
-      if (brake) {
-        if (forwardSpeed > 1.5) accelForce -= 44.0;
-        else accelForce -= 18.0;
+        car.inReverseGear = false;
+        car.reverseHoldTimer = 0;
+        if (forwardSpeed < -0.3) {
+          // Estava dando ré: freia a ré primeiro antes de ir pra frente
+          accelForce = 32.0;
+        } else {
+          const speedRatio = Math.min(1, Math.max(0, forwardSpeed / topMs));
+          accelForce = car.accelPower * throttleAmt * (1.0 - speedRatio * 0.68) * (car.nitroActive ? 1.48 : 1.0);
+        }
+      } else if (brake) {
+        if (forwardSpeed > 0.38) {
+          // Indo para frente: FREIA ATÉ PARAR (sem engatar ré automaticamente!)
+          car.inReverseGear = false;
+          car.reverseHoldTimer = 0;
+          accelForce = -34.0;
+          if (forwardSpeed + accelForce * dt <= 0.12) {
+            car.vel.set(0, 0, 0);
+            accelForce = 0;
+            holdStopped = true;
+          }
+        } else if (!car.inReverseGear) {
+          // Carro parou: segura 100% parado por 0.55s antes de engatar a marcha à ré!
+          car.vel.set(0, 0, 0);
+          accelForce = 0;
+          holdStopped = true;
+          car.reverseHoldTimer = (car.reverseHoldTimer || 0) + dt;
+          if (car.reverseHoldTimer >= 0.55) {
+            car.inReverseGear = true;
+          }
+        } else {
+          // Marcha à ré engatada de forma suave e controlada (~40 km/h máx)
+          const maxRevMs = 11.2;
+          const revRatio = Math.min(1, Math.max(0, -forwardSpeed / maxRevMs));
+          accelForce = -11.0 * (1.0 - revRatio * 0.85);
+        }
+      } else {
+        // Sem gás nem freio: se estiver parado, deixa pronto para engatar ré rápido num segundo toque
+        if (Math.abs(forwardSpeed) <= 0.45) {
+          car.reverseHoldTimer = 0.40;
+          if (Math.abs(forwardSpeed) < 0.12) car.vel.set(0, 0, 0);
+        } else {
+          car.reverseHoldTimer = 0;
+          if (forwardSpeed > 0.5) car.inReverseGear = false;
+        }
       }
     }
-    if (drift && forwardSpeed > 8.0) accelForce -= 12.0;
+    if (drift && forwardSpeed > 6.0) accelForce -= 12.0;
 
-    // Gravidade longitudinal suave em ladeiras/escadas (sente o peso da subida sem travar o motor!)
-    if (car.grounded && Math.abs(car.slopePitch || 0) > 0.04) {
-      accelForce += Math.sin(car.slopePitch) * fSign * 5.8;
+    // Gravidade longitudinal suave em ladeiras/escadas (não puxa quando segurando o freio parado!)
+    if (!holdStopped && car.grounded && Math.abs(car.slopePitch || 0) > 0.04) {
+      accelForce += Math.sin(car.slopePitch) * fSign * 5.2;
     }
 
-    car.vel.addScaledVector(forwardDir, accelForce * dt);
-    const drag = 0.0042 * car.vel.length() + 0.14;
-    car.vel.multiplyScalar(Math.max(0, 1.0 - drag * dt));
+    if (!holdStopped) {
+      car.vel.addScaledVector(forwardDir, accelForce * dt);
+      const drag = 0.0052 * car.vel.length() + 0.22;
+      car.vel.multiplyScalar(Math.max(0, 1.0 - drag * dt));
+    }
 
     const steerSensitivity = Math.abs(forwardSpeed) < 0.25 ? 0 : Math.min(1.0, Math.abs(forwardSpeed) / 2.2);
     const driftMultiplier = drift ? 1.48 : 1.0;
@@ -8876,23 +8954,25 @@
     }
     const target = player.inCar ? realTarget : camFollow;
     const baseDist = player.inCar ? 5.2 : 3.2;
-    const dist = Math.max(0.65, Math.min(13.5, baseDist + input.camZoomOffset));
-    const height = player.inCar ? 1.85 : (dist < 1.5 ? 1.32 : 1.45);
+    const dist = Math.max(player.inCar ? 1.05 : 0.65, Math.min(14.0, baseDist + input.camZoomOffset));
+    const closeT = player.inCar ? Math.max(0, Math.min(1, (3.4 - dist) / 2.35)) : 0;
+    const height = player.inCar ? (1.85 - closeT * 1.05) : (dist < 1.5 ? 1.32 : 1.45);
 
     if (camManualTimer > 0) camManualTimer -= dt;
-    if (player.inCar && Math.abs(player.inCar.speed) > 0.5 && camTouchId === null && camManualTimer <= 0) {
+    if (player.inCar && !player.carFreeCam360 && Math.abs(player.inCar.speed) > 0.8 && camTouchId === null && camManualTimer <= 0) {
       const fSign = player.inCar.forwardSign || -1;
       const desiredYaw = fSign > 0 ? (player.inCar.yaw + Math.PI) : player.inCar.yaw;
       let diff = desiredYaw - input.camYaw;
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
-      const followRate = player.inCar.speed >= 0 ? 5.2 : 2.0;
+      const followRate = player.inCar.speed >= 0 ? 2.4 : 1.6;
       input.camYaw += diff * Math.min(1, dt * followRate);
     }
 
     const cx = target.x + Math.sin(input.camYaw) * Math.cos(input.camPitch) * dist;
     let cy = target.y + height + Math.sin(input.camPitch) * dist;
     const cz = target.z + Math.cos(input.camYaw) * Math.cos(input.camPitch) * dist;
+    if (player.inCar && cy < target.y + 0.26) cy = target.y + 0.26;
 
     if (!player.inCar) {
       const camGy = getWalkableGround(cx, cz, target.y, 2.5);
@@ -8900,7 +8980,8 @@
       // A pé: câmera 3ª pessoa firme mantendo o personagem 100% centralizado enquanto o mapa gira ao redor
       camera.position.set(cx, cy, cz);
     } else {
-      camera.position.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, dt * 11));
+      const lerpSpeed = (camManualTimer > 0 || player.carFreeCam360 || camTouchId !== null) ? 24 : 12;
+      camera.position.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, dt * lerpSpeed));
     }
     if (camShakeTimer > 0) {
       const s = camShakePower * (camShakeTimer / 0.65);
@@ -8908,7 +8989,8 @@
       camera.position.y += (Math.random() - 0.5) * s;
       camera.position.z += (Math.random() - 0.5) * s;
     }
-    camera.lookAt(target.x, target.y + (player.inCar ? 0.95 : 1.18), target.z);
+    const lookY = player.inCar ? (0.95 - closeT * 0.30) : 1.18;
+    camera.lookAt(target.x, target.y + lookY, target.z);
   }
 
   function drawMinimap() {

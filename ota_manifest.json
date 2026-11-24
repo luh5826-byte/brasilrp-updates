@@ -1,20 +1,20 @@
 {
-  "otaVersion": 24,
+  "otaVersion": 25,
   "minApkCodeForOta": 42,
-  "changelog": "• Rodas dianteiras da Saveiro corrigidas (sem oscilação): agora usam exatamente a mesma malha redonda e centralização das rodas traseiras, mantendo o esterçamento suave para direita e esquerda",
-  "totalBytes": 18696454,
+  "changelog": "• Mobilidade calibrada (aceleração progressiva e velocidade realista nas ruas) + Freio agora para totalmente o veículo antes de engatar a ré\n• Câmera 360° livre no veículo (inclusive em movimento e no joystick Bluetooth) + zoom aproximado sem bloqueio para ver detalhes externos\n• Rodas das Saveiros atualizadas para prata alumínio uniforme (sem diamantado)",
+  "totalBytes": 18681284,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "0dd185ac0fa7e415b4bae359cceeac3475c2e9222b90722b714ed4b29120621d",
-      "size": 47513
+      "sha256": "8904624438affc5fc304db4dab8442ace635a34baf57f9d2475368dfc3bb5ecf",
+      "size": 48130
     },
     "js/game.js": {
-      "sha256": "4487746dab2ac20514341e6121f5ce660b3136ec35c60547eb75704ce5e73f7b",
-      "size": 383532
+      "sha256": "33c0ce8978896098457c1764fab91545509147caa3df6cbcf902de5d321610ce",
+      "size": 387309
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -41,12 +41,12 @@
       "size": 1223680
     },
     "models/vehicles/saveiro_brasil.glb": {
-      "sha256": "1a5fe8cdd652aa914344a1925f0e4a003685e0ed14240a86fe4432b23b9acc89",
-      "size": 5671984
+      "sha256": "08efb607a12a9ff425ca8548bd2653c3542e54418c9236363939116a87ed6426",
+      "size": 5652144
     },
     "models/vehicles/vw_pickup_azul.glb": {
-      "sha256": "bb7fc350e5722fc61385439fadf9f3bc5931fe63bcf5b7065e2afbbc8f6f87ea",
-      "size": 1853764
+      "sha256": "004223ec6d1cc84cc1d9f8bab15dd97527f5eb206c81f5c739ff07fa442b561d",
+      "size": 1854040
     },
     "style.css": {
       "sha256": "34cf84dbae482ab5d8ce489d07af71c173c95f8ee6737f609a7e27529e7482c8",
