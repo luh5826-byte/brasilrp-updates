@@ -1,20 +1,24 @@
 {
-  "otaVersion": 8,
+  "otaVersion": 9,
   "minApkCodeForOta": 42,
-  "changelog": "• Semáforos (incluindo amarelo âmbar), postes de energia com luz noturna e feixes reais nos 2 faróis e lanternas dos veículos\n• Todos os 5 veículos agora abrem/fecham as portas, motorista aparece sentado ao volante e colisão OBB impede atravessar partes do carro\n• Ciclo automático de iluminação 24h (Manhã, Dia, Tarde e Noite), Casa Própria interativa e Caixa 24h/Job reposicionados na calçada\n• Novo Smartphone iFruit moderno, combo de socos com reações reais e Rota GPS rua por rua nas 3 ilhas com setas 3D luminosas na pista",
-  "totalBytes": 7335847,
+  "changelog": "• Corrigido erro de inicialização na Splash Screen (THREE.OctagonGeometry)\n• Multiplayer 3D em tempo real corrigido e integrado ao servidor unificado (até 64 jogadores visíveis com avatar 3D rigado, veículos 3D ao dirigir, voz por proximidade e posição ao vivo no Minimapa/Mapa)",
+  "totalBytes": 7363460,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "07dda4db99bf48221470fbb86484c49b2c8d95f850b0bbd3473ce7bc15bd974a",
-      "size": 37467
+      "sha256": "e3cea00d18b6f93dc1993f73a1a023c6f5b83951e5b5efb475aafe74157422f7",
+      "size": 38026
     },
     "js/game.js": {
-      "sha256": "2fa8f489511701c1a416187d8561d62cf0eed054e5045f0ec252998974f29b37",
-      "size": 327869
+      "sha256": "66398747a9d2f6439aac89fdafa819c9c566dd82b9fc36df417853591b498ad9",
+      "size": 330986
+    },
+    "js/multiplayer.js": {
+      "sha256": "d90cd7b73590a542adb7ba4b315592a10dc29584254ef8044590a192237515d4",
+      "size": 23937
     },
     "models/map/collision_floor.bin": {
       "sha256": "2a7a98d279bb8e7b5fdbe39c8723ae76131c419298230fd8cf2a3f4286bcd403",

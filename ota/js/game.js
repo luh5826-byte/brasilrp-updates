@@ -1108,7 +1108,7 @@
 
     const signPoleGeo = new THREE.CylinderGeometry(0.045, 0.055, 2.5, 6);
     signPoleGeo.translate(0, 1.25, 0);
-    const signBoardGeo = new THREE.OctagonGeometry ? new THREE.CylinderGeometry(0.34, 0.34, 0.05, 8) : new THREE.BoxGeometry(0.55, 0.55, 0.05);
+    const signBoardGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.05, 8);
     const signMat = new THREE.MeshLambertMaterial({ color: 0xe53935 });
 
     const placed = [];
@@ -5455,7 +5455,58 @@
         trafficCars,
         getGameMode: () => gameMode,
         getSoundEnabled: () => soundEnabled,
-        showToast
+        showToast,
+        setGpsDestination,
+        createRemoteCharVisual: () => {
+          if (!playableCharCache.npc1) return null;
+          const mesh = cloneSkinnedObject(playableCharCache.npc1);
+          const bones = {};
+          const boneInitQ = {};
+          mesh.position.set(0, 0, 0);
+          mesh.rotation.set(0, 0, 0);
+          mesh.updateMatrixWorld(true);
+          mesh.traverse((c) => {
+            if (c.isMesh) { c.frustumCulled = false; c.castShadow = false; }
+            if (c.isBone) {
+              bones[c.name] = c;
+              boneInitQ[c.name] = c.quaternion.clone();
+            }
+          });
+          return {
+            mesh,
+            bones,
+            boneInitQ,
+            phase: Math.random() * 6.28,
+            moveBlend: 0,
+            airBlend: 0,
+            springPos: 0,
+            springVel: 0,
+            hairSway: 0,
+            hairVel: 0,
+            blinkTimer: 2.0,
+            grounded: true,
+            velY: 0,
+            armRestZ: 0.38
+          };
+        },
+        animateRemoteChar: (st, dt, walking, sprinting) => {
+          if (!st || !st.bones) return;
+          st.sprintBlend = sprinting ? 1.0 : 0.0;
+          animateJobNpcBones(st, dt, walking);
+        },
+        createRemoteCarVisual: (idNum) => {
+          const keys = ['lexus_lc_500_wald', 'ford_mustang_gtd', 'volkswagen_saveiro', 'car_gol', 'car_pm'];
+          const k = keys[Math.abs(idNum || 0) % keys.length];
+          const tpl = vehicleTemplates[k];
+          if (!tpl) return null;
+          const m = tpl.clone(true);
+          const wheels = [];
+          m.traverse((c) => {
+            if (c.isMesh) c.castShadow = false;
+            if (['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR'].includes(c.name)) wheels.push(c);
+          });
+          return { mesh: m, wheels };
+        }
       };
 
       ui.loadFill.style.width = '100%';
@@ -7847,6 +7898,19 @@
       }
     });
 
+    // Jogadores reais online no Minimapa (azul/verde neon pulsante)
+    if (window.BrasilMP && typeof window.BrasilMP.getRemotePlayers === 'function') {
+      const remotes = window.BrasilMP.getRemotePlayers();
+      for (let i = 0; i < remotes.length; i++) {
+        const rp = remotes[i];
+        const pt = toMini(rp.x, rp.z);
+        ctx.fillStyle = rp.speaking ? '#00e676' : '#00e5ff';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+    }
+
     if (gpsRoute.active) {
       const pt = toMini(gpsRoute.target.x, gpsRoute.target.z);
       const cx = Math.max(8, Math.min(W - 8, pt.x));
@@ -7946,6 +8010,23 @@
       ctx.fillStyle = '#ffa726';
       ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.2 / fullMapZoom, 0, Math.PI * 2); ctx.fill();
     });
+
+    // Jogadores reais online no Mapa Completo com Nome
+    if (window.BrasilMP && typeof window.BrasilMP.getRemotePlayers === 'function') {
+      const remotes = window.BrasilMP.getRemotePlayers();
+      ctx.font = `bold ${Math.max(9, Math.round(11 / fullMapZoom))}px sans-serif`;
+      ctx.textAlign = 'center';
+      for (let i = 0; i < remotes.length; i++) {
+        const rp = remotes[i];
+        const pt = toFull(rp.x, rp.z);
+        ctx.fillStyle = rp.speaking ? '#00e676' : '#00e5ff';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2 / fullMapZoom;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 6 / fullMapZoom, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(rp.name || 'Jogador', pt.x, pt.y - 9 / fullMapZoom);
+      }
+    }
 
     if (gpsRoute.active) {
       const pt = toFull(gpsRoute.target.x, gpsRoute.target.z);
