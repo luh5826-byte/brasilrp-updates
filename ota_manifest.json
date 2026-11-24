@@ -1,12 +1,20 @@
 {
-  "otaVersion": 4,
+  "otaVersion": 5,
   "minApkCodeForOta": 42,
-  "changelog": "• Corrige colisão sob viadutos/pontes (personagem e veículos não afundam no asfalto)\n• Corrige cabelo da personagem DOA para balançar apenas para trás, sem atravessar a cintura\n• Movimentação e câmera estilo GTA (marchas suaves, cadência de passos e FOV no sprint)",
-  "totalBytes": 277241,
+  "changelog": "• Adicionado Log de Atualizações nas Configurações com o histórico de cada versão",
+  "totalBytes": 335865,
   "files": {
+    "index.html": {
+      "sha256": "c0725d76640a2ea37a68d66ee510ebfb932168370b74e8b1728279a6b0279b2e",
+      "size": 29413
+    },
     "js/game.js": {
       "sha256": "c60bb805202122ce20791ec1c1b73bb5654f8723e06f4f8b68d703dc3f2b8cbf",
       "size": 277241
+    },
+    "style.css": {
+      "sha256": "559f1dcd0c3957f983af90b50fd95bd1624258420402686daf7ec7eb72160a3d",
+      "size": 29211
     }
   },
   "deleted": []
