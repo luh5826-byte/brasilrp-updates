@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 17,
+  "otaVersion": 18,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/03c508090bb441716448d75c290f9eb4129f72a3/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/03c508090bb441716448d75c290f9eb4129f72a3/ota_manifest.json",
-  "otaChangelog": "• Adicionado McDonald's 3D real com Drive-Thru funcional na praça próxima à Central (combo pelo carro na janela e salão para recuperar vida a pé), integrado ao GPS e à missão 'Primeiro Corre'"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/f463bb47aa9d6e54c0eda0c92ba4ad2e3708d27b/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/f463bb47aa9d6e54c0eda0c92ba4ad2e3708d27b/ota_manifest.json",
+  "otaChangelog": "• Créditos atualizados: Desenvolvido por Luan Felipe (Programação, história e design) com link direto para Instagram @luanf46 na tela DEV e na Splash Screen"
 }
