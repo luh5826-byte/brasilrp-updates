@@ -21,6 +21,7 @@
     env: 'day',
     gfxQuality: 'medium',
     steerMode: 'buttons',
+    burnoutEnabled: true,
     targetFps: 90,
     dist: 1,
     soundEnabled: true,
@@ -2198,8 +2199,8 @@
     return best;
   }
 
-  // --- Partículas de Fumaça Drift & Motor Danificado ---
-  const SMOKE_COUNT = 110;
+  // --- Partículas de Fumaça Drift, Burnout & Motor Danificado ---
+  const SMOKE_COUNT = 260;
   const smokePositions = new Float32Array(SMOKE_COUNT * 3);
   const smokeVel = [];
   const smokeLife = new Float32Array(SMOKE_COUNT);
@@ -2210,10 +2211,40 @@
   }
   const smokeGeo = new THREE.BufferGeometry();
   smokeGeo.setAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
-  const smokeMat = new THREE.PointsMaterial({ color: 0xd8e4f0, size: 1.3, transparent: true, opacity: 0.42, depthWrite: false });
+  const smokeMat = new THREE.PointsMaterial({ color: 0xe6eef6, size: 1.55, transparent: true, opacity: 0.46, depthWrite: false });
   const smokePoints = new THREE.Points(smokeGeo, smokeMat);
   scene.add(smokePoints);
   let smokeCursor = 0;
+
+  // --- Marcas de Pneu Queimado no Asfalto (Burnout / Drift) ---
+  const SKID_COUNT = 64;
+  const skidGeo = new THREE.PlaneGeometry(0.32, 0.72);
+  skidGeo.rotateX(-Math.PI / 2);
+  const skidMat = new THREE.MeshBasicMaterial({
+    color: 0x0c0d10,
+    transparent: true,
+    opacity: 0.52,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2
+  });
+  const skidMarks = [];
+  for (let i = 0; i < SKID_COUNT; i++) {
+    const m = new THREE.Mesh(skidGeo, skidMat);
+    m.visible = false;
+    m.position.set(0, -999, 0);
+    scene.add(m);
+    skidMarks.push(m);
+  }
+  let skidCursor = 0;
+  function spawnSkidMark(pos, yaw) {
+    const m = skidMarks[skidCursor];
+    skidCursor = (skidCursor + 1) % SKID_COUNT;
+    m.position.set(pos.x, pos.y + 0.035, pos.z);
+    m.rotation.set(0, yaw, 0);
+    m.visible = true;
+  }
 
   const activeExplosions = [];
   let camShakeTimer = 0;
@@ -2318,14 +2349,19 @@
     }
   }
 
-  function spawnSmoke(pos, carVel) {
+  function spawnSmoke(pos, carVel, opts) {
     const i = smokeCursor;
     smokeCursor = (smokeCursor + 1) % SMOKE_COUNT;
-    smokePositions[i * 3] = pos.x + (Math.random() - 0.5) * 0.25;
-    smokePositions[i * 3 + 1] = pos.y + 0.18;
-    smokePositions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.25;
-    smokeVel[i].set(carVel.x * 0.15 + (Math.random() - 0.5) * 1.4, 0.8 + Math.random() * 0.9, carVel.z * 0.15 + (Math.random() - 0.5) * 1.4);
-    smokeLife[i] = 0.65;
+    const spread = (opts && opts.spread) ? opts.spread : 0.25;
+    smokePositions[i * 3] = pos.x + (Math.random() - 0.5) * spread;
+    smokePositions[i * 3 + 1] = pos.y + ((opts && opts.yOff !== undefined) ? opts.yOff : 0.18);
+    smokePositions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * spread;
+    const vxBase = (carVel ? carVel.x * 0.15 : 0) + (opts && opts.backDir ? opts.backDir.x * (1.2 + Math.random() * 1.6) : 0);
+    const vzBase = (carVel ? carVel.z * 0.15 : 0) + (opts && opts.backDir ? opts.backDir.z * (1.2 + Math.random() * 1.6) : 0);
+    const latRand = (opts && opts.latSpread) ? opts.latSpread : 1.4;
+    const upBase = (opts && opts.upVel) ? opts.upVel : 0.8;
+    smokeVel[i].set(vxBase + (Math.random() - 0.5) * latRand, upBase + Math.random() * 1.05, vzBase + (Math.random() - 0.5) * latRand);
+    smokeLife[i] = (opts && opts.life) ? opts.life : 0.65;
   }
 
   function updateSmoke(dt) {
@@ -4053,6 +4089,11 @@
       el('lobby-audio-btn').classList.toggle('active', soundEnabled);
       el('lobby-audio-btn').textContent = soundEnabled ? 'ÁUDIO: ON' : 'ÁUDIO: OFF';
     }
+    if (el('lobby-burnout-btn')) {
+      const bOn = save.burnoutEnabled !== false;
+      el('lobby-burnout-btn').classList.toggle('active', bOn);
+      el('lobby-burnout-btn').textContent = bOn ? 'BURNOUT: ON' : 'BURNOUT: OFF';
+    }
   })();
 
   // --- Seletor de Personagens Jogáveis no Lobby 3D (somente Cool Man disponível ao jogador) ---
@@ -4710,6 +4751,16 @@
       GtaRadio.stop(true);
     }
   };
+  if (el('lobby-burnout-btn')) {
+    el('lobby-burnout-btn').onclick = () => {
+      const next = save.burnoutEnabled === false;
+      save.burnoutEnabled = next;
+      persistSave();
+      el('lobby-burnout-btn').classList.toggle('active', next);
+      el('lobby-burnout-btn').textContent = next ? 'BURNOUT: ON' : 'BURNOUT: OFF';
+      showToast(next ? '🔥 Burnout ATIVADO (segure Freio + Acelerador parado)' : '🔥 Burnout DESATIVADO', 2600);
+    };
+  }
   el('lobby-doors-btn').onclick = () => {
     if (vehicles[0]) { vehicles[0].doorsOpen = !vehicles[0].doorsOpen; vehicles[0].doorAutoTimer = 0; el('lobby-doors-btn').classList.toggle('active', vehicles[0].doorsOpen); }
   };
@@ -6397,6 +6448,10 @@
         const duck = Math.sin(outW * Math.PI);
 
         if (u >= 0.70 && player.inCar === car) {
+          car.burnoutActive = false;
+          car.burnoutHeat = 0;
+          car.launchBoostTimer = 0;
+          if (ui.burnoutBadge) ui.burnoutBadge.classList.add('hidden');
           player.inCar = null;
           player.pos.set(standWX, standWY + 0.05, standWZ);
           player.yaw = car.yaw + Math.PI;
@@ -6776,10 +6831,45 @@
     const throttleAmt = (padState.active && padState.gasAmount > 0.05 && !input.gas && !keys['KeyW'] && !keys['ArrowUp'])
       ? padState.gasAmount
       : (gas ? 1.0 : 0.0);
+    const burnoutAllowed = save.burnoutEnabled !== false;
+    const prevBurnout = Boolean(car.burnoutActive);
+    const wantBurnout = !car.broken && car.grounded && burnoutAllowed && gas && brake && Math.abs(forwardSpeed) < 3.5;
     let accelForce = 0;
     let holdStopped = false;
-    if (!car.broken) {
-      if (gas) {
+    if (wantBurnout) {
+      car.burnoutActive = true;
+      car.burnoutHeat = Math.min(1.0, (car.burnoutHeat || 0) + dt * 1.45);
+      car.inReverseGear = false;
+      car.reverseHoldTimer = 0;
+      car.launchBoostTimer = 0;
+      holdStopped = true;
+      car.vel.multiplyScalar(Math.max(0, 1.0 - dt * 14.0));
+      if (car.vel.lengthSq() < 0.03) car.vel.set(0, 0, 0);
+      // Permite girar a traseira no lugar (zerinho) se virar o volante durante o burnout
+      if (Math.abs(car.steerAngle) > 0.12) {
+        car.yaw += car.steerAngle * 1.35 * car.burnoutHeat * dt;
+      }
+      if (Math.random() < 0.35) vibrate(13);
+      camShakeTimer = Math.max(camShakeTimer, 0.08);
+      camShakePower = Math.max(camShakePower, 0.042 * car.burnoutHeat);
+    } else {
+      // Arrancada explosiva (Launch Control) se soltar o freio mantendo acelerador com pneu quente
+      if (prevBurnout && gas && !brake && (car.burnoutHeat || 0) > 0.35 && !car.broken) {
+        car.launchBoostTimer = 0.72;
+        vibrate(28);
+      }
+      car.burnoutActive = false;
+      car.burnoutHeat = Math.max(0, (car.burnoutHeat || 0) - dt * 1.25);
+      if (car.launchBoostTimer > 0) car.launchBoostTimer = Math.max(0, car.launchBoostTimer - dt);
+    }
+
+    if (!car.broken && !wantBurnout) {
+      if (gas && brake && burnoutAllowed) {
+        // Freio + Acelerador em movimento: segura forte até parar e entrar no burnout
+        car.inReverseGear = false;
+        car.reverseHoldTimer = 0;
+        accelForce = forwardSpeed > 0 ? -38.0 : 38.0;
+      } else if (gas) {
         car.inReverseGear = false;
         car.reverseHoldTimer = 0;
         if (forwardSpeed < -0.3) {
@@ -6787,7 +6877,8 @@
           accelForce = 32.0;
         } else {
           const speedRatio = Math.min(1, Math.max(0, forwardSpeed / topMs));
-          accelForce = car.accelPower * throttleAmt * (1.0 - speedRatio * 0.68) * (car.nitroActive ? 1.48 : 1.0);
+          const launchMul = (car.launchBoostTimer > 0) ? 1.38 : 1.0;
+          accelForce = car.accelPower * throttleAmt * (1.0 - speedRatio * 0.68) * (car.nitroActive ? 1.48 : 1.0) * launchMul;
         }
       } else if (brake) {
         if (forwardSpeed > 0.38) {
@@ -6858,13 +6949,37 @@
     const hitMapWall = resolveVehicleMapCollision(car, dt, forwardDir);
     car.speed = car.vel.dot(forwardDir);
 
-    // Fumaça de pneu no drift ou fumaça do motor se danificado
+    // Fumaça de pneu no burnout, arrancada, drift ou fumaça do motor se danificado
     const slipFactor = Math.abs(dampedLateral) / (Math.abs(newForwardSpeed) + 4.0);
-    if ((slipFactor > 0.24 || (drift && speedKmh > 30)) && speedKmh > 25) {
-      const rearL = new THREE.Vector3().copy(car.pos).addScaledVector(forwardDir, -1.35).addScaledVector(rightDir, -0.75);
-      const rearR = new THREE.Vector3().copy(car.pos).addScaledVector(forwardDir, -1.35).addScaledVector(rightDir, 0.75);
+    const halfWB = (car.parts && car.parts.wheelBase) ? car.parts.wheelBase * 0.5 : 1.35;
+    const halfTW = (car.parts && car.parts.trackWidth) ? car.parts.trackWidth * 0.5 : 0.78;
+    if (car.burnoutActive) {
+      const rearL = new THREE.Vector3().copy(car.pos).addScaledVector(forwardDir, -halfWB).addScaledVector(rightDir, -halfTW);
+      const rearR = new THREE.Vector3().copy(car.pos).addScaledVector(forwardDir, -halfWB).addScaledVector(rightDir, halfTW);
+      const backDir = forwardDir.clone().negate();
+      const bOpts = { life: 1.25, spread: 0.42, latSpread: 2.2, upVel: 1.15, yOff: 0.14, backDir };
+      const puffs = car.burnoutHeat > 0.45 ? 3 : 2;
+      for (let p = 0; p < puffs; p++) {
+        spawnSmoke(rearL, car.vel, bOpts);
+        spawnSmoke(rearR, car.vel, bOpts);
+      }
+      car._skidTimer = (car._skidTimer || 0) - dt;
+      if (car._skidTimer <= 0) {
+        car._skidTimer = 0.14;
+        spawnSkidMark(rearL, car.yaw);
+        spawnSkidMark(rearR, car.yaw);
+      }
+    } else if ((car.launchBoostTimer > 0 && gas) || ((slipFactor > 0.24 || (drift && speedKmh > 30)) && speedKmh > 25)) {
+      const rearL = new THREE.Vector3().copy(car.pos).addScaledVector(forwardDir, -halfWB).addScaledVector(rightDir, -halfTW);
+      const rearR = new THREE.Vector3().copy(car.pos).addScaledVector(forwardDir, -halfWB).addScaledVector(rightDir, halfTW);
       spawnSmoke(rearL, car.vel);
       spawnSmoke(rearR, car.vel);
+      car._skidTimer = (car._skidTimer || 0) - dt;
+      if (car._skidTimer <= 0) {
+        car._skidTimer = 0.08;
+        spawnSkidMark(rearL, car.yaw);
+        spawnSkidMark(rearR, car.yaw);
+      }
     }
     if (car.dmgCooldown > 0) car.dmgCooldown = Math.max(0, car.dmgCooldown - dt);
     if (car.hp < 50 && !car.exploded && Math.random() < (car.hp < 22 ? 0.65 : 0.32)) {
@@ -7069,8 +7184,13 @@
     }
 
     // Transferência de peso real (molas de Roll e Pitch na suspensão da carroceria)
-    const targetRoll = -car.steerAngle * Math.min(0.085, speedKmh * 0.00058) + dampedLateral * 0.0055;
-    const targetPitch = brake ? 0.048 : (gas ? (car.nitroActive ? -0.052 : -0.032) : 0);
+    const nowMs = performance.now();
+    const targetRoll = car.burnoutActive
+      ? (Math.sin(nowMs * 0.068) * 0.014 * (car.burnoutHeat || 0.5) - car.steerAngle * 0.035)
+      : (-car.steerAngle * Math.min(0.085, speedKmh * 0.00058) + dampedLateral * 0.0055);
+    const targetPitch = car.burnoutActive
+      ? (-0.034 * (car.burnoutHeat || 0.5) + Math.sin(nowMs * 0.052) * 0.009 * (car.burnoutHeat || 0.5))
+      : (brake ? 0.048 : (gas ? (car.nitroActive ? -0.052 : -0.032) : 0));
     car.rollVel = (car.rollVel || 0) + ((targetRoll - (car.roll || 0)) * 78 - (car.rollVel || 0) * 11.5) * dt;
     car.pitchVel = (car.pitchVel || 0) + ((targetPitch - (car.pitch || 0)) * 72 - (car.pitchVel || 0) * 11.0) * dt;
     car.roll = Math.max(-0.18, Math.min(0.18, (car.roll || 0) + car.rollVel * dt));
@@ -7082,6 +7202,10 @@
       ui._lastSpeedInt = spdInt;
       ui.speedVal.textContent = spdInt;
     }
+    if (!ui.burnoutBadge) ui.burnoutBadge = el('burnoutBadge');
+    if (ui.burnoutBadge) {
+      ui.burnoutBadge.classList.toggle('hidden', !car.burnoutActive);
+    }
     if (!ui.carHpVal) ui.carHpVal = el('carHpVal');
     if (ui.carHpVal) {
       const hpInt = Math.round(car.hp);
@@ -7091,7 +7215,8 @@
         ui.carHpVal.style.color = hpInt > 50 ? '#00e676' : hpInt > 20 ? '#ffab00' : '#ff1744';
       }
     }
-    AudioFX.updateEngine(!car.broken, Math.abs(car.speed));
+    const engineAudSpd = car.burnoutActive ? (26 + (car.burnoutHeat || 0) * 24) : Math.abs(car.speed);
+    AudioFX.updateEngine(!car.broken, engineAudSpd);
   }
 
   const _steerWheelAxis = new THREE.Vector3(0, 0.3746, 0.9272);
@@ -7468,13 +7593,15 @@
       }
 
       const wheelSpin = v.speed * dt * 2.9 * fs;
+      const burnoutRearSpin = v.burnoutActive ? (28 + 26 * (v.burnoutHeat || 0.5)) * dt * fs : 0;
       v.parts.wheels.forEach((w) => {
         if (w.front) w.steerPivot.rotation.y = v.steerAngle * 0.34;
-        w.spinObj.rotation.x = (w.spinObj.rotation.x + wheelSpin) % (Math.PI * 2);
+        const spin = v.burnoutActive ? (w.front ? 0 : burnoutRearSpin) : wheelSpin;
+        w.spinObj.rotation.x = (w.spinObj.rotation.x + spin) % (Math.PI * 2);
       });
 
       const interiorLit = v.doorsOpen || (v.driverDoorAnimAngle > 0.06) || (v === player.inCar && v.lightsOn && v.doorsOpen);
-      const braking = (v === player.inCar) && (input.brake || keys['KeyS'] || keys['ArrowDown']);
+      const braking = (v === player.inCar) && (input.brake || padState.brake || keys['KeyS'] || keys['ArrowDown']);
       if (v.parts.headLightGroup) {
         v.parts.headLightGroup.visible = Boolean(v.lightsOn);
         if (v.parts.headBeamMat) v.parts.headBeamMat.opacity = 0.02 + streetLampState.nightFactor * 0.075;

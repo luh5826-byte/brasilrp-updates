@@ -1167,6 +1167,24 @@ body.gyro-mode #carControls .pedal.gas {
 }
 body.gyro-mode #carControls #btnDrift { grid-column: 1; }
 
+.burnout-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: #fff;
+  background: linear-gradient(90deg, #ff5100, #ff1744);
+  box-shadow: 0 0 12px rgba(255, 81, 0, 0.75);
+  animation: burnoutPulse 0.45s ease-in-out infinite alternate;
+}
+@keyframes burnoutPulse {
+  from { transform: scale(1); filter: brightness(1.0); }
+  to { transform: scale(1.06); filter: brightness(1.28); }
+}
+
 .act-btn:active, .steer-btn:active, .pedal:active, .mini-pill:active, .pill-btn:active, .phone-app:active {
   transform: scale(0.94); filter: brightness(1.2);
 }

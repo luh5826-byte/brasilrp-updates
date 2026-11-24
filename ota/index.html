@@ -155,6 +155,7 @@
           <div class="config-title">SISTEMA &amp; VEÍCULO</div>
           <div class="pill-row">
             <div class="pill-btn active" id="lobby-audio-btn">ÁUDIO: ON</div>
+            <div class="pill-btn active" id="lobby-burnout-btn">BURNOUT: ON</div>
             <div class="pill-btn" id="lobby-doors-btn">PORTAS</div>
             <div class="pill-btn active" id="lobby-lights-btn">LUZES: ON</div>
           </div>
@@ -175,6 +176,12 @@
         <div class="config-group config-group-full">
           <div class="config-title">LOG DE ATUALIZAÇÕES</div>
           <div class="changelog-list">
+            <div class="changelog-entry">
+              <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #30</span></div>
+              <ul class="changelog-items">
+                <li>Adicionado sistema de Burnout (queimar pneu parado): segure FREIO + ACELERAR ao mesmo tempo para travar as rodas dianteiras, girar as traseiras em alta rotação, gerar fumaça densa, marcas pretas de borracha no asfalto, ronco V8 cortando giro com chiado de pneu e arrancada explosiva ao soltar o freio (ativável/desativável em Configurações)</li>
+              </ul>
+            </div>
             <div class="changelog-entry">
               <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #29</span></div>
               <ul class="changelog-items">
@@ -410,6 +417,7 @@
         </div>
       </div>
       <div id="speedBox" class="speed-box hidden">
+        <div id="burnoutBadge" class="burnout-badge hidden">🔥 BURNOUT</div>
         <span id="speedVal">0</span>
         <small>KM/H • <b id="carHpVal" style="color:#22c55e">100%</b></small>
       </div>

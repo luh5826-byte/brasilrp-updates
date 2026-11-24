@@ -1,20 +1,26 @@
 {
-  "otaVersion": 29,
-  "minApkCodeForOta": 42,
-  "changelog": "• Adicionado sistema de direção por Giroscópio (Configurações > Direção do Veículo ou botão rápido 'GIRO' no carro): inclinar o celular vira o volante, pedal de FREIO / RÉ fica à esquerda e ACELERAR à direita",
-  "totalBytes": 18690651,
+  "otaVersion": 30,
+  "minApkCode": 42,
+  "generatedAt": "2026-11-24T19:17:16.580Z",
+  "changelog": "• Adicionado sistema de Burnout (queimar pneu parado): segure FREIO + ACELERAR juntos para travar as rodas dianteiras, girar as traseiras em alta rotação, gerar fumaça densa, marcas pretas de borracha no asfalto, ronco V8 cortando giro com chiado de pneu e arrancada explosiva ao soltar o freio (opção BURNOUT: ON/OFF nas Configurações)",
+  "fileCount": 13,
+  "totalSize": 18723638,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "f1a4888996386e1e0d48eec947f98f6c3e6607157b1c16371adbf08069c142aa",
-      "size": 50297
+      "sha256": "c1fa92ea5d859b0d183e620c09a49e2735da663817ecb7480022542794daeda3",
+      "size": 51059
+    },
+    "js/audio_world.js": {
+      "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
+      "size": 25574
     },
     "js/game.js": {
-      "sha256": "0c7a7b090872d0fe18a5facb47e4c2638400cb958791b8f2815bd062ac3dc95f",
-      "size": 393925
+      "sha256": "5ddc5994f02652380c7dc964efd732b08784fbd82961bc2a79033a0a2c5aec37",
+      "size": 400075
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -49,8 +55,8 @@
       "size": 1854040
     },
     "style.css": {
-      "sha256": "408752b088ab98bc66b85aaae9e2be563a645c79235f2a6b1ce3c111aab6a797",
-      "size": 38686
+      "sha256": "d520270a41e289e54233caca9d1831661a01845207c571cfbca98590d61dc664",
+      "size": 39187
     }
   }
 }
