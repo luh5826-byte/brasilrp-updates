@@ -1,0 +1,13 @@
+{
+  "otaVersion": 1,
+  "minApkCodeForOta": 42,
+  "changelog": "• Velocidade de caminhada e corrida dos personagens ajustada para ritmo realista (andar 2.6 m/s, correr 5.6 m/s, NPCs 2.4 m/s e cadência de passos sincronizada)",
+  "totalBytes": 275080,
+  "files": {
+    "js/game.js": {
+      "sha256": "9eea6a45dce1241c60824fe34cc22162f5afc86493cd72b9cf336dfb086f7e30",
+      "size": 275080
+    }
+  },
+  "deleted": []
+}
