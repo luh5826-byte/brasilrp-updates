@@ -385,32 +385,126 @@
     el('mBank').textContent = 'R$ ' + fmtMoney(save.bank);
   }
 
-  // --- Three.js Setup (Visual Nível GTA V + Performance Mobile) ---
+  // --- Detector Automático de Hardware / GPU (Otimização para Celulares Fracos & Intermediários) ---
+  const DEVICE_PROFILE = (function detectHardwareProfile() {
+    const ua = (navigator.userAgent || '');
+    const mem = Number(navigator.deviceMemory || 0); // em GB (pode ser 0 se oculto)
+    const cores = Number(navigator.hardwareConcurrency || 4);
+    let gpu = '';
+    try {
+      const probe = document.createElement('canvas');
+      const gl = probe.getContext('webgl2') || probe.getContext('webgl') || probe.getContext('experimental-webgl');
+      if (gl) {
+        const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+        if (dbg) gpu = String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '');
+        const lose = gl.getExtension('WEBGL_lose_context');
+        if (lose) lose.loseContext();
+      }
+    } catch (_) {}
+
+    const gpuLowRe = /Adreno.*(3\d\d|4\d\d|5\d\d|60\d|61[0-9]|62\d)|Mali-(T|4\d\d|G3\d|G5\d|G68|G71|G72)|PowerVR|IMG|SwiftShader|llvmpipe|VideoCore/i;
+    const uaLowRe = /SM-A0|SM-A1|SM-A2|SM-A3|SM-A4|SM-A50|SM-A51|SM-A52|SM-M1|SM-M2|SM-M3|SM-J|Redmi\s?(7|8|9|10|12C|A)|Moto\s?(E|G[4-9]|G10|G20|G22|G30|G31)/i;
+    const gpuHighRe = /Adreno.*(7[3-9]\d|8\d\d)|Mali-G7(15|20|25)|Immortalis|Xclipse\s?9|Apple\s?GPU|RTX|GTX|Radeon/i;
+
+    let tier = 'mid';
+    if (gpuLowRe.test(gpu) || uaLowRe.test(ua) || (mem > 0 && mem <= 4) || cores <= 4) {
+      tier = 'low';
+    } else if (gpuHighRe.test(gpu) || (mem >= 8 && cores >= 8 && !/Adreno.*6\d\d/i.test(gpu))) {
+      tier = 'high';
+    }
+
+    if (tier === 'low') {
+      return {
+        tier: 'low',
+        label: 'Otimizado (Celular Fraco/Médio)',
+        gpu: gpu || 'Mobile GPU',
+        antialias: false,
+        precision: 'mediump',
+        defaultQuality: 'low',
+        defaultDist: 0,
+        defaultFps: 30,
+        maxTraffic: 4,
+        bootBatchSize: 2,
+        chunkBatchSize: 2,
+        streamChunksOnDemand: true,
+        skipPmrem: true,
+        maxDpr: 0.65
+      };
+    }
+    if (tier === 'mid') {
+      return {
+        tier: 'mid',
+        label: 'Balanceado (Intermediário)',
+        gpu: gpu || 'Mobile GPU',
+        antialias: false,
+        precision: 'mediump',
+        defaultQuality: 'medium',
+        defaultDist: 0,
+        defaultFps: 60,
+        maxTraffic: 7,
+        bootBatchSize: 3,
+        chunkBatchSize: 3,
+        streamChunksOnDemand: true,
+        skipPmrem: false,
+        maxDpr: 0.85
+      };
+    }
+    return {
+      tier: 'high',
+      label: 'Alto Desempenho',
+      gpu: gpu || 'High-End GPU',
+      antialias: true,
+      precision: 'highp',
+      defaultQuality: 'medium',
+      defaultDist: 1,
+      defaultFps: 90,
+      maxTraffic: 10,
+      bootBatchSize: 6,
+      chunkBatchSize: 6,
+      streamChunksOnDemand: false,
+      skipPmrem: false,
+      maxDpr: 1.50
+    };
+  })();
+
+  // --- Three.js Setup (Visual Nível GTA V + Performance Mobile Adaptativa) ---
   const canvas = el('gameCanvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: DEVICE_PROFILE.antialias,
+    precision: DEVICE_PROFILE.precision,
+    powerPreference: DEVICE_PROFILE.tier === 'low' ? 'default' : 'high-performance',
+    stencil: false
+  });
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    try { renderer.setPixelRatio(0.55); } catch (_) {}
+    showToast('⚠️ GPU reiniciou — modo econômico ativado');
+  }, false);
+
   const gfxQualities = {
-    low: { dpr: 0.70, shadows: false, shadowSize: 512, far: 185 },
-    medium: { dpr: Math.min(window.devicePixelRatio || 1, 0.95), shadows: false, shadowSize: 1024, far: 245 },
-    high: { dpr: Math.min(window.devicePixelRatio || 1, 1.25), shadows: true, shadowSize: 1024, far: 295 },
-    ultra: { dpr: Math.min(window.devicePixelRatio || 1, 1.50), shadows: true, shadowSize: 1024, far: 350 }
+    low: { dpr: DEVICE_PROFILE.tier === 'low' ? 0.60 : 0.70, shadows: false, shadowSize: 512, far: DEVICE_PROFILE.tier === 'low' ? 145 : 185 },
+    medium: { dpr: Math.min(window.devicePixelRatio || 1, DEVICE_PROFILE.tier === 'low' ? 0.72 : 0.95), shadows: false, shadowSize: 1024, far: DEVICE_PROFILE.tier === 'low' ? 185 : 245 },
+    high: { dpr: Math.min(window.devicePixelRatio || 1, DEVICE_PROFILE.tier === 'low' ? 0.85 : 1.25), shadows: DEVICE_PROFILE.tier !== 'low', shadowSize: 1024, far: 295 },
+    ultra: { dpr: Math.min(window.devicePixelRatio || 1, DEVICE_PROFILE.maxDpr), shadows: true, shadowSize: 1024, far: 350 }
   };
-  let currentGfxQuality = 'medium';
-  let targetFps = 90;
-  let targetFrameMs = 1000 / 90;
-  renderer.setPixelRatio(gfxQualities.medium.dpr);
+  let currentGfxQuality = DEVICE_PROFILE.defaultQuality;
+  let targetFps = DEVICE_PROFILE.defaultFps;
+  let targetFrameMs = targetFps >= 120 ? 0 : (1000 / targetFps);
+  renderer.setPixelRatio(gfxQualities[currentGfxQuality].dpr);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.shadowMap.enabled = false;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = DEVICE_PROFILE.tier === 'low' ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.06;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x6db3f2);
-  scene.fog = new THREE.FogExp2(0x6db3f2, 0.0022);
+  scene.fog = new THREE.FogExp2(0x6db3f2, DEVICE_PROFILE.tier === 'low' ? 0.0034 : 0.0022);
 
-  // Environment Map HDR-like procedural 512x256 para reflexos nível GTA V em carros, vidros e água
-  (function setupEnvReflections() {
+  // Environment Map HDR-like procedural 512x256 (pulado em celulares fracos para economizar VRAM)
+  if (!DEVICE_PROFILE.skipPmrem) (function setupEnvReflections() {
     const pmrem = new THREE.PMREMGenerator(renderer);
     const envScene = new THREE.Scene();
     const skyGeo = new THREE.SphereGeometry(50, 32, 20);
@@ -961,6 +1055,36 @@
     const radSq = (rad + 25) * (rad + 25);
     const hasLocalCache = localStorage.getItem(MAP_CACHE_FLAG) === '1';
 
+    // Celulares fracos/intermediários (ex: Galaxy A52 / Adreno 618): NUNCA carrega a cidade toda na RAM!
+    if (DEVICE_PROFILE.streamChunksOnDemand) {
+      const nearChunks = chunks.filter((c) => ((c.cx - px) ** 2 + (c.cz - pz) ** 2) <= radSq);
+      const totalNear = Math.max(1, nearChunks.length);
+      let done = 0;
+      const step = DEVICE_PROFILE.chunkBatchSize || 2;
+      for (let i = 0; i < nearChunks.length; i += step) {
+        const slice = nearChunks.slice(i, i + step);
+        await Promise.all(slice.map((c) =>
+          loadGLB('models/map/' + c.file)
+            .then((grp) => {
+              grp.visible = true;
+              grp.matrixAutoUpdate = false;
+              grp.updateMatrix();
+              scene.add(grp);
+              loadedChunks.set(c.file, { cx: c.cx, cz: c.cz, group: grp, loading: false });
+            })
+            .catch(() => {})
+            .finally(() => {
+              done++;
+              if (ui.loadStatus) ui.loadStatus.textContent = `Modo ${DEVICE_PROFILE.label} (${done}/${totalNear})...`;
+              if (ui.loadFill) ui.loadFill.style.width = `${55 + Math.round((done / totalNear) * 35)}%`;
+            })
+        ));
+        await new Promise((r) => setTimeout(r, 16));
+      }
+      try { renderer.compile(scene, camera); } catch (e) {}
+      return;
+    }
+
     if (hasLocalCache) {
       // Cache local ativo: carrega só os chunks próximos do spawn no boot e hidrata o resto em background
       const nearChunks = chunks.filter((c) => ((c.cx - px) ** 2 + (c.cz - pz) ** 2) <= radSq);
@@ -1022,11 +1146,55 @@
     if (!mapManifest) return;
     const rad = qualityLevels[qualityIdx].radius;
     const visRadSq = (rad + 25) * (rad + 25);
-    for (const entry of loadedChunks.values()) {
-      if (!entry.group) continue;
+    const unloadRadSq = (rad + 60) * (rad + 60);
+
+    for (const [file, entry] of loadedChunks.entries()) {
       const dx = entry.cx - px;
       const dz = entry.cz - pz;
-      entry.group.visible = (dx * dx + dz * dz <= visRadSq);
+      const distSq = dx * dx + dz * dz;
+      if (DEVICE_PROFILE.streamChunksOnDemand && !entry.loading && entry.group && distSq > unloadRadSq) {
+        scene.remove(entry.group);
+        disposeObject3D(entry.group, true);
+        loadedChunks.delete(file);
+        continue;
+      }
+      if (entry.group) {
+        entry.group.visible = (distSq <= visRadSq);
+      }
+    }
+
+    if (DEVICE_PROFILE.streamChunksOnDemand && activeChunkLoads < 1) {
+      let best = null;
+      let bestDistSq = visRadSq;
+      for (let i = 0; i < mapManifest.chunks.length; i++) {
+        const c = mapManifest.chunks[i];
+        if (loadedChunks.has(c.file)) continue;
+        const dx = c.cx - px;
+        const dz = c.cz - pz;
+        const dSq = dx * dx + dz * dz;
+        if (dSq <= bestDistSq) {
+          bestDistSq = dSq;
+          best = c;
+        }
+      }
+      if (best) {
+        activeChunkLoads++;
+        loadedChunks.set(best.file, { cx: best.cx, cz: best.cz, group: null, loading: true });
+        loadGLB('models/map/' + best.file)
+          .then((grp) => {
+            grp.visible = true;
+            grp.matrixAutoUpdate = false;
+            grp.updateMatrix();
+            scene.add(grp);
+            loadedChunks.set(best.file, { cx: best.cx, cz: best.cz, group: grp, loading: false });
+          })
+          .catch(() => {
+            loadedChunks.delete(best.file);
+          })
+          .finally(() => {
+            activeChunkLoads = Math.max(0, activeChunkLoads - 1);
+          });
+      }
     }
   }
 
@@ -3957,6 +4125,7 @@
     btn.onclick = () => {
       setActivePill('#gfx-quality-pills', btn);
       save.gfxQuality = btn.dataset.quality;
+      save.userCustomizedGfx = true;
       persistSave();
       applyGfxQuality(save.gfxQuality);
       showToast(`🎨 Qualidade: ${btn.textContent}`);
@@ -3966,6 +4135,7 @@
     btn.onclick = () => {
       setActivePill('#fps-pills', btn);
       save.targetFps = parseInt(btn.dataset.fps, 10) || 90;
+      save.userCustomizedGfx = true;
       persistSave();
       applyTargetFps(save.targetFps);
       showToast(`⚡ Limite: ${btn.textContent}`);
@@ -4064,23 +4234,28 @@
     };
   }
 
-  // Restaura preferências salvas ao iniciar
+  // Restaura preferências salvas ao iniciar (ou aplica perfil automático detectado do aparelho)
   (function restoreSavedSettings() {
+    if (!save.userCustomizedGfx) {
+      save.gfxQuality = DEVICE_PROFILE.defaultQuality;
+      save.dist = DEVICE_PROFILE.defaultDist;
+      save.targetFps = DEVICE_PROFILE.defaultFps;
+    }
     const envVal = (!save.env || save.env === 'day') ? 'auto' : save.env;
     const envBtn = document.querySelector(`#env-pills .pill-btn[data-env="${envVal}"]`);
     if (envBtn) setActivePill('#env-pills', envBtn);
     applyEnv(envVal);
 
-    const qBtn = document.querySelector(`#gfx-quality-pills .pill-btn[data-quality="${save.gfxQuality || 'medium'}"]`);
+    const qBtn = document.querySelector(`#gfx-quality-pills .pill-btn[data-quality="${save.gfxQuality || DEVICE_PROFILE.defaultQuality}"]`);
     if (qBtn) setActivePill('#gfx-quality-pills', qBtn);
-    applyGfxQuality(save.gfxQuality || 'medium');
+    applyGfxQuality(save.gfxQuality || DEVICE_PROFILE.defaultQuality);
     applySteerMode(save.steerMode || 'buttons', false);
 
-    const fpsBtn = document.querySelector(`#fps-pills .pill-btn[data-fps="${save.targetFps || 90}"]`);
+    const fpsBtn = document.querySelector(`#fps-pills .pill-btn[data-fps="${save.targetFps || DEVICE_PROFILE.defaultFps}"]`);
     if (fpsBtn) setActivePill('#fps-pills', fpsBtn);
-    applyTargetFps(save.targetFps || 90);
+    applyTargetFps(save.targetFps || DEVICE_PROFILE.defaultFps);
 
-    const distVal = typeof save.dist === 'number' ? save.dist : 1;
+    const distVal = typeof save.dist === 'number' ? save.dist : DEVICE_PROFILE.defaultDist;
     qualityIdx = Math.max(0, Math.min(2, distVal));
     const dBtn = document.querySelector(`#dist-pills .pill-btn[data-dist="${qualityIdx}"]`);
     if (dBtn) setActivePill('#dist-pills', dBtn);
@@ -5851,23 +6026,34 @@
       }
       buildRealMapTexture();
 
-      ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
-      ui.loadFill.style.width = '45%';
+      ui.loadStatus.textContent = `Carregando Veículos e Personagens (${DEVICE_PROFILE.label})...`;
+      ui.loadFill.style.width = '40%';
 
-      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
-        loadGLB('models/chars/cool_man.glb'),
-        loadGLB('models/chars/npc_outer_plane.glb'),
-        loadGLB('models/chars/doa_npc_fighter.glb'),
-        loadGLB('models/vehicles/traffic_rider_npc_vehicles.glb'),
-        loadGLB('models/vehicles/vw_pickup_azul.glb'),
-        loadGLB('models/vehicles/saveiro_brasil.glb'),
-        loadGLB('models/vehicles/ford_mustang_gtd.glb'),
-        loadGLB('models/vehicles/lexus_lc_500_wald.glb'),
-        loadGLB('models/vehicles/car_gol.glb'),
-        loadGLB('models/vehicles/car_pm.glb'),
-        loadGLB('models/props/prop_atm.glb'),
-        loadGLB('models/props/prop_job.glb')
-      ]);
+      const bootAssetPaths = [
+        'models/chars/cool_man.glb',
+        'models/chars/npc_outer_plane.glb',
+        'models/chars/doa_npc_fighter.glb',
+        'models/vehicles/traffic_rider_npc_vehicles.glb',
+        'models/vehicles/vw_pickup_azul.glb',
+        'models/vehicles/saveiro_brasil.glb',
+        'models/vehicles/ford_mustang_gtd.glb',
+        'models/vehicles/lexus_lc_500_wald.glb',
+        'models/vehicles/car_gol.glb',
+        'models/vehicles/car_pm.glb',
+        'models/props/prop_atm.glb',
+        'models/props/prop_job.glb'
+      ];
+      // Carrega em lotes pequenos para evitar pico de RAM/crash em celulares como Galaxy A52
+      const loadedBootAssets = [];
+      const bStep = DEVICE_PROFILE.bootBatchSize || 3;
+      for (let bi = 0; bi < bootAssetPaths.length; bi += bStep) {
+        const batch = bootAssetPaths.slice(bi, bi + bStep);
+        const resBatch = await Promise.all(batch.map((p) => loadGLB(p)));
+        loadedBootAssets.push(...resBatch);
+        ui.loadFill.style.width = `${30 + Math.round((loadedBootAssets.length / bootAssetPaths.length) * 24)}%`;
+        if (DEVICE_PROFILE.tier !== 'high') await new Promise((r) => setTimeout(r, 20));
+      }
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = loadedBootAssets;
 
       const carKeep = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'SteeringWheel', 'LightBlue', 'LightRed', 'HeadL', 'HeadR', 'TailL', 'TailR']);
       // Separa portas articuladas (DoorL e DoorR) no Mustang, Gol e Viatura PM antes de otimizar draw calls!
@@ -6191,6 +6377,7 @@
         ui.splash.classList.add('hide');
         setTimeout(() => { ui.splash.style.display = 'none'; }, 550);
         gameMode = 'lobby';
+        showToast('📱 ' + DEVICE_PROFILE.label);
         ui.lobby3d.classList.remove('hidden');
         requestAnimationFrame(loop);
       }, 350);
@@ -8780,7 +8967,7 @@
 
   function setupTrafficSystem(px, pz) {
     if (trafficTemplates.length === 0 || roadCells.length === 0) return;
-    const TARGET_TRAFFIC = 10;
+    const TARGET_TRAFFIC = DEVICE_PROFILE.maxTraffic || 6;
     for (let i = 0; i < TARGET_TRAFFIC; i++) {
       const sp = pickTrafficSpawnNear(px, pz, i < 8 ? 16 : 34, i < 8 ? 55 : 102);
       if (!sp) continue;
