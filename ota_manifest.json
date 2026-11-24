@@ -1,23 +1,23 @@
 {
-  "otaVersion": 19,
+  "otaVersion": 20,
   "minApkCodeForOta": 42,
-  "changelog": "• McDonald's 3D + Drive-Thru reposicionado para terreno aberto ao lado do meio-fio da Av. Sul (-63, 27), fora das ruas e 100% livre de paredes ou prédios bloqueando o acesso",
-  "totalBytes": 11166827,
+  "changelog": "• Corrigido bug visual de transparência/Z-sorting do McDonald's 3D (paredes agora 100% sólidas), proporção real para o carro caber folgado no Drive-Thru (3.9m x 2.53m) e entrada virada direto para a Av. Sul com anel luminoso",
+  "totalBytes": 11168795,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "0ed59af25338fa82ddf9291b7a9978dea9d0ab6737edca1f2691a76b1fe58907",
-      "size": 46041
+      "sha256": "c66e0bb914d298c377db601dafd54422ebe5ef0e859e049c8f5aa1895db33c87",
+      "size": 46516
     },
     "js/game.js": {
-      "sha256": "ce06329cd9df855e9098666ed5263f59025e292be5a2d840e7da9b7bfd694d9a",
-      "size": 381125
+      "sha256": "8bef55c02de1ff3d935b92174831f96b64649415567b334f2674ca9dabacb1a2",
+      "size": 382618
     },
     "js/missions.js": {
-      "sha256": "9c91fd4097a9137f0d68380408a468847210e7a55f0e3b70d74890a3e60c2592",
+      "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
       "size": 36539
     },
     "js/multiplayer.js": {

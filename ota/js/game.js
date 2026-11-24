@@ -5473,14 +5473,14 @@
   if (el('phGoMcEnter')) {
     el('phGoMcEnter').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-57.0, 13.5, "McDonald's (Salão)");
+      setGpsDestination(-53.1, 17.2, "McDonald's (Salão)");
       AudioFX.coin();
     };
   }
   if (el('phGoMcDrive')) {
     el('phGoMcDrive').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-67.1, 29.7, "McDonald's Drive-Thru");
+      setGpsDestination(-41.0, 30.0, "McDonald's Drive-Thru");
       AudioFX.coin();
     };
   }
@@ -5746,26 +5746,55 @@
         rpProps.push({ type: 'safehouse', label: 'Minha Casa', pos: hGrp.position, mesh: hGrp });
       })();
 
-      // McDonald's Drive-Thru real (mcdonalds_drivethru.glb) em terreno plano aberto ao lado do meio-fio da Av. Sul (-63, 27)
+      // McDonald's Drive-Thru real em terreno plano aberto ao lado do meio-fio da Av. Sul (-45, 30)
       (function buildMcDonalds() {
-        const mcOx = -63.0, mcOz = 27.0;
+        const mcOx = -45.0, mcOz = 30.0;
+        const mcScaleXZ = 1.35, mcScaleY = 1.55;
         loadGLB('models/props/mcdonalds_drivethru.glb').then((mcScene) => {
-          const mcY = getSafeGroundForSpawn(mcOx + 3.3, mcOz - 0.4, groundY);
+          const mcY = getSafeGroundForSpawn(-53.3, 30.5, groundY);
           mcScene.position.set(mcOx, mcY, mcOz);
+          // Rotaciona 180° para entrada do Drive-Thru e placa McDonald's ficarem voltadas para a Av. Sul (Z=14.5)
+          mcScene.rotation.y = Math.PI;
+          // Escala real para carros de 2.0m passarem folgados na pista (3.9m largura x 2.53m altura livre sob o toldo)
+          mcScene.scale.set(mcScaleXZ, mcScaleY, mcScaleXZ);
           mcScene.traverse((o) => {
-            if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; }
+            if (o.isMesh) {
+              o.castShadow = false;
+              o.receiveShadow = true;
+              const mats = Array.isArray(o.material) ? o.material : [o.material];
+              for (const mat of mats) {
+                if (!mat) continue;
+                // Corrige Z-sorting bugado do EngadineMaccas.002 (alphaMode BLEND deixava paredes invertidas/transparentes)
+                if (mat.transparent) {
+                  mat.transparent = false;
+                  mat.depthWrite = true;
+                  mat.alphaTest = 0.25;
+                }
+                mat.side = THREE.DoubleSide;
+                mat.needsUpdate = true;
+              }
+            }
           });
           scene.add(mcScene);
-          mcBuildings.push({ mesh: mcScene, x: mcOx + 3.3, z: mcOz - 0.4 });
-          // Balcão de atendimento a pé (calçada do meio-fio da avenida)
-          const counterPos = new THREE.Vector3(-57.0, getSafeGroundForSpawn(-57.0, 13.5, mcY), 13.5);
+          mcBuildings.push({ mesh: mcScene, x: -53.3, z: 30.5 });
+          // Balcão de atendimento a pé (fachada frontal voltada para o meio-fio da avenida)
+          const counterPos = new THREE.Vector3(-53.1, getSafeGroundForSpawn(-53.1, 17.2, mcY), 17.2);
           rpProps.push({ type: 'mcdonalds', label: "McDonald's", pos: counterPos, mesh: mcScene });
-          // Janela do Drive-Thru (pista aberta para carros)
+          // Janela/pista do Drive-Thru (corredor largo de ~3.9m entre os totens de pedido)
+          const dtY = getSafeGroundForSpawn(-41.0, 30.0, mcY);
           driveThrus.push({
-            pos: new THREE.Vector3(-67.1, mcY, 29.7),
+            pos: new THREE.Vector3(-41.0, dtY, 30.0),
             label: "McDonald's Drive-Thru",
             cooldown: 0
           });
+          // Marcação luminosa no chão da pista do Drive-Thru
+          const dtRing = new THREE.Mesh(
+            new THREE.RingGeometry(1.9, 2.35, 28),
+            new THREE.MeshBasicMaterial({ color: 0xffd41f, transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false })
+          );
+          dtRing.rotation.x = -Math.PI / 2;
+          dtRing.position.set(-41.0, dtY + 0.09, 30.0);
+          scene.add(dtRing);
         }).catch((e) => console.warn("McDonald's GLB indisponível:", e));
       })();
 
@@ -5920,7 +5949,7 @@
       const pz = player.inCar ? player.inCar.pos.z : player.pos.z;
       updateChunkStreaming(px, pz);
       for (const mb of mcBuildings) {
-        mb.mesh.visible = ((mb.x - px) ** 2 + (mb.z - pz) ** 2) < (140 * 140);
+        mb.mesh.visible = ((mb.x - px) ** 2 + (mb.z - pz) ** 2) < (240 * 240);
       }
     }
 
