@@ -1,16 +1,20 @@
 {
-  "otaVersion": 5,
+  "otaVersion": 6,
   "minApkCodeForOta": 42,
-  "changelog": "• Adicionado Log de Atualizações nas Configurações com o histórico de cada versão",
-  "totalBytes": 335865,
+  "changelog": "• Fim das paredes invisíveis embaixo de viadutos, passarelas, marquises e árvores (nova camada de colisão gerada da geometria real)\n• Personagem e veículos usam o piso real sob viadutos\n• Mar ao redor da cidade removido; limite do mapa na borda da cidade",
+  "totalBytes": 5297064,
   "files": {
     "index.html": {
-      "sha256": "c0725d76640a2ea37a68d66ee510ebfb932168370b74e8b1728279a6b0279b2e",
-      "size": 29413
+      "sha256": "0b5124a3812b09d4542644fb21117e86ef98763d2fd9e17473c6d3d8de086300",
+      "size": 30024
     },
     "js/game.js": {
-      "sha256": "c60bb805202122ce20791ec1c1b73bb5654f8723e06f4f8b68d703dc3f2b8cbf",
-      "size": 277241
+      "sha256": "5fd384b5db5eabb0cc60973b56f949aab0bbe1e7baef29f7b499b3cf74e2edd2",
+      "size": 278745
+    },
+    "models/map/collision_floor.bin": {
+      "sha256": "177f8fcf89f8ff3b5c4338fc41b05ab7fdae87a7aa19af72615f2e234d499956",
+      "size": 4959084
     },
     "style.css": {
       "sha256": "559f1dcd0c3957f983af90b50fd95bd1624258420402686daf7ec7eb72160a3d",

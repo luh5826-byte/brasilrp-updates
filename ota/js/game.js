@@ -521,25 +521,13 @@
     // Leste (x > 790)
     { w: 2800, h: 1620, x: 790 + 1400, z: -613 }
   ];
-  seaPanels.forEach((sp) => {
-    const geo = new THREE.PlaneGeometry(sp.w, sp.h, 16, 12);
-    const m = new THREE.Mesh(geo, waterMat);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(sp.x, WATER_Y, sp.z);
-    m.receiveShadow = false;
-    seaGroup.add(m);
-    seaMeshes.push({ mesh: m, geo });
-  });
-  // Plano fundo bem abaixo da ilha (-3.8m) apenas para evitar vazio se olhar sob o mapa
-  const deepFloor = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshBasicMaterial({ color: 0x052d47 }));
-  deepFloor.rotation.x = -Math.PI / 2;
-  deepFloor.position.y = -3.8;
-  seaGroup.add(deepFloor);
-  scene.add(seaGroup);
+  // Mar removido: nenhum painel de água ou fundo oceânico é criado/adicionado à cena
+  void seaPanels; void waterMat; void seaGroup;
 
   let oceanWarnCooldown = 0;
+  // Limite do mapa = borda da cidade (sem mar ao redor)
   function clampOceanBounds(pos, vel = null) {
-    const minX = -1040, maxX = 900, minZ = -1530, maxZ = 310;
+    const minX = -922, maxX = 786, minZ = -1414, maxZ = 188;
     let clamped = false;
     if (pos.x < minX) { pos.x = minX; clamped = true; }
     if (pos.x > maxX) { pos.x = maxX; clamped = true; }
@@ -549,7 +537,7 @@
       if (vel) vel.multiplyScalar(-0.3);
       if (oceanWarnCooldown <= 0) {
         oceanWarnCooldown = 3.0;
-        showToast('🌊 Correnteza forte! Limite do oceano.');
+        showToast('🚧 Limite do mapa');
       }
     }
     return clamped;
@@ -965,6 +953,9 @@
   // --- Colisão & Altura O(1) + Minimapa IA & Roteamento GPS ---
   let colMeta = null;
   let colGrid = null;
+  // Camada extra (collision_floor.bin): por célula [piso inferior transitável (cm), início do obstáculo acima (cm)]
+  // Permite passar embaixo de viadutos, passarelas, marquises e copas de árvores sem paredes invisíveis
+  let colFloor = null;
   const mapAiImage = new Image();
   let mapAiReady = false;
   mapAiImage.onload = () => { mapAiReady = true; };
@@ -1507,6 +1498,28 @@
     return raw * 0.01;
   }
 
+  // Piso inferior com vão livre (embaixo de viaduto/marquise/árvore) acessível a partir da altura posY
+  function getUnderFloorAt(ix, iy, posY, maxStep, clearance = 1.9) {
+    if (!colFloor || !colMeta) return null;
+    if (ix < 0 || iy < 0 || ix >= colMeta.W || iy >= colMeta.H) return null;
+    const i = (iy * colMeta.W + ix) * 2;
+    const f = colFloor[i];
+    if (f === -32768) return null;
+    const fy = f * 0.01;
+    const cy = colFloor[i + 1] * 0.01;
+    if (cy - fy < clearance) return null;
+    if (fy - posY > maxStep) return null;      // piso alto demais para subir
+    if (posY > cy - 0.4) return null;          // já está acima da cobertura (em cima do viaduto)
+    return fy;
+  }
+
+  function getUnderFloorWorld(x, z, posY, maxStep, clearance = 1.9) {
+    if (!colMeta) return null;
+    const ix = Math.floor((x - colMeta.minX) / colMeta.step);
+    const iy = Math.floor((-z - colMeta.minY) / colMeta.step);
+    return getUnderFloorAt(ix, iy, posY, maxStep, clearance);
+  }
+
   function isRealWallCell(ix, iy, raw, posY, maxStep, cellCenterX, cellCenterZ) {
     // Frestas de raycast (-32768) nunca devem virar paredes invisíveis
     if (raw === -32768) return false;
@@ -1517,6 +1530,9 @@
 
     const isHigh = (raw >= 29500) || ((raw * 0.01) - posY > maxStep);
     if (!isHigh) return false;
+
+    // Embaixo de viaduto, passarela, marquise ou copa de árvore com vão livre real: não é parede
+    if (getUnderFloorAt(ix, iy, posY, maxStep) !== null) return false;
 
     // Verifica vizinhos para distinguir prédios/muros/muretas costeiras de postes, árvores e arcos de pontes
     const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -1682,10 +1698,14 @@
     const outside = isOutsideIsland(x, z);
     const gy = getGroundHeight(x, z);
     if (gy === null) {
-      return outside ? null : Math.max(0.05, curY);
+      if (outside) return null;
+      const uf = getUnderFloorWorld(x, z, curY, maxStep);
+      return uf !== null ? uf : Math.max(0.05, curY);
     }
     if (gy - curY > maxStep) {
-      // Embaixo de viaduto/ponte/marquise: busca nível do piso ao redor ou mantém o nível atual dentro da ilha
+      // Embaixo de viaduto/ponte/marquise: usa o piso real inferior da camada de colisão
+      const uf = getUnderFloorWorld(x, z, curY, maxStep);
+      if (uf !== null) return uf;
       if (getRoadCellAt(x, z) === 1) return Math.max(0.05, curY);
       if (colMeta && colGrid) {
         const ix = Math.floor((x - colMeta.minX) / colMeta.step);
@@ -4464,6 +4484,15 @@
       colGrid = new Int16Array(await binRes.arrayBuffer());
       roadGrid = new Uint8Array(await roadRes.arrayBuffer());
       roadGridN = Math.round(Math.sqrt(roadGrid.length)) || 1024;
+      try {
+        const floorRes = await fetch('models/map/collision_floor.bin');
+        if (floorRes.ok) {
+          const fl = new Int16Array(await floorRes.arrayBuffer());
+          if (fl.length === colMeta.W * colMeta.H * 2) colFloor = fl;
+        }
+      } catch (e) {
+        console.warn('collision_floor.bin indisponível:', e);
+      }
       buildRealMapTexture();
 
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
@@ -4892,6 +4921,7 @@
     } else {
       player.waterTimer = 0;
       player.mesh.rotation.x = 0;
+      clampOceanBounds(player.pos);
       player.velY -= 22 * dt;
       player.pos.y += player.velY * dt;
 
