@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 24,
+  "otaVersion": 25,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/6e0d097b21dee705c955c52ad08bd2d6af539037/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/6e0d097b21dee705c955c52ad08bd2d6af539037/ota_manifest.json",
-  "otaChangelog": "• Rodas dianteiras da Saveiro corrigidas (sem oscilação): agora usam exatamente a mesma malha redonda e centralização das rodas traseiras, mantendo o esterçamento suave para direita e esquerda"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/ac3ec551c75556293db0803250ba6dda49a2abb3/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/ac3ec551c75556293db0803250ba6dda49a2abb3/ota_manifest.json",
+  "otaChangelog": "• Mobilidade calibrada (aceleração progressiva e velocidade realista nas ruas) + Freio agora para totalmente o veículo antes de engatar a ré\n• Câmera 360° livre no veículo (inclusive em movimento e no joystick Bluetooth) + zoom aproximado sem bloqueio para ver detalhes externos\n• Rodas das Saveiros atualizadas para prata alumínio uniforme (sem diamantado)"
 }
