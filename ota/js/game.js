@@ -4729,10 +4729,29 @@
     showToast(`🏥 ${reason} Spawn no Hospital! (-R$ ${fee})`, 3400);
   }
 
+  const GTA = {
+    walkSpeed: 1.7,      // joystick pouco inclinado
+    runSpeed: 3.8,       // joystick no máximo (corrida padrão, como no GTA)
+    sprintSpeed: 5.6,    // botão de sprint
+    walkStick: 0.45,     // inclinação em que chega na velocidade de andar
+    runStick: 0.85,      // inclinação em que chega na velocidade de corrida
+    strideBase: 1.3,     // passos: maior = passos mais lentos e longos
+    stridePerMs: 0.45,   // o comprimento do passo cresce com a velocidade
+    camFollowRate: 9,    // câmera: menor = mais atraso e mais peso
+    camFollowRateY: 6,   // atraso vertical (pulos e degraus)
+    sprintFovBoost: 8,   // graus de FOV extra no sprint (0 desliga)
+  };
+
   function updatePlayer(dt, jx, jy) {
     const mag = Math.min(1, Math.hypot(jx, jy));
     const isSprinting = (input.sprint || keys['ShiftLeft']) && player.stamina > 5 && mag > 0.2;
-    const speed = isSprinting ? 5.6 : 2.6;
+    let speed;
+    if (isSprinting) speed = GTA.sprintSpeed * Math.max(0.6, mag);
+    else if (mag < GTA.walkStick) speed = GTA.walkSpeed * (mag / GTA.walkStick);
+    else {
+      const t = Math.min(1, (mag - GTA.walkStick) / (GTA.runStick - GTA.walkStick));
+      speed = GTA.walkSpeed + (GTA.runSpeed - GTA.walkSpeed) * (t * t * (3 - 2 * t));
+    }
 
     if (isSprinting) player.stamina = Math.max(0, player.stamina - 18 * dt);
     else player.stamina = Math.min(100, player.stamina + 14 * dt);
@@ -4751,8 +4770,8 @@
       const moveAngle = Math.atan2(-jx, -jy) + input.camYaw;
       const dirX = -Math.sin(moveAngle);
       const dirZ = -Math.cos(moveAngle);
-      targetVx = dirX * speed * mag;
-      targetVz = dirZ * speed * mag;
+      targetVx = dirX * speed;
+      targetVz = dirZ * speed;
 
       let diff = moveAngle - player.yaw;
       while (diff > Math.PI) diff -= Math.PI * 2;
@@ -4895,7 +4914,8 @@
     // npc_outer_plane.glb tem o rosto voltado para +Z em Three.js, então somamos Math.PI para andar sempre de frente!
     player.mesh.rotation.y = player.yaw + Math.PI;
     player.mesh.rotation.z = inWater ? 0 : (player.turnLean || 0);
-    const animTimeScale = curHorizSpeed > 0.35 ? Math.max(0.65, curHorizSpeed / 5.5) : 1.0;
+    const phaseRate = (Math.PI * 2 * curHorizSpeed) / (GTA.strideBase + GTA.stridePerMs * curHorizSpeed);
+    const animTimeScale = curHorizSpeed > 0.35 ? Math.max(0.6, phaseRate / 6.4) : 1.0;
     animateJobNpcBones(player, dt * animTimeScale, curHorizSpeed > 0.35);
 
     nearestCar = null;
@@ -6517,7 +6537,19 @@
     ui.wantedStars.textContent = '★'.repeat(player.wanted) + '☆'.repeat(5 - player.wanted);
   }
 
+  const camFollow = new THREE.Vector3();
+  let camFollowInit = false;
+  let camBaseFov = null;
+
   function updateCamera(dt) {
+    if (camBaseFov === null) camBaseFov = camera.fov;
+    const wantFov = camBaseFov + ((!player.inCar && !player.firstPersonFoot) ? GTA.sprintFovBoost * (player.sprintBlend || 0) : 0);
+    if (Math.abs(camera.fov - wantFov) > 0.05) {
+      camera.fov += (wantFov - camera.fov) * Math.min(1, dt * 6);
+      camera.updateProjectionMatrix();
+    }
+    if (player.inCar || player.firstPersonFoot) camFollowInit = false;
+
     const wantNear = (player.inCar && player.firstPersonCar) ? 0.05 : (!player.inCar && player.firstPersonFoot ? 0.12 : 0.28);
     if (Math.abs(camera.near - wantNear) > 0.01) {
       camera.near = wantNear;
@@ -6555,7 +6587,17 @@
       return;
     }
 
-    const target = player.inCar ? player.inCar.pos : player.pos;
+    const realTarget = player.inCar ? player.inCar.pos : player.pos;
+    if (player.inCar || !camFollowInit || camFollow.distanceTo(realTarget) > 2.5) {
+      camFollow.copy(realTarget);
+      camFollowInit = true;
+    } else {
+      const kXZ = Math.min(1, dt * GTA.camFollowRate);
+      camFollow.x += (realTarget.x - camFollow.x) * kXZ;
+      camFollow.z += (realTarget.z - camFollow.z) * kXZ;
+      camFollow.y += (realTarget.y - camFollow.y) * Math.min(1, dt * GTA.camFollowRateY);
+    }
+    const target = player.inCar ? realTarget : camFollow;
     const baseDist = player.inCar ? 5.2 : 3.2;
     const dist = Math.max(0.65, Math.min(13.5, baseDist + input.camZoomOffset));
     const height = player.inCar ? 1.85 : (dist < 1.5 ? 1.32 : 1.45);
