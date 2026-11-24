@@ -2721,16 +2721,6 @@
       beam.rotation.x = 0.09 * fSign;
       if (fSign < 0) beam.rotation.y = Math.PI;
       parts.headLightGroup.add(beam);
-
-      const flare = new THREE.Mesh(_flareQuadGeo, headFlareMat);
-      flare.position.set(hp.x, hp.y, hp.z + fSign * 0.06);
-      parts.headLightGroup.add(flare);
-    });
-    [tL, tR].forEach((tp) => {
-      const tf = new THREE.Mesh(_flareQuadGeo, parts.tailMat);
-      tf.scale.set(1.1, 0.55, 1);
-      tf.position.set(tp.x, tp.y, tp.z - fSign * 0.03);
-      parts.tailLightGroup.add(tf);
     });
 
     carObj.rotation.order = 'YXZ';
