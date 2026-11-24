@@ -1,26 +1,26 @@
 {
-  "otaVersion": 33,
+  "otaVersion": 34,
   "minApkCode": 42,
-  "generatedAt": "2026-11-24T21:29:50.627Z",
-  "changelog": "• Revertidas alterações gráficas do OTA #32 — gráficos restaurados exatamente ao padrão original",
-  "fileCount": 13,
-  "totalSize": 18732071,
+  "generatedAt": "2026-11-24T21:51:37.596Z",
+  "changelog": "• Adicionado Toyota GR Supra GT300 direto do Apex Circuit com física completa (296 km/h / 348 km/h no Nitro, aceleração, drift e aderência lateral padrão Apex)\n• Rodas dianteiras e traseiras re-ancoradas por pivô individual (aro + pneu) com giro real e esterçamento de 0.44 rad\n• Disponível no seletor do Lobby, estacionado no spawn e no Celular RP",
+  "fileCount": 14,
+  "totalSize": 27495870,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "c1fa92ea5d859b0d183e620c09a49e2735da663817ecb7480022542794daeda3",
-      "size": 51059
+      "sha256": "4efde988188c34878140ae58486d0f53890ba6980b192a0ea822e1b753100915",
+      "size": 51323
     },
     "js/audio_world.js": {
       "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "bd82a8f3eb8fc78b1b5d4a015bae03c98b92e1ed7730288919ea48c9196226dc",
-      "size": 404119
+      "sha256": "add5ea0a235d3cfb96e0aa4300a7af09af21b49a5210c2278e66803d1ab2348f",
+      "size": 406286
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -49,6 +49,10 @@
     "models/vehicles/saveiro_brasil.glb": {
       "sha256": "08efb607a12a9ff425ca8548bd2653c3542e54418c9236363939116a87ed6426",
       "size": 5652144
+    },
+    "models/vehicles/toyota_gr_supra_gt300.glb": {
+      "sha256": "cf500c1e45219bceb921e2978d90f4c085800c32330921bd3b9769da637d5374",
+      "size": 8761368
     },
     "models/vehicles/vw_pickup_azul.glb": {
       "sha256": "004223ec6d1cc84cc1d9f8bab15dd97527f5eb206c81f5c739ff07fa442b561d",

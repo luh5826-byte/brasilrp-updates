@@ -2979,7 +2979,7 @@
     chassis.add(root);
     chassis.updateMatrixWorld(true);
 
-    // Re-ancora rodas e portas de modelos Assetto Corsa / Sketchfab (ex: Lexus LC 500 Wald)
+    // Re-ancora rodas e portas de modelos Assetto Corsa / Sketchfab (ex: Lexus LC 500 Wald e Toyota GR Supra GT300)
     const partRules = [
       { re: /^WHEEL_LF/i, target: 'WheelFL', mode: 'wheel' },
       { re: /^WHEEL_RF/i, target: 'WheelFR', mode: 'wheel' },
@@ -2988,19 +2988,44 @@
       { re: /^L_Door/i, target: 'DoorL', mode: 'door' },
       { re: /^R_door/i, target: 'DoorR', mode: 'door' }
     ];
-    const matched = new Map();
+    const matWheelRules = [
+      { re: /^(rim|tire)_FL$/i, target: 'WheelFL' },
+      { re: /^(rim|tire)_FR$/i, target: 'WheelFR' },
+      { re: /^(rim|tire)_RL$/i, target: 'WheelRL' },
+      { re: /^(rim|tire)_RR$/i, target: 'WheelRR' }
+    ];
+    const groupedParts = new Map(); // targetName -> { objs: [], mode }
     root.traverse((obj) => {
-      if (!obj.name) return;
-      for (const rule of partRules) {
-        if (!matched.has(rule.target) && rule.re.test(obj.name)) {
-          matched.set(rule.target, { obj, mode: rule.mode });
+      if (obj.name) {
+        for (const rule of partRules) {
+          if (rule.re.test(obj.name)) {
+            if (!groupedParts.has(rule.target)) groupedParts.set(rule.target, { objs: [obj], mode: rule.mode });
+            return;
+          }
+        }
+      }
+      if (obj.isMesh && obj.material) {
+        const matName = Array.isArray(obj.material) ? (obj.material[0] && obj.material[0].name) : obj.material.name;
+        if (matName) {
+          for (const mr of matWheelRules) {
+            if (mr.re.test(matName)) {
+              if (!groupedParts.has(mr.target)) groupedParts.set(mr.target, { objs: [], mode: 'wheel' });
+              groupedParts.get(mr.target).objs.push(obj);
+              return;
+            }
+          }
         }
       }
     });
     const pBox = new THREE.Box3();
+    const tmpBox = new THREE.Box3();
     const pCenter = new THREE.Vector3();
-    matched.forEach(({ obj, mode }, targetName) => {
-      pBox.setFromObject(obj);
+    groupedParts.forEach(({ objs, mode }, targetName) => {
+      pBox.makeEmpty();
+      objs.forEach((o) => {
+        tmpBox.setFromObject(o);
+        if (!tmpBox.isEmpty()) pBox.union(tmpBox);
+      });
       if (pBox.isEmpty()) return;
       pBox.getCenter(pCenter);
       const pivotWorld = pCenter.clone();
@@ -3014,13 +3039,13 @@
       pivot.position.copy(pivotWorld);
       chassis.add(pivot);
       pivot.updateMatrixWorld(true);
-      pivot.attach(obj);
+      objs.forEach((o) => pivot.attach(o));
     });
 
     wrapper.add(chassis);
     const keepSeparate = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'SteeringWheel', 'LightBlue', 'LightRed']);
     mergeStaticMeshesByMaterial(chassis, keepSeparate);
-    matched.forEach((_, targetName) => {
+    groupedParts.forEach((_, targetName) => {
       const partObj = chassis.getObjectByName(targetName);
       if (partObj) mergeStaticMeshesByMaterial(partObj, null);
     });
@@ -3039,15 +3064,17 @@
     const isSaveiroBrasil = typeKey === 'saveiro_brasil';
     const isMustang = typeKey === 'ford_mustang_gtd';
     const isLexus = typeKey === 'lexus_lc_500_wald';
-    // Todos os 6 veículos têm a frente real em +Z!
+    const isGt300 = typeKey === 'toyota_gr_supra_gt300';
+    // Todos os veículos têm a frente real em +Z!
     const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
 
     const isLexusSpec = isLexus || isSaveiro || isSaveiroBrasil;
     const v = {
       type: typeKey,
+      apexPhysics: isGt300,
       forwardSign: forwardPlusZ ? 1 : -1,
-      name: isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
+      name: isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
       mesh,
       parts,
       pos: mesh.position,
@@ -3062,7 +3089,7 @@
       rollVel: 0,
       pitchVel: 0,
       angVel: 0,
-      mass: isLexusSpec ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
+      mass: isGt300 ? 1.28 : isLexusSpec ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
       hp: 100,
       broken: false,
       nitro: 100,
@@ -3074,11 +3101,12 @@
       sirenOn: false,
       reverseHoldTimer: 0,
       inReverseGear: false,
-      // Mobilidade calibrada e realista nas ruas (controle progressivo sem disparar excessivamente)
-      maxTopSpeedMs: isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : typeKey === 'car_pm' ? (168 / 3.6) : (145 / 3.6),
-      accelPower: isMustang ? 19.0 : isLexusSpec ? 17.5 : typeKey === 'car_pm' ? 16.5 : 14.5,
-      turnRate: isLexusSpec ? 1.92 : 1.98,
-      soundProfile: isLexusSpec ? 'v8_muscle' : null
+      // GT300 usa física, aceleração, esterçamento e drift fiéis ao Apex Circuit!
+      maxTopSpeedMs: isGt300 ? (296 / 3.6) : isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : typeKey === 'car_pm' ? (168 / 3.6) : (145 / 3.6),
+      accelPower: isGt300 ? 34.0 : isMustang ? 19.0 : isLexusSpec ? 17.5 : typeKey === 'car_pm' ? 16.5 : 14.5,
+      turnRate: isGt300 ? 2.15 : isLexusSpec ? 1.92 : 1.98,
+      wheelSteerMax: isGt300 ? 0.44 : 0.34,
+      soundProfile: (isGt300 || isLexusSpec) ? 'v8_muscle' : null
     };
     if (isMustang) paintVehicle(v, save.paint);
     vehicles.push(v);
@@ -5649,6 +5677,7 @@
   });
 
   if (el('phCallMustang')) el('phCallMustang').onclick = () => deliverPhoneCar('ford_mustang_gtd', '🏎️ Ford Mustang GTD');
+  if (el('phCallGt300')) el('phCallGt300').onclick = () => deliverPhoneCar('toyota_gr_supra_gt300', '🏁 Toyota GR Supra GT300');
   if (el('phCallLexus')) el('phCallLexus').onclick = () => deliverPhoneCar('lexus_lc_500_wald', '🏁 Lexus LC 500 Wald');
   if (el('phCallSaveiro')) el('phCallSaveiro').onclick = () => deliverPhoneCar('volkswagen_saveiro', '🛻 VW Pickup Azul');
   if (el('phCallSaveiroBrasil')) el('phCallSaveiroBrasil').onclick = () => deliverPhoneCar('saveiro_brasil', '🇧🇷 Saveiro Cross Brasil');
@@ -5854,7 +5883,7 @@
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
       ui.loadFill.style.width = '45%';
 
-      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
         loadGLB('models/chars/cool_man.glb'),
         loadGLB('models/chars/npc_outer_plane.glb'),
         loadGLB('models/chars/doa_npc_fighter.glb'),
@@ -5863,6 +5892,7 @@
         loadGLB('models/vehicles/saveiro_brasil.glb'),
         loadGLB('models/vehicles/ford_mustang_gtd.glb'),
         loadGLB('models/vehicles/lexus_lc_500_wald.glb'),
+        loadGLB('models/vehicles/toyota_gr_supra_gt300.glb'),
         loadGLB('models/vehicles/car_gol.glb'),
         loadGLB('models/vehicles/car_pm.glb'),
         loadGLB('models/props/prop_atm.glb'),
@@ -5889,6 +5919,7 @@
         saveiro_brasil: saveiroBrasilScene,
         ford_mustang_gtd: mustangScene,
         lexus_lc_500_wald: normalizeApexVehicleScene(lexusScene, 4.55),
+        toyota_gr_supra_gt300: normalizeApexVehicleScene(gt300Scene, 4.62),
         car_gol: golScene,
         car_pm: pmScene
       };
@@ -6049,6 +6080,7 @@
       }
       spawnVehicle('ford_mustang_gtd', -172.0, getSafeGroundForSpawn(-172.0, -180.5, groundY) + 0.03, -180.5, 0.0);
       spawnVehicle('lexus_lc_500_wald', -172.0, getSafeGroundForSpawn(-172.0, -188.0, groundY) + 0.03, -188.0, 0.0);
+      spawnVehicle('toyota_gr_supra_gt300', -172.0, getSafeGroundForSpawn(-172.0, -195.5, groundY) + 0.03, -195.5, 0.0);
       spawnVehicle('car_pm', -172.0, getSafeGroundForSpawn(-172.0, -195.5, groundY) + 0.03, -195.5, 0.0);
 
       // Semáforos nativos do mapa funcionando + Tráfego de veículos
@@ -6171,7 +6203,7 @@
           animateJobNpcBones(st, dt, walking);
         },
         createRemoteCarVisual: (idNum, carType) => {
-          const keys = ['lexus_lc_500_wald', 'ford_mustang_gtd', 'volkswagen_saveiro', 'car_gol', 'car_pm'];
+          const keys = ['toyota_gr_supra_gt300', 'lexus_lc_500_wald', 'ford_mustang_gtd', 'volkswagen_saveiro', 'car_gol', 'car_pm'];
           const k = (carType && vehicleTemplates[carType]) ? carType : keys[Math.abs(idNum || 0) % keys.length];
           const tpl = vehicleTemplates[k];
           if (!tpl) return null;
@@ -6880,7 +6912,9 @@
     }
     ui.screenFx.classList.toggle('nitro-active', car.nitroActive);
 
-    const topMs = car.nitroActive ? car.maxTopSpeedMs * 1.22 : car.maxTopSpeedMs;
+    const topMs = car.apexPhysics
+      ? (car.nitroActive ? (348 / 3.6) : car.maxTopSpeedMs)
+      : (car.nitroActive ? car.maxTopSpeedMs * 1.22 : car.maxTopSpeedMs);
     const throttleAmt = (padState.active && padState.gasAmount > 0.05 && !input.gas && !keys['KeyW'] && !keys['ArrowUp'])
       ? padState.gasAmount
       : (gas ? 1.0 : 0.0);
@@ -6931,7 +6965,9 @@
         } else {
           const speedRatio = Math.min(1, Math.max(0, forwardSpeed / topMs));
           const launchMul = (car.launchBoostTimer > 0) ? 1.38 : 1.0;
-          accelForce = car.accelPower * throttleAmt * (1.0 - speedRatio * 0.68) * (car.nitroActive ? 1.48 : 1.0) * launchMul;
+          const curveDrop = car.apexPhysics ? 0.62 : 0.68;
+          const nitroMul = car.nitroActive ? (car.apexPhysics ? 1.55 : 1.48) : 1.0;
+          accelForce = car.accelPower * throttleAmt * (1.0 - speedRatio * curveDrop) * nitroMul * launchMul;
         }
       } else if (brake) {
         if (forwardSpeed > 0.38) {
@@ -6979,13 +7015,16 @@
 
     if (!holdStopped) {
       car.vel.addScaledVector(forwardDir, accelForce * dt);
-      const drag = 0.0052 * car.vel.length() + 0.22;
+      const drag = car.apexPhysics
+        ? (0.0042 * car.vel.length() + 0.14)
+        : (0.0052 * car.vel.length() + 0.22);
       car.vel.multiplyScalar(Math.max(0, 1.0 - drag * dt));
     }
 
-    const steerSensitivity = Math.abs(forwardSpeed) < 0.25 ? 0 : Math.min(1.0, Math.abs(forwardSpeed) / 2.2);
+    const steerSensitivity = Math.abs(forwardSpeed) < 0.25 ? 0 : Math.min(1.0, Math.abs(forwardSpeed) / (car.apexPhysics ? 4.5 : 2.2));
     const driftMultiplier = drift ? 1.48 : 1.0;
-    const turnRate = (car.turnRate || 2.15) * (1.0 / (1.0 + speedKmh * 0.0055)) * driftMultiplier;
+    const speedDamp = car.apexPhysics ? 0.0045 : 0.0055;
+    const turnRate = (car.turnRate || 2.15) * (1.0 / (1.0 + speedKmh * speedDamp)) * driftMultiplier;
     const dirSign = forwardSpeed >= -0.25 ? 1.0 : -1.0;
 
     car.yaw += car.steerAngle * turnRate * steerSensitivity * dirSign * dt;
@@ -6995,7 +7034,7 @@
 
     const newForwardSpeed = car.vel.dot(forwardDir);
     const newLateralSpeed = car.vel.dot(rightDir);
-    const lateralGrip = drift ? 3.2 : 16.5;
+    const lateralGrip = car.apexPhysics ? (drift ? 2.4 : 8.8) : (drift ? 3.2 : 16.5);
     const dampedLateral = newLateralSpeed * Math.max(0, 1.0 - lateralGrip * dt);
 
     car.vel.copy(forwardDir).multiplyScalar(newForwardSpeed).addScaledVector(rightDir, dampedLateral);
@@ -7647,8 +7686,9 @@
 
       const wheelSpin = v.speed * dt * 2.9 * fs;
       const burnoutRearSpin = v.burnoutActive ? (28 + 26 * (v.burnoutHeat || 0.5)) * dt * fs : 0;
+      const steerMax = v.wheelSteerMax || 0.34;
       v.parts.wheels.forEach((w) => {
-        if (w.front) w.steerPivot.rotation.y = v.steerAngle * 0.34;
+        if (w.front) w.steerPivot.rotation.y = v.steerAngle * steerMax;
         const spin = v.burnoutActive ? (w.front ? 0 : burnoutRearSpin) : wheelSpin;
         w.spinObj.rotation.x = (w.spinObj.rotation.x + spin) % (Math.PI * 2);
       });
