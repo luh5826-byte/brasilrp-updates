@@ -1773,25 +1773,38 @@
     // Embaixo de viaduto, passarela, marquise ou copa de árvore com vão livre real: não é parede
     if (getUnderFloorAt(ix, iy, posY, maxStep) !== null) return false;
 
-    // Verifica vizinhos para distinguir prédios/muros/muretas costeiras de postes, árvores e arcos de pontes
+    // Verifica vizinhos para distinguir prédios/muros/muretas costeiras de postes, árvores, escadarias e arcos de pontes
     const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
     let walkableNeighbors = 0;
     let highNeighbors = 0;
     let seaNeighbors = 0;
+    let stairBridgeNeighbor = false;
+    const cellH = raw < 29500 ? raw * 0.01 : 999;
     for (let i = 0; i < 4; i++) {
       const nr = getCellRaw(ix + dirs[i][0], iy + dirs[i][1]);
       if (nr === -32768) {
         seaNeighbors++;
-      } else if (nr < 29500 && (nr * 0.01) - posY <= maxStep + 0.85) {
-        walkableNeighbors++;
-      } else if (nr >= 29500 || (nr !== -32768 && (nr * 0.01) - posY > maxStep)) {
+      } else if (nr < 29500) {
+        const nh = nr * 0.01;
+        if (nh - posY <= maxStep + 0.85) walkableNeighbors++;
+        if (nh - posY > maxStep) highNeighbors++;
+        // Escadaria / rampa contínua: vizinho intermediário entre posY e cellH com degrau suave
+        if (cellH < 900 && nh >= posY - 0.45 && nh < cellH - 0.18 && (cellH - nh) <= 1.25) {
+          stairBridgeNeighbor = true;
+        }
+      } else {
         highNeighbors++;
       }
     }
 
     // Mureta costeira na beira do mar/canal: sempre bloqueia para não cair na água
-    if (seaNeighbors >= 1 && walkableNeighbors >= 1 && raw < 29500 && (raw * 0.01) - posY > maxStep) {
+    if (seaNeighbors >= 1 && walkableNeighbors >= 1 && raw < 29500 && (cellH - posY) > maxStep) {
       return true;
+    }
+
+    // Degraus de escadaria / rampa íngreme contínua (até 1.48m de desnível sobre célula adjacente, sem ser beira de mar)
+    if (seaNeighbors === 0 && raw < 29500 && (cellH - posY) <= 1.48 && stairBridgeNeighbor) {
+      return false;
     }
 
     // Arco de ponte, pórtico, poste ou árvore isolada sobre piso/ponte transitável
@@ -1895,20 +1908,23 @@
     const probePos = new THREE.Vector3();
     let anyHit = false;
 
+    const pitchSin = Math.sin(car.slopePitch || 0) * (car.forwardSign || 1);
+    const stepLim = Math.abs(car.slopePitch || 0) > 0.12 ? 1.32 : 1.05;
+
     for (let s = 0; s < steps; s++) {
       car.pos.addScaledVector(car.vel, subDt);
-      // Testa 3 círculos ao longo do chassi: centro, frente e traseira (maxStep 0.90m segura muretas)
-      if (resolveMapWallCollision(car.pos, 1.18, car.vel, 0.90)) anyHit = true;
+      // Testa 3 círculos ao longo do chassi acompanhando a inclinação real em escadas/rampas
+      if (resolveMapWallCollision(car.pos, 1.15, car.vel, stepLim)) anyHit = true;
 
       for (const sign of [1, -1]) {
         probePos.set(
           car.pos.x + forwardDir.x * probeOffset * sign,
-          car.pos.y,
+          car.pos.y - sign * probeOffset * pitchSin,
           car.pos.z + forwardDir.z * probeOffset * sign
         );
         const beforeX = probePos.x;
         const beforeZ = probePos.z;
-        if (resolveMapWallCollision(probePos, 1.05, car.vel, 0.90)) {
+        if (resolveMapWallCollision(probePos, 1.02, car.vel, stepLim)) {
           car.pos.x += (probePos.x - beforeX);
           car.pos.z += (probePos.z - beforeZ);
           anyHit = true;
@@ -1917,10 +1933,10 @@
     }
 
     // Se mesmo após sub-stepping o carro entrou em célula sólida/mureta, reverte para posição segura anterior
-    if (isSolidMapCell(car.pos.x, car.pos.z, car.pos.y, 0.90)) {
+    if (isSolidMapCell(car.pos.x, car.pos.z, car.pos.y, stepLim)) {
       car.pos.x = prevX;
       car.pos.z = prevZ;
-      if (isSolidMapCell(car.pos.x, car.pos.z, car.pos.y, 0.90)) {
+      if (isSolidMapCell(car.pos.x, car.pos.z, car.pos.y, stepLim)) {
         car.pos.x = car.lastSafePos.x;
         car.pos.z = car.lastSafePos.z;
       }
@@ -2574,13 +2590,16 @@
       parts.tailLightGroup.add(tf);
     });
 
-    const attachTarget = parts.chassis || carObj;
-    attachTarget.add(parts.headLightGroup);
-    attachTarget.add(parts.tailLightGroup);
+    carObj.rotation.order = 'YXZ';
+    carObj.updateMatrixWorld(true);
 
+    // 1. Re-ancora as 4 rodas diretamente em carObj (com curso independente de suspensão vertical!)
+    const wheelPivotsSet = new Set();
+    let minWZ = 1e9, maxWZ = -1e9, minWX = 1e9, maxWX = -1e9;
     wheelNodes.forEach((wn) => {
       const parent = wn.parent;
       const steerPivot = new THREE.Group();
+      steerPivot.name = wn.name + '_SuspPivot';
       steerPivot.rotation.order = 'YXZ';
       steerPivot.position.copy(wn.position);
       parent.add(steerPivot);
@@ -2593,8 +2612,48 @@
       wn.position.set(0, 0, 0);
       // Preserva a rotação/orientação original do GLB na roda (não zera wn.rotation!)
       spinGroup.add(wn);
-      parts.wheels.push({ steerPivot, spinObj: spinGroup, front: wn.name === 'WheelFL' || wn.name === 'WheelFR' });
+
+      // Anexa steerPivot direto na raiz do veículo para que carroceria/portas balancem na suspensão sem descolar as rodas
+      steerPivot.updateMatrixWorld(true);
+      if (steerPivot.parent !== carObj) {
+        carObj.attach(steerPivot);
+      }
+      wheelPivotsSet.add(steerPivot);
+
+      const lx = steerPivot.position.x;
+      const ly = steerPivot.position.y;
+      const lz = steerPivot.position.z;
+      if (lz < minWZ) minWZ = lz;
+      if (lz > maxWZ) maxWZ = lz;
+      if (lx < minWX) minWX = lx;
+      if (lx > maxWX) maxWX = lx;
+
+      parts.wheels.push({
+        steerPivot,
+        spinObj: spinGroup,
+        name: wn.name,
+        front: wn.name === 'WheelFL' || wn.name === 'WheelFR',
+        localX: lx,
+        localZ: lz,
+        baseY: ly,
+        suspY: 0,
+        suspVel: 0
+      });
     });
+
+    parts.wheelBase = (maxWZ > minWZ && maxWZ - minWZ > 1.2) ? (maxWZ - minWZ) : 2.68;
+    parts.trackWidth = (maxWX > minWX && maxWX - minWX > 0.8) ? (maxWX - minWX) : 1.56;
+
+    // 2. Agrupa TODA a carroceria, cabine, portas, volante e para-choques em um único bodyGroup suspenso
+    // Assim portas, faróis e cabine balançam juntos na suspensão e NUNCA descolam em escadas/rampas!
+    const bodyGroup = new THREE.Group();
+    bodyGroup.name = 'CarBodySuspension';
+    const nonWheelChildren = carObj.children.filter((ch) => !wheelPivotsSet.has(ch));
+    carObj.add(bodyGroup);
+    nonWheelChildren.forEach((ch) => bodyGroup.add(ch));
+    bodyGroup.add(parts.headLightGroup);
+    bodyGroup.add(parts.tailLightGroup);
+    parts.chassis = bodyGroup;
 
     // Luzes compartilhadas globais (evita 10+ SpotLights/PointLights simultâneas na cena e recompilação de shaders)
     if (!window._sharedCarHeadSpot) {
@@ -5973,12 +6032,17 @@
     player.mesh.visible = !player.firstPersonCar;
     if (!player.mesh.visible) return;
     const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.35, y: -0.31, z: -0.22 };
-    const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
-    const wx = car.pos.x + seat.x * cosY + seat.z * sinY;
-    const wz = car.pos.z - seat.x * sinY + seat.z * cosY;
+    car.mesh.updateMatrixWorld(true);
+    const bodyRef = (car.parts && car.parts.chassis) ? car.parts.chassis : car.mesh;
+    if (!window._seatWorldPos) {
+      window._seatWorldPos = new THREE.Vector3();
+      window._seatWorldQuat = new THREE.Quaternion();
+    }
+    window._seatWorldPos.set(seat.x, seat.y, seat.z).applyMatrix4(bodyRef.matrixWorld);
+    bodyRef.getWorldQuaternion(window._seatWorldQuat);
     player.mesh.scale.setScalar(0.76);
-    player.mesh.position.set(wx, car.pos.y + seat.y, wz);
-    player.mesh.rotation.set(car.pitch || 0, car.yaw, -(car.roll || 0));
+    player.mesh.position.copy(window._seatWorldPos);
+    player.mesh.quaternion.copy(window._seatWorldQuat);
     applyDriverPoseBlend(1.0, 0, 0, 0, seat.x >= 0 ? 1 : -1, car.steerAngle);
   }
 
@@ -6312,6 +6376,11 @@
     }
     if (drift && forwardSpeed > 8.0) accelForce -= 12.0;
 
+    // Gravidade longitudinal suave em ladeiras/escadas (sente o peso da subida sem travar o motor!)
+    if (car.grounded && Math.abs(car.slopePitch || 0) > 0.04) {
+      accelForce += Math.sin(car.slopePitch) * fSign * 5.8;
+    }
+
     car.vel.addScaledVector(forwardDir, accelForce * dt);
     const drag = 0.0042 * car.vel.length() + 0.14;
     car.vel.multiplyScalar(Math.max(0, 1.0 - drag * dt));
@@ -6503,11 +6572,82 @@
         spawnSmoke(new THREE.Vector3(v.pos.x, v.pos.y + 0.65, v.pos.z), v.vel);
       }
       if (!v.lastSafePos) v.lastSafePos = v.pos.clone();
+      const fs = v.forwardSign || 1;
+      const sinY = Math.sin(v.yaw);
+      const cosY = Math.cos(v.yaw);
+      const wheelBase = (v.parts && v.parts.wheelBase) ? v.parts.wheelBase : 2.68;
+      const trackWidth = (v.parts && v.parts.trackWidth) ? v.parts.trackWidth : 1.56;
+      const halfWB = wheelBase * 0.5;
+      const halfTW = trackWidth * 0.5;
+
+      // Amostragem de altura real nas 4 rodas + centro (lógica de degraus e escadarias!)
+      const hCenter = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.85);
+      const refY = hCenter !== null ? hCenter : v.pos.y;
+      const sampleWheelG = (lx, lz) => {
+        const wx = v.pos.x + lx * cosY + lz * sinY;
+        const wz = v.pos.z - lx * sinY + lz * cosY;
+        return getWalkableGround(wx, wz, refY, 1.85);
+      };
+
+      let sumF = 0, cntF = 0, sumR = 0, cntR = 0;
+      let sumPX = 0, cntPX = 0, sumMX = 0, cntMX = 0;
+      let sumAll = 0, cntAll = 0;
+      const wheelHits = [];
+      const wList = (v.parts && v.parts.wheels && v.parts.wheels.length >= 4) ? v.parts.wheels : null;
+
+      if (wList) {
+        for (let wi = 0; wi < wList.length; wi++) {
+          const w = wList[wi];
+          const wh = sampleWheelG(w.localX, w.localZ);
+          wheelHits.push(wh);
+          if (wh !== null) {
+            sumAll += wh; cntAll++;
+            if (w.localZ * fs >= 0) { sumF += wh; cntF++; } else { sumR += wh; cntR++; }
+            if (w.localX >= 0) { sumPX += wh; cntPX++; } else { sumMX += wh; cntMX++; }
+          }
+        }
+      } else {
+        const hFL = sampleWheelG(halfTW, halfWB * fs);
+        const hFR = sampleWheelG(-halfTW, halfWB * fs);
+        const hRL = sampleWheelG(halfTW, -halfWB * fs);
+        const hRR = sampleWheelG(-halfTW, -halfWB * fs);
+        if (hFL !== null) { sumAll += hFL; cntAll++; sumF += hFL; cntF++; sumPX += hFL; cntPX++; }
+        if (hFR !== null) { sumAll += hFR; cntAll++; sumF += hFR; cntF++; sumMX += hFR; cntMX++; }
+        if (hRL !== null) { sumAll += hRL; cntAll++; sumR += hRL; cntR++; sumPX += hRL; cntPX++; }
+        if (hRR !== null) { sumAll += hRR; cntAll++; sumR += hRR; cntR++; sumMX += hRR; cntMX++; }
+      }
+
+      const avg4 = cntAll > 0 ? (sumAll / cntAll) : hCenter;
+      const hFront = cntF > 0 ? (sumF / cntF) : avg4;
+      const hRear = cntR > 0 ? (sumR / cntR) : avg4;
+      const hPlusX = cntPX > 0 ? (sumPX / cntPX) : avg4;
+      const hMinusX = cntMX > 0 ? (sumMX / cntMX) : avg4;
+
+      let slopeMag = 0;
+      let targetSlopePitch = 0;
+      let targetSlopeRoll = 0;
+      if (avg4 !== null) {
+        const dPitch = (hFront !== null && hRear !== null) ? (hFront - hRear) : 0;
+        const dRoll = (hPlusX !== null && hMinusX !== null) ? (hPlusX - hMinusX) : 0;
+        targetSlopePitch = Math.max(-0.52, Math.min(0.52, -Math.atan2(dPitch, wheelBase) * fs));
+        targetSlopeRoll = Math.max(-0.36, Math.min(0.36, Math.atan2(dRoll, trackWidth)));
+        slopeMag = Math.hypot(dPitch / wheelBase, dRoll / trackWidth);
+      }
+
+      // Folga de crista dos degraus: em escadas/rampas íngremes, as quinas vivas ficam +6..11cm acima da média
+      const stepCrestLift = slopeMag > 0.14 ? Math.min(0.11, (slopeMag - 0.14) * 0.24) : 0;
+      let gy = null;
+      if (avg4 !== null) {
+        gy = avg4 + stepCrestLift;
+        if (hCenter !== null && hCenter - 0.03 > gy) gy = hCenter - 0.03;
+      } else {
+        gy = hCenter;
+      }
+
       // Física vertical real (gravidade em saltos/rampas + empuxo na água + proteção anti-limbo)
       v.velY -= 22 * dt;
       v.pos.y += v.velY * dt;
       const outside = isOutsideIsland(v.pos.x, v.pos.z);
-      const gy = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.65);
 
       if (outside && v.pos.y < WATER_Y + 0.1) {
         // Empuxo & arrasto na água
@@ -6523,14 +6663,23 @@
             return;
           }
         }
-      } else if (gy !== null && v.pos.y <= gy + 0.08) {
+      } else if (gy !== null && v.pos.y <= gy + 0.18) {
         v.waterTimer = 0;
         if (v.velY < -14 && v === player.inCar && !v.broken && !v.burning) {
           v.hp = Math.max(0, v.hp - Math.min(12, Math.abs(v.velY + 12) * 0.8));
           vibrate(45);
           if (v.hp <= 0) { v.burning = true; v.burnTimer = 1.6; showToast('🔥 Motor pegando fogo! Saia do carro!', 2200); }
         }
-        v.pos.y = gy;
+        // Impacto de pouso alimenta a mola vertical da carroceria
+        if (!v.grounded && v.velY < -3.5) {
+          v.suspHeaveVel = (v.suspHeaveVel || 0) + Math.max(-1.6, v.velY * 0.12);
+        }
+        // Transição suave na subida de escadas para não dar saltos bruscos de frame em frame
+        if (v.grounded && Math.abs(gy - v.pos.y) <= 0.45) {
+          v.pos.y += (gy - v.pos.y) * Math.min(1, dt * 22);
+        } else {
+          v.pos.y = gy;
+        }
         v.velY = 0;
         v.grounded = true;
         if (!isSolidMapCell(v.pos.x, v.pos.z, v.pos.y, 1.65)) {
@@ -6561,24 +6710,79 @@
         v.vel.multiplyScalar(0.92);
         resolveMapWallCollision(v.pos, 1.65, v.vel, 1.65);
       }
-      v.mesh.rotation.y = v.yaw;
 
-      // Calcula inclinação real da rampa/escadaria sob as rodas dianteiras e traseiras para assentar 100% no chão!
-      const fs = v.forwardSign || 1;
-      const sinY = Math.sin(v.yaw);
-      const cosY = Math.cos(v.yaw);
+      // Inclinação 3D completa do VEÍCULO INTEIRO (carroceria + portas + rodas) acompanhando escadas e rampas!
       if (v.grounded) {
-        const fh = getWalkableGround(v.pos.x + sinY * 1.35 * fs, v.pos.z + cosY * 1.35 * fs, v.pos.y, 1.4) ?? v.pos.y;
-        const rh = getWalkableGround(v.pos.x - sinY * 1.35 * fs, v.pos.z - cosY * 1.35 * fs, v.pos.y, 1.4) ?? v.pos.y;
-        const slopePitch = Math.max(-0.42, Math.min(0.42, -Math.atan2(fh - rh, 2.7) * fs));
-        v.slopePitch = (v.slopePitch || 0) + (slopePitch - (v.slopePitch || 0)) * Math.min(1, dt * 10);
+        v.slopePitch = (v.slopePitch || 0) + (targetSlopePitch - (v.slopePitch || 0)) * Math.min(1, dt * 12);
+        v.slopeRoll = (v.slopeRoll || 0) + (targetSlopeRoll - (v.slopeRoll || 0)) * Math.min(1, dt * 12);
       } else {
-        v.slopePitch = (v.slopePitch || 0) * Math.max(0, 1 - dt * 4);
+        v.slopePitch = (v.slopePitch || 0) * Math.max(0, 1 - dt * 3.5);
+        v.slopeRoll = (v.slopeRoll || 0) * Math.max(0, 1 - dt * 3.5);
+      }
+      v.mesh.rotation.order = 'YXZ';
+      v.mesh.rotation.set(v.slopePitch || 0, v.yaw, v.slopeRoll || 0);
+
+      // Suspensão independente por roda com física de degraus (mola + amortecedor + micro-impulsos de escada)
+      const absSpd = Math.abs(v.speed || 0);
+      const onStairs = v.grounded && slopeMag > 0.15;
+      if (onStairs && absSpd > 0.35) {
+        const prevSteps = Math.floor((v.stairDist || 0) / 0.42);
+        v.stairDist = (v.stairDist || 0) + absSpd * dt;
+        const curSteps = Math.floor(v.stairDist / 0.42);
+        if (curSteps !== prevSteps && v === player.inCar && absSpd > 2.2) {
+          vibrate(8);
+        }
       }
 
+      let meanWheelSusp = 0;
+      let stairBodyPitch = 0;
+      let stairBodyRoll = 0;
+      if (wList) {
+        const sinP = Math.sin(v.slopePitch || 0);
+        const sinR = Math.sin(v.slopeRoll || 0);
+        const stepAmp = onStairs ? Math.min(0.068, (slopeMag - 0.12) * 0.16) * Math.min(1.0, absSpd / 3.0) : 0;
+        const stepK = (Math.PI * 2) / 0.42;
+
+        for (let wi = 0; wi < wList.length; wi++) {
+          const w = wList[wi];
+          let targetSusp = 0;
+          if (v.grounded) {
+            const wh = wheelHits[wi];
+            if (wh !== null) {
+              const planeWY = v.pos.y - w.localZ * sinP + w.localX * sinR;
+              targetSusp = wh - planeWY;
+            }
+            if (stepAmp > 0.002) {
+              // Onda individual de degrau por eixo/roda conforme o pneu galga cada aresta da escada
+              const wPhase = ((v.stairDist || 0) + w.localZ * 0.85 + w.localX * 0.35) * stepK;
+              const crest = Math.max(0, Math.sin(wPhase));
+              targetSusp += crest * stepAmp;
+            }
+            targetSusp = Math.max(-0.09, Math.min(0.11, targetSusp));
+          } else {
+            // No ar (salto): suspensão estende levemente para baixo (droop realista)
+            targetSusp = -0.08;
+          }
+          // Mola-amortecedor de roda (Hooke + Damping)
+          w.suspVel = (w.suspVel || 0) + ((targetSusp - (w.suspY || 0)) * 165 - (w.suspVel || 0) * 18) * dt;
+          w.suspY = Math.max(-0.10, Math.min(0.12, (w.suspY || 0) + w.suspVel * dt));
+          w.steerPivot.position.y = w.baseY + w.suspY;
+          meanWheelSusp += w.suspY;
+          stairBodyPitch -= w.suspY * (w.localZ >= 0 ? 1 : -1) * 0.14;
+          stairBodyRoll += w.suspY * (w.localX >= 0 ? 1 : -1) * 0.16;
+        }
+        meanWheelSusp /= wList.length;
+      }
+
+      // Mola vertical + balanço suave da carroceria (bodyGroup: inclui lataria, portas e cabine juntas)
+      const targetHeave = Math.max(-0.06, Math.min(0.08, meanWheelSusp * 0.55));
+      v.suspHeaveVel = (v.suspHeaveVel || 0) + ((targetHeave - (v.suspHeave || 0)) * 85 - (v.suspHeaveVel || 0) * 12) * dt;
+      v.suspHeave = Math.max(-0.08, Math.min(0.09, (v.suspHeave || 0) + v.suspHeaveVel * dt));
+
       if (v.parts.chassis) {
-        v.parts.chassis.rotation.z = v.roll || 0;
-        v.parts.chassis.rotation.x = (v.pitch || 0) + (v.slopePitch || 0);
+        v.parts.chassis.position.y = v.suspHeave;
+        v.parts.chassis.rotation.z = (v.roll || 0) + stairBodyRoll;
+        v.parts.chassis.rotation.x = (v.pitch || 0) + stairBodyPitch;
       }
 
       if (v.doorAutoTimer > 0) {
