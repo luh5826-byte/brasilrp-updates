@@ -2,93 +2,370 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Brasil RP — Download Oficial (Android APK)</title>
-  <meta name="description" content="Baixe a versão mais recente do Brasil RP para Android." />
-  <meta property="og:title" content="Brasil RP — Download Oficial APK" />
-  <meta property="og:description" content="Baixe agora a última versão atualizada do Brasil RP para Android." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Brasil RP: GTA 6 Edition — Download Oficial (Android APK)</title>
+  <meta name="description" content="Baixe grátis o Brasil RP: GTA 6 Edition para Android. Mundo aberto 3D, Modo História, veículos esportivos, McDonald's Drive-Thru, rádio ao vivo e multiplayer RP." />
+  <meta property="og:title" content="Brasil RP: GTA 6 Edition — Download Oficial APK" />
+  <meta property="og:description" content="Mundo aberto 3D no celular! Baixe a última versão oficial para Android." />
+  <meta property="og:image" content="https://luh5826-byte.github.io/brasilrp-updates/screenshots/screen_1_lobby.jpg" />
   <meta property="og:type" content="website" />
-  <meta name="theme-color" content="#0b0f17" />
+  <meta name="theme-color" content="#070b12" />
   <style>
+    :root {
+      --bg: #070b12;
+      --surface: rgba(16, 23, 38, 0.88);
+      --border: rgba(255, 255, 255, 0.1);
+      --gold: #ffd41f;
+      --cyan: #00f0ff;
+      --green: #00e676;
+      --pink: #ff2e93;
+      --text: #f3f6fc;
+      --muted: #98a9c7;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: radial-gradient(circle at top, #182338 0%, #0b0f17 65%);
-      color: #f3f6fc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      padding-bottom: 48px;
     }
-    .card {
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(0, 240, 255, 0.14), transparent 42%),
+        radial-gradient(circle at 85% 18%, rgba(255, 46, 147, 0.14), transparent 40%),
+        radial-gradient(circle at 50% 85%, rgba(255, 212, 31, 0.08), transparent 45%);
+      pointer-events: none;
+    }
+    .container {
       width: 100%;
-      max-width: 440px;
-      background: rgba(18, 25, 39, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 22px;
-      padding: 28px 24px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
-      text-align: center;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+      margin-bottom: 22px;
+    }
+    .hero-banner {
+      position: relative;
+      height: 230px;
+      background: url("./screenshots/screen_1_lobby.jpg") center/cover no-repeat;
+    }
+    .hero-banner::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(7, 11, 18, 0.25) 0%, rgba(16, 23, 38, 0.98) 95%);
+    }
+    .hero-top-bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
     }
     .badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #00c853, #009624);
-      color: #06130a;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 230, 118, 0.16);
+      border: 1px solid rgba(0, 230, 118, 0.5);
+      color: var(--green);
       font-weight: 800;
-      font-size: 12px;
-      letter-spacing: 0.6px;
+      font-size: 11px;
+      letter-spacing: 0.7px;
       text-transform: uppercase;
       padding: 5px 12px;
       border-radius: 999px;
-      margin-bottom: 14px;
+      backdrop-filter: blur(8px);
     }
-    h1 {
-      font-size: 28px;
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .share-btn {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .share-btn:active { transform: scale(0.95); }
+
+    .hero-body {
+      padding: 0 22px 24px;
+      margin-top: -36px;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-title {
+      font-size: clamp(28px, 5vw, 40px);
       font-weight: 900;
-      letter-spacing: -0.5px;
-      margin-bottom: 6px;
-      background: linear-gradient(90deg, #ffffff, #ffd54f);
+      letter-spacing: -0.6px;
+      line-height: 1.05;
+      background: linear-gradient(90deg, #ffffff 0%, #ffd41f 65%, #ff8f00 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
     }
-    .version {
+    .hero-sub {
       font-size: 14px;
-      color: #9fb0cc;
-      margin-bottom: 20px;
+      color: var(--muted);
+      margin-bottom: 16px;
     }
-    .btn {
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .chip {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #dbe7ff;
+    }
+    .chip.highlight {
+      border-color: rgba(0, 240, 255, 0.45);
+      color: var(--cyan);
+      background: rgba(0, 240, 255, 0.09);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-download {
+      flex: 1 1 260px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      width: 100%;
-      padding: 16px 20px;
+      padding: 16px 22px;
       border-radius: 14px;
       background: linear-gradient(135deg, #00e676, #00b248);
-      color: #05160b;
+      color: #04170b;
       font-size: 16px;
-      font-weight: 800;
+      font-weight: 900;
+      letter-spacing: 0.3px;
       text-decoration: none;
-      box-shadow: 0 8px 24px rgba(0, 230, 118, 0.35);
+      box-shadow: 0 10px 28px rgba(0, 230, 118, 0.35);
       transition: transform 0.15s ease, filter 0.15s ease;
     }
-    .btn:active { transform: scale(0.98); filter: brightness(0.95); }
-    .changelog-box {
-      margin-top: 22px;
-      text-align: left;
+    .btn-download:hover { filter: brightness(1.06); }
+    .btn-download:active { transform: scale(0.98); }
+    .btn-secondary {
+      flex: 0 1 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 15px 18px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .dl-hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* CARROSSEL DE SCREENSHOTS */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--gold);
+    }
+    .section-tip {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .carousel-wrap {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #04070d;
+      touch-action: pan-y;
+    }
+    .carousel-track {
+      display: flex;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .slide {
+      min-width: 100%;
+      position: relative;
+      cursor: zoom-in;
+    }
+    .slide img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 7.2;
+      object-fit: cover;
+    }
+    .slide-caption {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 26px 14px 12px;
+      background: linear-gradient(180deg, transparent, rgba(5, 8, 15, 0.92));
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(7, 11, 18, 0.72);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+    .nav-btn.prev { left: 10px; }
+    .nav-btn.next { right: 10px; }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+      border: none;
+      cursor: pointer;
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+    .dot.active {
+      width: 24px;
+      background: var(--cyan);
+    }
+
+    /* ABAS INTERATIVAS */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      flex: 1 1 auto;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      background: rgba(0, 240, 255, 0.14);
+      border-color: rgba(0, 240, 255, 0.5);
+      color: var(--cyan);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .feat-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .feat-icon { font-size: 20px; margin-bottom: 6px; }
+    .feat-name { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .feat-desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+
+    .changelog-block {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
       padding: 14px 16px;
+      margin-bottom: 12px;
     }
-    .changelog-title {
+    .changelog-block:last-child { margin-bottom: 0; }
+    .changelog-label {
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
+      color: var(--gold);
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #ffd54f;
-      margin-bottom: 8px;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
     }
     .changelog-text {
       font-size: 13.5px;
@@ -96,42 +373,295 @@
       color: #d6e0f0;
       white-space: pre-line;
     }
-    .footer {
-      margin-top: 18px;
-      font-size: 12px;
-      color: #7d8da8;
+
+    .steps-list { display: grid; gap: 10px; }
+    .step-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
     }
-    .footer a { color: #9fb0cc; text-decoration: none; }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--gold), #ff9800);
+      color: #0b0f17;
+      font-weight: 900;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-text { font-size: 13px; color: #dce6f7; line-height: 1.45; }
+
+    /* CRÉDITOS */
+    .dev-box {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+    .dev-info h3 { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+    .dev-info p { font-size: 13px; color: var(--muted); }
+    .insta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(221, 42, 123, 0.35);
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .footer a { color: #cbd5e1; text-decoration: none; }
+
+    /* LIGHTBOX */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+      background: rgba(4, 7, 13, 0.94);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(8px);
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 100%;
+      max-height: 86vh;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(15, 23, 42, 0.85);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0f172a;
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 120;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
-  <main class="card">
-    <span class="badge">Android APK Oficial</span>
-    <h1>Brasil RP</h1>
-    <p class="version" id="versionLabel">Carregando última versão...</p>
+  <div class="bg-glow"></div>
 
-    <a class="btn" id="downloadBtn" href="https://github.com/luh5826-byte/brasilrp-updates/releases/latest/download/BrasilRP_GTA6.apk">
-      <span>⬇ BAIXAR ÚLTIMA VERSÃO</span>
-    </a>
+  <div class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-banner">
+        <div class="hero-top-bar">
+          <span class="badge"><span class="badge-dot"></span> Android APK Oficial</span>
+          <button class="share-btn" id="btnShare" type="button">Compartilhar</button>
+        </div>
+      </div>
+      <div class="hero-body">
+        <h1 class="hero-title">BRASIL RP: GTA 6</h1>
+        <p class="hero-sub">Mundo aberto 3D no celular com Modo História, carros esportivos, rádio ao vivo e multiplayer RP.</p>
 
-    <section class="changelog-box">
-      <div class="changelog-title">Novidades da atualização</div>
-      <div class="changelog-text" id="changelogText">Carregando novidades...</div>
+        <div class="chips">
+          <span class="chip highlight" id="versionChip">Carregando versão...</span>
+          <span class="chip" id="otaChip">OTA automático</span>
+          <span class="chip">60 FPS Otimizado</span>
+          <span class="chip">Grátis • Android</span>
+        </div>
+
+        <div class="cta-row">
+          <a class="btn-download" id="downloadBtn" href="https://github.com/luh5826-byte/brasilrp-updates/releases/latest/download/BrasilRP_GTA6.apk">
+            <span>⬇ BAIXAR APK OFICIAL</span>
+          </a>
+          <a class="btn-secondary" href="#galeria">Ver Imagens</a>
+        </div>
+        <p class="dl-hint" id="dlHint">Download direto pelo servidor oficial. Atualizações futuras são baixadas dentro do próprio jogo.</p>
+      </div>
+    </section>
+
+    <!-- GALERIA INTERATIVA -->
+    <section class="section-card" id="galeria">
+      <div class="section-head">
+        <div class="section-title">Galeria do Jogo</div>
+        <div class="section-tip">Arraste ou toque para ampliar</div>
+      </div>
+      <div class="carousel-wrap" id="carousel">
+        <div class="carousel-track" id="carouselTrack">
+          <div class="slide" data-img="./screenshots/screen_1_lobby.jpg">
+            <img src="./screenshots/screen_1_lobby.jpg" alt="Lobby Showroom 3D do Brasil RP" loading="eager" />
+            <div class="slide-caption">Showroom 3D: escolha seu personagem, carro inicial e pintura PBR</div>
+          </div>
+          <div class="slide" data-img="./screenshots/screen_2_missao.jpg">
+            <img src="./screenshots/screen_2_missao.jpg" alt="Modo História e GPS no Brasil RP" loading="lazy" />
+            <div class="slide-caption">Modo História "Ascensão em Liberty BR" com GPS e minimapa real</div>
+          </div>
+          <div class="slide" data-img="./screenshots/screen_3_estadio.jpg">
+            <img src="./screenshots/screen_3_estadio.jpg" alt="Lexus LC 500 Wald no Estádio Memorial" loading="lazy" />
+            <div class="slide-caption">Lexus LC 500 Wald, ciclo dia/noite e Estádio Memorial</div>
+          </div>
+          <div class="slide" data-img="./screenshots/screen_4_mcdonalds.jpg">
+            <img src="./screenshots/screen_4_mcdonalds.jpg" alt="McDonald's Drive-Thru 3D no Brasil RP" loading="lazy" />
+            <div class="slide-caption">McDonald's 3D real com Drive-Thru funcional e salão interativo</div>
+          </div>
+        </div>
+        <button class="nav-btn prev" id="btnPrev" type="button" aria-label="Foto anterior">‹</button>
+        <button class="nav-btn next" id="btnNext" type="button" aria-label="Próxima foto">›</button>
+      </div>
+      <div class="dots" id="carouselDots"></div>
+    </section>
+
+    <!-- ABAS INTERATIVAS -->
+    <section class="section-card">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="tab-features" type="button">Destaques</button>
+        <button class="tab-btn" data-tab="tab-changelog" type="button">Novidades</button>
+        <button class="tab-btn" data-tab="tab-install" type="button">Como Instalar</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-features">
+        <div class="feat-grid">
+          <div class="feat-item">
+            <div class="feat-icon">🏙️</div>
+            <div class="feat-name">Cidade 3D com Streaming</div>
+            <div class="feat-desc">Mapa completo inspirado em Liberty City com semáforos funcionais, tráfego inteligente e 60 FPS no celular.</div>
+          </div>
+          <div class="feat-item">
+            <div class="feat-icon">🎬</div>
+            <div class="feat-name">Modo História + Missões</div>
+            <div class="feat-desc">6 missões encadeadas com diálogos estilo GTA, além de Uber RP, Time Trial e Patrulha PM-BR no celular do jogo.</div>
+          </div>
+          <div class="feat-item">
+            <div class="feat-icon">🏎️</div>
+            <div class="feat-name">Física e Suspensão Real</div>
+            <div class="feat-desc">Mustang GTD, Lexus LC 500 Wald, VW Saveiro, Gol e Viatura PM com suspensão independente, drift, nitro e portas móveis.</div>
+          </div>
+          <div class="feat-item">
+            <div class="feat-icon">📻</div>
+            <div class="feat-name">Rádio Ao Vivo & Multiplayer</div>
+            <div class="feat-desc">Estações de rádio reais, voz por proximidade, chat RP e suporte completo a Joystick Bluetooth.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-changelog">
+        <div class="changelog-block">
+          <div class="changelog-label" id="otaChangelogTitle">Último Patch OTA</div>
+          <div class="changelog-text" id="otaChangelogText">Carregando novidades do OTA...</div>
+        </div>
+        <div class="changelog-block">
+          <div class="changelog-label" id="apkChangelogTitle">Novidades do APK Base</div>
+          <div class="changelog-text" id="changelogText">Carregando novidades do APK...</div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-install">
+        <div class="steps-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-text">Toque em <b>Baixar APK Oficial</b> acima e aguarde o download de <code>BrasilRP_GTA6.apk</code> concluir.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-text">Abra o arquivo baixado e, se o Android pedir, ative <b>"Permitir desta fonte"</b> para autorizar a instalação.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-text">Instale e abra o jogo! As próximas atualizações (OTA) serão aplicadas automaticamente ao iniciar.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CRÉDITOS DO DESENVOLVEDOR -->
+    <section class="section-card">
+      <div class="dev-box">
+        <div class="dev-info">
+          <h3>Desenvolvido por Luan Felipe</h3>
+          <p>Programação, história e design • Obrigado por jogar!</p>
+        </div>
+        <a class="insta-btn" href="https://www.instagram.com/luanf46/" target="_blank" rel="noopener noreferrer">
+          Instagram @luanf46
+        </a>
+      </div>
     </section>
 
     <p class="footer">
-      Sempre atualizado automaticamente •
-      <a href="https://github.com/luh5826-byte/brasilrp-updates/releases/latest">Ver no GitHub</a>
+      Brasil RP: GTA 6 Edition •
+      <a href="https://github.com/luh5826-byte/brasilrp-updates/releases/latest">Releases no GitHub</a>
     </p>
-  </main>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Fechar imagem">✕</button>
+    <img id="lightboxImg" src="" alt="Preview ampliado" />
+  </div>
+
+  <div class="toast" id="toast"></div>
 
   <script>
     const FALLBACK_URL = "https://github.com/luh5826-byte/brasilrp-updates/releases/latest/download/BrasilRP_GTA6.apk";
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    // Carrega versão e changelogs dinâmicos
     fetch("./version.json?t=" + Date.now(), { cache: "no-store" })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         if (data.versionName) {
-          document.getElementById("versionLabel").textContent = "Versão v" + data.versionName + " (Build " + (data.versionCode || "") + ")";
+          document.getElementById("versionChip").textContent = "v" + data.versionName + " (Build " + (data.versionCode || "") + ")";
+        }
+        if (data.otaVersion) {
+          document.getElementById("otaChip").textContent = "OTA #" + data.otaVersion + " Ativo";
+          document.getElementById("otaChangelogTitle").textContent = "Último Patch OTA (#" + data.otaVersion + ")";
+        }
+        if (data.otaChangelog) {
+          document.getElementById("otaChangelogText").textContent = data.otaChangelog;
+        } else {
+          document.getElementById("otaChangelogText").textContent = "Melhorias gerais de estabilidade e conteúdo.";
         }
         if (data.changelog) {
           document.getElementById("changelogText").textContent = data.changelog;
@@ -141,10 +671,88 @@
         }
       })
       .catch(() => {
-        document.getElementById("versionLabel").textContent = "Última versão disponível";
-        document.getElementById("changelogText").textContent = "Toque no botão acima para baixar o APK mais recente.";
+        document.getElementById("versionChip").textContent = "Última versão";
+        document.getElementById("changelogText").textContent = "Toque em Baixar APK Oficial para instalar a versão mais recente.";
         document.getElementById("downloadBtn").href = FALLBACK_URL;
       });
+
+    // Feedback no clique do download
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      document.getElementById("dlHint").textContent = "Iniciando download do BrasilRP_GTA6.apk...";
+      showToast("Iniciando download do APK...");
+    });
+
+    // Compartilhar página
+    document.getElementById("btnShare").addEventListener("click", async () => {
+      const shareData = {
+        title: "Brasil RP: GTA 6 Edition",
+        text: "Baixe o Brasil RP: GTA 6 para Android!",
+        url: window.location.href
+      };
+      if (navigator.share) {
+        try { await navigator.share(shareData); return; } catch (_) {}
+      }
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        showToast("Link copiado!");
+      } catch (_) {
+        showToast("Compartilhe: " + window.location.href);
+      }
+    });
+
+    // Carrossel com swipe e lightbox
+    const track = document.getElementById("carouselTrack");
+    const slides = Array.from(track.children);
+    const dotsWrap = document.getElementById("carouselDots");
+    let idx = 0;
+
+    slides.forEach((_, i) => {
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "dot" + (i === 0 ? " active" : "");
+      d.setAttribute("aria-label", "Ir para imagem " + (i + 1));
+      d.onclick = () => goTo(i);
+      dotsWrap.appendChild(d);
+    });
+
+    function goTo(n) {
+      idx = (n + slides.length) % slides.length;
+      track.style.transform = `translateX(-${idx * 100}%)`;
+      Array.from(dotsWrap.children).forEach((d, i) => d.classList.toggle("active", i === idx));
+    }
+
+    document.getElementById("btnPrev").onclick = () => goTo(idx - 1);
+    document.getElementById("btnNext").onclick = () => goTo(idx + 1);
+
+    let startX = 0;
+    const carousel = document.getElementById("carousel");
+    carousel.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, { passive: true });
+    carousel.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) goTo(dx < 0 ? idx + 1 : idx - 1);
+    }, { passive: true });
+
+    // Lightbox
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightboxImg");
+    slides.forEach(s => {
+      s.addEventListener("click", () => {
+        lightboxImg.src = s.dataset.img;
+        lightbox.classList.add("open");
+      });
+    });
+    document.getElementById("lightboxClose").onclick = () => lightbox.classList.remove("open");
+    lightbox.addEventListener("click", e => { if (e.target === lightbox) lightbox.classList.remove("open"); });
+
+    // Abas
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
   </script>
 </body>
 </html>
