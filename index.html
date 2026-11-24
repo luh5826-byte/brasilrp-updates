@@ -704,6 +704,42 @@
 
   <script>
     const FALLBACK_URL = "https://github.com/luh5826-byte/brasilrp-updates/releases/latest/download/BrasilRP_GTA6.apk";
+    const ANALYTICS_API = "https://brasilrp-server.onrender.com/api/track";
+    let currentVersionLabel = "latest";
+
+    function getVisitorId() {
+      try {
+        let id = localStorage.getItem("brasilrp_visitor_id");
+        if (!id) {
+          id = "v_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+          localStorage.setItem("brasilrp_visitor_id", id);
+        }
+        return id;
+      } catch (_) {
+        return "v_" + Math.random().toString(36).slice(2, 10);
+      }
+    }
+
+    function trackEvent(event, extra = {}) {
+      try {
+        const payload = Object.assign({
+          event,
+          visitorId: getVisitorId(),
+          referrer: document.referrer || "",
+          screen: window.screen ? (window.screen.width + "x" + window.screen.height) : "",
+          version: currentVersionLabel
+        }, extra);
+        fetch(ANALYTICS_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
+    // Registra visita na página
+    trackEvent("page_view");
 
     function showToast(msg) {
       const t = document.getElementById("toast");
@@ -717,6 +753,7 @@
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         if (data.versionName) {
+          currentVersionLabel = "v" + data.versionName;
           document.getElementById("versionChip").textContent = "v" + data.versionName + " (Build " + (data.versionCode || "") + ")";
         }
         if (data.otaVersion) {
@@ -743,12 +780,14 @@
 
     // Feedback no clique do download
     document.getElementById("downloadBtn").addEventListener("click", () => {
+      trackEvent("download_click");
       document.getElementById("dlHint").textContent = "Iniciando download do BrasilRP_GTA6.apk...";
       showToast("Iniciando download do APK...");
     });
 
     // Compartilhar página
     document.getElementById("btnShare").addEventListener("click", async () => {
+      trackEvent("share_click");
       const shareData = {
         title: "Brasil RP: GTA 6 Edition",
         text: "Baixe o Brasil RP: GTA 6 para Android!",

@@ -16,6 +16,11 @@
 
   let serverUrl = localStorage.getItem(STORAGE_SERVER_KEY) || DEFAULT_SERVER_URL;
   let playerName = localStorage.getItem(STORAGE_NAME_KEY) || ('RP_' + Math.floor(100 + Math.random() * 899));
+  let deviceId = localStorage.getItem('brasilrp_device_id');
+  if (!deviceId) {
+    deviceId = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    try { localStorage.setItem('brasilrp_device_id', deviceId); } catch (_) {}
+  }
 
   let ws = null;
   let myId = null;
@@ -30,6 +35,8 @@
   let micAnalyser = null;
   let micData = null;
   let isSpeaking = false;
+  let micHoldTimer = 0;
+  let micGateOpen = false;
 
   const peers = new Map();       // peerId -> { pc, audioEl }
   const remotePlayers = new Map(); // id -> { id, name, targetX, targetY, targetZ, targetRotY, speed, inCar, speaking, mesh, labelSprite, labelCtx, labelTex, lastLabelKey, walkPhase }
@@ -164,8 +171,9 @@
     const group = new THREE.Group();
     const numId = parseInt(String(p.id).replace(/\D/g, ''), 10) || 1;
 
-    // 1. Personagem 3D real rigado (fallback nas caixas apenas se o GLB ainda não carregou)
-    let charState = bridge.createRemoteCharVisual ? bridge.createRemoteCharVisual() : null;
+    // 1. Personagem 3D real rigado (usa a skin real do jogador!)
+    const wantedChar = p.charId || 'cool_man';
+    let charState = bridge.createRemoteCharVisual ? bridge.createRemoteCharVisual(wantedChar) : null;
     let fallbackParts = null;
     if (charState && charState.mesh) {
       group.add(charState.mesh);
@@ -192,7 +200,7 @@
     }
 
     // 2. Veículo 3D real quando o jogador remoto está dirigindo!
-    let carVisual = bridge.createRemoteCarVisual ? bridge.createRemoteCarVisual(numId) : null;
+    let carVisual = bridge.createRemoteCarVisual ? bridge.createRemoteCarVisual(numId, p.carType) : null;
     if (carVisual && carVisual.mesh) {
       carVisual.mesh.visible = !!p.inCar;
       group.add(carVisual.mesh);
@@ -212,6 +220,8 @@
       id: p.id,
       numId,
       name: p.name || 'Jogador',
+      charId: wantedChar,
+      carType: p.carType || '',
       targetX: p.x || 0,
       targetY: p.y || 0,
       targetZ: p.z || 0,
@@ -240,20 +250,26 @@
       return;
     }
     const bridge = window.BrasilRPBridge;
-    // Se criou antes dos GLBs carregarem, promove automaticamente para o modelo 3D real!
-    if (!rp.charState && bridge && bridge.createRemoteCharVisual) {
-      const cs = bridge.createRemoteCharVisual();
+    const wantedChar = p.charId || rp.charId || 'cool_man';
+    // Se criou antes dos GLBs carregarem ou mudou de skin, promove/atualiza para o modelo 3D real!
+    if (bridge && bridge.createRemoteCharVisual && (!rp.charState || (p.charId && rp.charId !== wantedChar))) {
+      const cs = bridge.createRemoteCharVisual(wantedChar);
       if (cs && cs.mesh) {
+        if (rp.charState && rp.charState.mesh) rp.mesh.remove(rp.charState.mesh);
         if (rp.fallbackParts) rp.mesh.remove(rp.fallbackParts.root);
         rp.fallbackParts = null;
         rp.charState = cs;
+        rp.charId = wantedChar;
         rp.mesh.add(cs.mesh);
       }
     }
-    if (!rp.carVisual && bridge && bridge.createRemoteCarVisual) {
-      const cv = bridge.createRemoteCarVisual(rp.numId);
+    const wantedCar = p.carType || '';
+    if (bridge && bridge.createRemoteCarVisual && (!rp.carVisual || (wantedCar && rp.carType !== wantedCar))) {
+      const cv = bridge.createRemoteCarVisual(rp.numId, wantedCar);
       if (cv && cv.mesh) {
+        if (rp.carVisual && rp.carVisual.mesh) rp.mesh.remove(rp.carVisual.mesh);
         rp.carVisual = cv;
+        rp.carType = wantedCar;
         rp.mesh.add(cv.mesh);
       }
     }
@@ -288,25 +304,41 @@
     closePeer(id);
   }
 
-  // --- WebRTC Chat de Voz por Proximidade ---
+  // --- WebRTC Chat de Voz por Proximidade (Anti-Eco & Baixa Latência) ---
+  function tuneOpusLowLatency(sdp) {
+    if (!sdp) return sdp;
+    return sdp.replace(/a=fmtp:111 ([^\r\n]+)/g, (m, params) => {
+      let p = params
+        .replace(/;?minptime=\d+/g, '')
+        .replace(/;?maxptime=\d+/g, '')
+        .replace(/;?stereo=\d+/g, '')
+        .replace(/;?sprop-stereo=\d+/g, '')
+        .replace(/;?maxaveragebitrate=\d+/g, '')
+        .replace(/;?dtx=\d+/g, '');
+      return `a=fmtp:111 ${p};minptime=10;maxptime=20;useinbandfec=1;stereo=0;sprop-stereo=0;maxaveragebitrate=24000;dtx=1`;
+    });
+  }
+
   function closePeer(peerId) {
     const entry = peers.get(peerId);
     if (!entry) return;
     try { entry.pc.close(); } catch (_) {}
     if (entry.audioEl) {
-      try { entry.audioEl.srcObject = null; entry.audioEl.remove(); } catch (_) {}
+      try { entry.audioEl.pause(); entry.audioEl.srcObject = null; entry.audioEl.remove(); } catch (_) {}
     }
     peers.delete(peerId);
   }
 
   function getOrCreatePeer(peerId, initiator) {
+    if (!peerId || peerId === myId) return null;
     if (peers.has(peerId)) return peers.get(peerId);
 
     const pc = new RTCPeerConnection(RTC_CONFIG);
     const audioEl = document.createElement('audio');
     audioEl.autoplay = true;
     audioEl.playsInline = true;
-    audioEl.volume = 1.0;
+    audioEl.volume = 0.85;
+    audioEl.dataset.peerId = peerId;
     document.body.appendChild(audioEl);
 
     const entry = { pc, audioEl };
@@ -325,6 +357,12 @@
     };
 
     pc.ontrack = (ev) => {
+      if (ev.receiver) {
+        try {
+          if ('playoutDelayHint' in ev.receiver) ev.receiver.playoutDelayHint = 0.02;
+          if ('jitterBufferTarget' in ev.receiver) ev.receiver.jitterBufferTarget = 20;
+        } catch (_) {}
+      }
       if (ev.streams && ev.streams[0]) {
         audioEl.srcObject = ev.streams[0];
         audioEl.play().catch(() => {});
@@ -339,7 +377,10 @@
 
     if (initiator) {
       pc.createOffer({ offerToReceiveAudio: true })
-        .then((offer) => pc.setLocalDescription(offer).then(() => offer))
+        .then((offer) => {
+          offer.sdp = tuneOpusLowLatency(offer.sdp);
+          return pc.setLocalDescription(offer).then(() => offer);
+        })
         .then((offer) => {
           sendWS({ type: 'rtc_offer', to: peerId, data: offer });
         })
@@ -350,24 +391,36 @@
   }
 
   async function handleRtcOffer(fromId, offer) {
-    const entry = getOrCreatePeer(fromId, false);
+    if (!fromId || fromId === myId) return;
+    let entry = peers.get(fromId);
+    if (entry && entry.pc.signalingState !== 'stable') {
+      // Evita glare / conexoes duplicadas que causam eco duplo
+      if (String(myId) > String(fromId)) return;
+      closePeer(fromId);
+      entry = null;
+    }
+    if (!entry) entry = getOrCreatePeer(fromId, false);
+    if (!entry) return;
     try {
       await entry.pc.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await entry.pc.createAnswer();
+      answer.sdp = tuneOpusLowLatency(answer.sdp);
       await entry.pc.setLocalDescription(answer);
       sendWS({ type: 'rtc_answer', to: fromId, data: answer });
     } catch (_) {}
   }
 
   async function handleRtcAnswer(fromId, answer) {
+    if (!fromId || fromId === myId) return;
     const entry = peers.get(fromId);
-    if (!entry) return;
+    if (!entry || entry.pc.signalingState !== 'have-local-offer') return;
     try {
       await entry.pc.setRemoteDescription(new RTCSessionDescription(answer));
     } catch (_) {}
   }
 
   async function handleRtcIce(fromId, candidate) {
+    if (!fromId || fromId === myId) return;
     const entry = peers.get(fromId);
     if (!entry) return;
     try {
@@ -384,21 +437,30 @@
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
+            echoCancellation: { ideal: true },
+            noiseSuppression: { ideal: true },
+            autoGainControl: { ideal: false },
+            channelCount: { ideal: 1 },
+            sampleRate: { ideal: 16000 },
+            latency: { ideal: 0.01 }
           },
           video: false
         });
         micEnabled = true;
+        micGateOpen = false;
+        micHoldTimer = 0;
+        // Começa com gate fechado até detectar voz (evita transmitir eco ambiente)
+        for (const t of localStream.getAudioTracks()) t.enabled = false;
 
         try {
           const AC = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AC();
+          audioCtx = new AC({ latencyHint: 'interactive' });
           const src = audioCtx.createMediaStreamSource(localStream);
           micAnalyser = audioCtx.createAnalyser();
           micAnalyser.fftSize = 256;
+          micAnalyser.smoothingTimeConstant = 0.25;
           micData = new Uint8Array(micAnalyser.frequencyBinCount);
+          // Conecta apenas ao analyser (NUNCA ao destination -> zero retorno local)
           src.connect(micAnalyser);
         } catch (_) {}
 
@@ -406,11 +468,12 @@
           ui.btnVoice.classList.add('voice-on');
           ui.btnVoice.textContent = '🎙️';
         }
-        toast('🎙️ Microfone ligado! Fale perto de outros jogadores.');
-        addChatLine('🎙️ Microfone ativado (voz por proximidade).', 'sys');
+        toast('🎙️ Microfone ligado (anti-eco ativo)!');
+        addChatLine('🎙️ Microfone ativado (voz por proximidade anti-eco).', 'sys');
 
         // Renegocia / inicia chamadas de voz com jogadores conectados
         for (const id of remotePlayers.keys()) {
+          if (id === myId) continue;
           closePeer(id);
           getOrCreatePeer(id, true);
         }
@@ -420,6 +483,8 @@
     } else {
       micEnabled = false;
       isSpeaking = false;
+      micGateOpen = false;
+      micHoldTimer = 0;
       if (localStream) {
         for (const t of localStream.getTracks()) t.stop();
         localStream = null;
@@ -452,7 +517,15 @@
 
     ws.onopen = () => {
       connected = true;
-      sendWS({ type: 'join', name: playerName });
+      const curChar = (window.BrasilRPBridge && window.BrasilRPBridge.player && window.BrasilRPBridge.player.charId) || 'cool_man';
+      sendWS({
+        type: 'join',
+        name: playerName,
+        charId: curChar,
+        deviceId,
+        appVersion: (window.BrasilRPVersion && window.BrasilRPVersion.versionName) || '1.0.42',
+        otaVersion: (window.BrasilRPVersion && window.BrasilRPVersion.otaVersion) || '31'
+      });
       updateStatusUI();
       addChatLine('🟢 Conectado ao servidor Brasil RP!', 'sys');
     };
@@ -593,7 +666,13 @@
       sendWS({ type: 'ping', ts: Date.now() });
     }
 
-    // 1. Detecta se o jogador local esta falando no microfone
+    // 1. Detecta se algum jogador remoto esta falando perto (para suprimir eco acústico)
+    let anyRemoteSpeaking = false;
+    for (const rp of remotePlayers.values()) {
+      if (rp.speaking) { anyRemoteSpeaking = true; break; }
+    }
+
+    // Detecta se o jogador local esta falando + Voice Activity Gate (corta eco quando em silêncio!)
     if (micEnabled && micAnalyser && micData) {
       micAnalyser.getByteTimeDomainData(micData);
       let sum = 0;
@@ -602,7 +681,19 @@
         sum += v * v;
       }
       const rms = Math.sqrt(sum / micData.length);
-      isSpeaking = rms > 0.035;
+      // Threshold mais rígido se alguém estiver falando no alto-falante (evita loop de eco!)
+      const openThresh = anyRemoteSpeaking ? 0.075 : 0.038;
+      if (rms > openThresh) {
+        micHoldTimer = 0.32;
+        isSpeaking = true;
+      } else {
+        micHoldTimer = Math.max(0, micHoldTimer - dt);
+        isSpeaking = micHoldTimer > 0;
+      }
+      if (localStream && micGateOpen !== isSpeaking) {
+        micGateOpen = isSpeaking;
+        for (const t of localStream.getAudioTracks()) t.enabled = micGateOpen;
+      }
       if (ui.btnVoice) {
         ui.btnVoice.classList.toggle('voice-speaking', isSpeaking);
       }
@@ -615,13 +706,16 @@
     // Corrige yaw real do jogo (antes lia p.rotY inexistente -> NaN!)
     const rotY = p.inCar ? (p.inCar.yaw || 0) : ((p.yaw || 0) + Math.PI);
     const speed = p.inCar ? Math.abs(p.inCar.speed || 0) : Math.hypot(p.velX || 0, p.velZ || 0);
+    const carType = p.inCar ? (p.inCar.templateKey || p.inCar.type || p.inCar.key || '') : '';
 
-    // 2. Envia posicao e estado de voz ~15 Hz
+    // 2. Envia posicao, skin e estado de voz ~15 Hz
     sendAccum += dt;
     if (connected && sendAccum >= 0.066) {
       sendAccum = 0;
       sendWS({
         type: 'state',
+        charId: p.charId || 'cool_man',
+        carType,
         x: Math.round(px * 100) / 100,
         y: Math.round(py * 100) / 100,
         z: Math.round(pz * 100) / 100,
@@ -673,18 +767,19 @@
         }
       }
 
-      // Volume de voz por proximidade
+      // Volume de voz por proximidade + ducking anti-eco quando o jogador local fala
       const peer = peers.get(id);
       if (peer && peer.audioEl) {
         const dist = Math.hypot(rp.mesh.position.x - px, rp.mesh.position.z - pz);
+        let vol = 0.0;
         if (dist <= VOICE_MIN_DIST) {
-          peer.audioEl.volume = 1.0;
-        } else if (dist >= VOICE_MAX_DIST) {
-          peer.audioEl.volume = 0.0;
-        } else {
+          vol = 0.85;
+        } else if (dist < VOICE_MAX_DIST) {
           const t = 1 - (dist - VOICE_MIN_DIST) / (VOICE_MAX_DIST - VOICE_MIN_DIST);
-          peer.audioEl.volume = Math.max(0, Math.min(1, t * t));
+          vol = Math.max(0, Math.min(0.85, t * t * 0.85));
         }
+        if (micEnabled && isSpeaking) vol *= 0.25;
+        peer.audioEl.volume = vol;
       }
     }
   }

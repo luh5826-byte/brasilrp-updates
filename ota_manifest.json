@@ -1,10 +1,10 @@
 {
-  "otaVersion": 30,
+  "otaVersion": 31,
   "minApkCode": 42,
-  "generatedAt": "2026-11-24T19:17:16.580Z",
-  "changelog": "• Adicionado sistema de Burnout (queimar pneu parado): segure FREIO + ACELERAR juntos para travar as rodas dianteiras, girar as traseiras em alta rotação, gerar fumaça densa, marcas pretas de borracha no asfalto, ronco V8 cortando giro com chiado de pneu e arrancada explosiva ao soltar o freio (opção BURNOUT: ON/OFF nas Configurações)",
+  "generatedAt": "2026-11-24T21:17:06.826Z",
+  "changelog": "• Multiplayer: jogadores remotos agora usam a skin 3D real (Cool Man) e o veículo real em vez do boneco quadrado\n• Chat de voz WebRTC: corrigido eco, retorno da própria voz e alta latência (Voice Activity Gate anti-eco, ducking automático e Opus baixa latência)\n• Telemetria integrada com o novo painel de estatísticas do servidor",
   "fileCount": 13,
-  "totalSize": 18723638,
+  "totalSize": 18732071,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -19,16 +19,16 @@
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "5ddc5994f02652380c7dc964efd732b08784fbd82961bc2a79033a0a2c5aec37",
-      "size": 400075
+      "sha256": "bd82a8f3eb8fc78b1b5d4a015bae03c98b92e1ed7730288919ea48c9196226dc",
+      "size": 404119
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "d90cd7b73590a542adb7ba4b315592a10dc29584254ef8044590a192237515d4",
-      "size": 23937
+      "sha256": "a7742f58b3368be3a71d4ed737251238f2ac1c11fccf2d2bbb6496305d857a02",
+      "size": 28326
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",

@@ -6080,25 +6080,78 @@
         showToast,
         setGpsDestination,
         clearGpsDestination,
-        createRemoteCharVisual: () => {
-          if (!playableCharCache.npc1) return null;
-          const mesh = cloneSkinnedObject(playableCharCache.npc1);
+        createRemoteCharVisual: (charId) => {
+          const cid = (charId && playableCharCache[charId]) ? charId : (playableCharCache.cool_man ? 'cool_man' : Object.keys(playableCharCache)[0]);
+          const tpl = cid ? playableCharCache[cid] : null;
+          if (!tpl) return null;
+          const info = PLAYABLE_CHARS[cid] || PLAYABLE_CHARS.cool_man || { kind: 'custom' };
+          const mesh = cloneSkinnedObject(tpl);
+          const rigCache = tpl.userData && tpl.userData._cachedRigInit;
           const bones = {};
           const boneInitQ = {};
+          const boneWorldInitQ = {};
           mesh.position.set(0, 0, 0);
           mesh.rotation.set(0, 0, 0);
-          mesh.updateMatrixWorld(true);
+          mesh.visible = true;
           mesh.traverse((c) => {
+            if (c.isMesh && c.name && c.name.toLowerCase().includes('icosphere')) c.visible = false;
             if (c.isMesh) { c.frustumCulled = false; c.castShadow = false; }
             if (c.isBone) {
+              if (rigCache && rigCache.initQ && rigCache.initQ[c.name]) {
+                c.quaternion.copy(rigCache.initQ[c.name]);
+              }
               bones[c.name] = c;
-              boneInitQ[c.name] = c.quaternion.clone();
+              boneInitQ[c.name] = (rigCache && rigCache.initQ && rigCache.initQ[c.name]) ? rigCache.initQ[c.name].clone() : c.quaternion.clone();
+              boneWorldInitQ[c.name] = (rigCache && rigCache.worldInitQ && rigCache.worldInitQ[c.name]) ? rigCache.worldInitQ[c.name].clone() : new THREE.Quaternion();
             }
           });
+          mesh.updateMatrixWorld(true);
+
+          const isCustomChar = (info.kind === 'custom');
+          let customRig = null;
+          if (isCustomChar && Object.keys(bones).length > 4) {
+            const extraHair = Object.keys(bones).filter((k) => {
+              const lk = k.toLowerCase();
+              return lk.includes('hair') || lk.includes('cat_ears') || lk.includes('ponytail') || lk.includes('skirt') || lk.includes('ribbon');
+            });
+            customRig = {
+              hips: findBoneByPatterns(bones, ['cc_base_pelvis', 'cc_base_hip', 'hips_01', 'hips']),
+              spine: findBoneByPatterns(bones, ['cc_base_spine01', 'cc_base_waist', 'spine_02', 'spine1', 'spine']),
+              chest: findBoneByPatterns(bones, ['cc_base_spine02', 'spine2_04', 'spine2', 'chest']),
+              neck: findBoneByPatterns(bones, ['cc_base_necktwist01', 'neck_05', 'neck']),
+              head: findBoneByPatterns(bones, ['cc_base_head', 'head_08', 'head']),
+              eyeL: findBoneByPatterns(bones, ['cc_base_l_eye', 'lefteye', 'l_eye', 'eye_l']),
+              eyeR: findBoneByPatterns(bones, ['cc_base_r_eye', 'righteye', 'r_eye', 'eye_r']),
+              bustL: findBoneByPatterns(bones, ['cc_base_l_breast', 'l_breast', 'breast_l', 'bustl']),
+              bustR: findBoneByPatterns(bones, ['cc_base_r_breast', 'r_breast', 'breast_r', 'bustr']),
+              thighL: findBoneByPatterns(bones, ['cc_base_l_thigh', 'leftupleg', 'l_thigh', 'thigh_l']),
+              thighR: findBoneByPatterns(bones, ['cc_base_r_thigh', 'rightupleg', 'r_thigh', 'thigh_r']),
+              calfL: findBoneByPatterns(bones, ['cc_base_l_calf', 'leftleg', 'l_calf', 'calf_l', 'shin_l']),
+              calfR: findBoneByPatterns(bones, ['cc_base_r_calf', 'rightleg', 'r_calf', 'calf_r', 'shin_r']),
+              footL: findBoneByPatterns(bones, ['cc_base_l_foot', 'leftfoot', 'l_foot', 'foot_l']),
+              footR: findBoneByPatterns(bones, ['cc_base_r_foot', 'rightfoot', 'r_foot', 'foot_r']),
+              armL: findBoneByPatterns(bones, ['cc_base_l_upperarm', 'leftarm_0', 'leftarm', 'l_upperarm', 'upperarm_l']),
+              armR: findBoneByPatterns(bones, ['cc_base_r_upperarm', 'rightarm_0', 'rightarm', 'r_upperarm', 'upperarm_r']),
+              foreL: findBoneByPatterns(bones, ['cc_base_l_forearm_', 'cc_base_l_forearm', 'leftforearm_0', 'leftforearm', 'l_forearm', 'forearm_l']),
+              foreR: findBoneByPatterns(bones, ['cc_base_r_forearm_', 'cc_base_r_forearm', 'rightforearm_0', 'rightforearm', 'r_forearm', 'forearm_r']),
+              extraHair,
+              armDownZ: (info.armDownZ !== undefined) ? info.armDownZ : 0.62
+            };
+          }
+
           return {
+            charId: cid,
             mesh,
             bones,
             boneInitQ,
+            boneWorldInitQ,
+            isCustomChar,
+            customRig,
+            customRoot: mesh.children[0] || null,
+            customBaseY: (tpl.userData && tpl.userData.customBaseY !== undefined) ? tpl.userData.customBaseY : 0,
+            hipsInitY: undefined,
+            skirtBones: [],
+            skirtInfo: {},
             phase: Math.random() * 6.28,
             moveBlend: 0,
             airBlend: 0,
@@ -6109,7 +6162,7 @@
             blinkTimer: 2.0,
             grounded: true,
             velY: 0,
-            armRestZ: 0.38
+            armRestZ: (info.armRestZ !== undefined) ? info.armRestZ : 0.38
           };
         },
         animateRemoteChar: (st, dt, walking, sprinting) => {
@@ -6117,9 +6170,9 @@
           st.sprintBlend = sprinting ? 1.0 : 0.0;
           animateJobNpcBones(st, dt, walking);
         },
-        createRemoteCarVisual: (idNum) => {
+        createRemoteCarVisual: (idNum, carType) => {
           const keys = ['lexus_lc_500_wald', 'ford_mustang_gtd', 'volkswagen_saveiro', 'car_gol', 'car_pm'];
-          const k = keys[Math.abs(idNum || 0) % keys.length];
+          const k = (carType && vehicleTemplates[carType]) ? carType : keys[Math.abs(idNum || 0) % keys.length];
           const tpl = vehicleTemplates[k];
           if (!tpl) return null;
           const m = tpl.clone(true);
@@ -6128,7 +6181,7 @@
             if (c.isMesh) c.castShadow = false;
             if (['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR'].includes(c.name)) wheels.push(c);
           });
-          return { mesh: m, wheels };
+          return { mesh: m, wheels, carType: k };
         }
       };
 
