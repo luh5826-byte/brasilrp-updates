@@ -1,11 +1,11 @@
 {
-  "versionCode": 41,
-  "versionName": "1.0.41",
+  "versionCode": 42,
+  "versionName": "1.0.42",
   "mandatory": false,
-  "changelog": "• Expiração imediata de cache (0s): UpdateManager agora consulta o SHA real de refs/heads/main via Git info/refs (no-cache) antes de ler version.json\n• Inclui todas as otimizações de GPU/CPU, warmup de texturas, blur nas configurações e telemetria FPS • DC",
-  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.41/BrasilRP_GTA6.apk",
+  "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
+  "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
   "otaVersion": 0,
-  "minApkCodeForOta": 41,
+  "minApkCodeForOta": 42,
   "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota/",
   "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/ota_manifest.json"
 }
