@@ -20,6 +20,7 @@
     padSens: 1.0,
     env: 'day',
     gfxQuality: 'medium',
+    steerMode: 'buttons',
     targetFps: 90,
     dist: 1,
     soundEnabled: true,
@@ -3470,6 +3471,7 @@
   const input = {
     joyX: 0, joyY: 0, sprint: false, jumpPressed: false,
     left: false, right: false, gas: false, brake: false, drift: false, nitro: false,
+    gyroSteer: 0, gyroTarget: 0, lastOrientTs: 0,
     camYaw: 0, camPitch: 0.24, camZoomOffset: 0, interiorYaw: 0, interiorPitch: -0.10
   };
 
@@ -3945,6 +3947,87 @@
     };
   });
 
+  function getScreenOrientAngle() {
+    if (screen && screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
+    if (typeof window.orientation === 'number') return window.orientation;
+    return 90;
+  }
+
+  function updateGyroTiltDeg(tiltDeg) {
+    const dz = 3.2;
+    const maxDeg = 26.0;
+    const sens = Math.max(0.65, Math.min(1.8, save.camSens || 1.0));
+    const absD = Math.abs(tiltDeg);
+    if (absD <= dz) {
+      input.gyroTarget = 0;
+    } else {
+      const norm = Math.min(1, (absD - dz) / (maxDeg - dz));
+      // Curva suave (quadrática leve + linear) para controle fino no centro e firme nas curvas
+      const curved = norm * (0.65 + 0.35 * norm);
+      input.gyroTarget = Math.max(-1, Math.min(1, Math.sign(tiltDeg) * curved * sens));
+    }
+  }
+
+  window.addEventListener('deviceorientation', (e) => {
+    if (save.steerMode !== 'gyro') return;
+    if (typeof e.beta !== 'number' && typeof e.gamma !== 'number') return;
+    input.lastOrientTs = performance.now();
+    const ang = getScreenOrientAngle();
+    let tiltDeg = 0;
+    if (ang === 90) {
+      // Paisagem padrão Android (topo do celular à esquerda): inclinar p/ esquerda -> beta < 0 -> steer +1 (esquerda)
+      tiltDeg = -(e.beta || 0);
+    } else if (ang === 270 || ang === -90) {
+      // Paisagem invertida (topo do celular à direita)
+      tiltDeg = (e.beta || 0);
+    } else {
+      // Retrato
+      tiltDeg = -(e.gamma || 0);
+    }
+    updateGyroTiltDeg(tiltDeg);
+  }, { passive: true });
+
+  window.addEventListener('devicemotion', (e) => {
+    if (save.steerMode !== 'gyro') return;
+    if (performance.now() - (input.lastOrientTs || 0) < 900) return; // já está usando deviceorientation
+    const acc = e.accelerationIncludingGravity;
+    if (!acc || typeof acc.y !== 'number') return;
+    const ang = getScreenOrientAngle();
+    let deg = 0;
+    if (ang === 90) deg = -Math.atan2(acc.y, 9.81) * 57.2958;
+    else if (ang === 270 || ang === -90) deg = Math.atan2(acc.y, 9.81) * 57.2958;
+    else deg = Math.atan2(acc.x || 0, 9.81) * 57.2958;
+    updateGyroTiltDeg(deg);
+  }, { passive: true });
+
+  function applySteerMode(mode, notify) {
+    const isGyro = mode === 'gyro';
+    save.steerMode = isGyro ? 'gyro' : 'buttons';
+    persistSave();
+    document.body.classList.toggle('gyro-mode', isGyro);
+    if (!isGyro) { input.gyroTarget = 0; input.gyroSteer = 0; }
+    const pill = document.querySelector(`#steer-mode-pills .pill-btn[data-steer="${save.steerMode}"]`);
+    if (pill) setActivePill('#steer-mode-pills', pill);
+    const btnGyro = el('btnCarGyro');
+    if (btnGyro) btnGyro.classList.toggle('on', isGyro);
+    if (isGyro && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().catch(() => {});
+    }
+    if (notify) {
+      showToast(isGyro ? '📱 Giroscópio ATIVADO (Freio à esquerda • Acelerador à direita)' : '🎮 Direção por Botões ativada', 2800);
+    }
+  }
+
+  document.querySelectorAll('#steer-mode-pills .pill-btn').forEach((btn) => {
+    btn.onclick = () => applySteerMode(btn.dataset.steer, true);
+  });
+  if (el('btnCarGyro')) {
+    el('btnCarGyro').onclick = () => {
+      AudioFX.beep(720, 0.06, 'triangle', 0.08);
+      applySteerMode(save.steerMode === 'gyro' ? 'buttons' : 'gyro', true);
+    };
+  }
+
   // Restaura preferências salvas ao iniciar
   (function restoreSavedSettings() {
     const envVal = (!save.env || save.env === 'day') ? 'auto' : save.env;
@@ -3955,6 +4038,7 @@
     const qBtn = document.querySelector(`#gfx-quality-pills .pill-btn[data-quality="${save.gfxQuality || 'medium'}"]`);
     if (qBtn) setActivePill('#gfx-quality-pills', qBtn);
     applyGfxQuality(save.gfxQuality || 'medium');
+    applySteerMode(save.steerMode || 'buttons', false);
 
     const fpsBtn = document.querySelector(`#fps-pills .pill-btn[data-fps="${save.targetFps || 90}"]`);
     if (fpsBtn) setActivePill('#fps-pills', fpsBtn);
@@ -6659,9 +6743,16 @@
     const drift = input.drift || padState.drift || keys['Space'];
     const nitroBtn = input.nitro || padState.nitro || keys['ShiftLeft'];
 
+    if (save.steerMode === 'gyro') {
+      input.gyroSteer += (input.gyroTarget - input.gyroSteer) * Math.min(1, dt * 14.0);
+    } else {
+      input.gyroSteer = 0;
+    }
     const targetSteer = padState.active && Math.abs(padState.steer) > 0.05
       ? -padState.steer
-      : (left ? 1 : 0) - (right ? 1 : 0);
+      : (save.steerMode === 'gyro'
+          ? Math.max(-1, Math.min(1, input.gyroSteer + (left ? 1 : 0) - (right ? 1 : 0)))
+          : ((left ? 1 : 0) - (right ? 1 : 0)));
     car.steerAngle += (targetSteer - car.steerAngle) * Math.min(1, dt * 11.0);
 
     const forwardDir = new THREE.Vector3(Math.sin(car.yaw) * fSign, 0, Math.cos(car.yaw) * fSign);

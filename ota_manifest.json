@@ -1,20 +1,20 @@
 {
-  "otaVersion": 28,
+  "otaVersion": 29,
   "minApkCodeForOta": 42,
-  "changelog": "• Corrigido travamento ao alterar gráficos nas Configurações e voltar a jogar (despausa automática ao fechar Configurações + atualização segura de sombras/materiais WebGL)",
-  "totalBytes": 18685368,
+  "changelog": "• Adicionado sistema de direção por Giroscópio (Configurações > Direção do Veículo ou botão rápido 'GIRO' no carro): inclinar o celular vira o volante, pedal de FREIO / RÉ fica à esquerda e ACELERAR à direita",
+  "totalBytes": 18690651,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "6b8f35773d93145033cb2180ac22d4006e56b8664af6e7fd719b244139743556",
-      "size": 49420
+      "sha256": "f1a4888996386e1e0d48eec947f98f6c3e6607157b1c16371adbf08069c142aa",
+      "size": 50297
     },
     "js/game.js": {
-      "sha256": "c494204d757626f22e4fcd699db181528012f31bd87406dc9ac12a9c58c540be",
-      "size": 390103
+      "sha256": "0c7a7b090872d0fe18a5facb47e4c2638400cb958791b8f2815bd062ac3dc95f",
+      "size": 393925
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -49,8 +49,8 @@
       "size": 1854040
     },
     "style.css": {
-      "sha256": "34cf84dbae482ab5d8ce489d07af71c173c95f8ee6737f609a7e27529e7482c8",
-      "size": 38102
+      "sha256": "408752b088ab98bc66b85aaae9e2be563a645c79235f2a6b1ce3c111aab6a797",
+      "size": 38686
     }
   }
 }

@@ -145,6 +145,13 @@
           </div>
         </div>
         <div class="config-group">
+          <div class="config-title">DIREÇÃO DO VEÍCULO</div>
+          <div class="pill-row" id="steer-mode-pills">
+            <div class="pill-btn active" data-steer="buttons">BOTÕES</div>
+            <div class="pill-btn" data-steer="gyro">GIROSCÓPIO</div>
+          </div>
+        </div>
+        <div class="config-group">
           <div class="config-title">SISTEMA &amp; VEÍCULO</div>
           <div class="pill-row">
             <div class="pill-btn active" id="lobby-audio-btn">ÁUDIO: ON</div>
@@ -168,6 +175,12 @@
         <div class="config-group config-group-full">
           <div class="config-title">LOG DE ATUALIZAÇÕES</div>
           <div class="changelog-list">
+            <div class="changelog-entry">
+              <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #29</span></div>
+              <ul class="changelog-items">
+                <li>Adicionado sistema de direção por Giroscópio (ativável nas Configurações ou no botão rápido "GIRO" do carro): inclinação do celular vira o volante, pedal de FREIO / RÉ no lado esquerdo e ACELERAR no lado direito</li>
+              </ul>
+            </div>
             <div class="changelog-entry">
               <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #28</span></div>
               <ul class="changelog-items">
@@ -517,6 +530,7 @@
         <button id="btnCarRadio" class="mini-pill">📻 RÁDIO</button>
         <button id="btnCarDoors" class="mini-pill">🚪 PORTAS</button>
         <button id="btnCarLights" class="mini-pill">💡 LUZES</button>
+        <button id="btnCarGyro" class="mini-pill">📱 GIRO</button>
         <button id="btnCarCam" class="mini-pill">📷 INTERIOR</button>
       </div>
       <div class="drive-pad">
