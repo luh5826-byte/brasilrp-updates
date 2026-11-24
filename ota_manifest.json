@@ -1,20 +1,20 @@
 {
-  "otaVersion": 25,
+  "otaVersion": 26,
   "minApkCodeForOta": 42,
-  "changelog": "• Mobilidade calibrada (aceleração progressiva e velocidade realista nas ruas) + Freio agora para totalmente o veículo antes de engatar a ré\n• Câmera 360° livre no veículo (inclusive em movimento e no joystick Bluetooth) + zoom aproximado sem bloqueio para ver detalhes externos\n• Rodas das Saveiros atualizadas para prata alumínio uniforme (sem diamantado)",
-  "totalBytes": 18681284,
+  "changelog": "• Eliminada a trepidação ao dirigir: sincronia exata X/Z da câmera com o veículo (suavização exponencial apenas em Y) + filtro passa-baixa e super-amortecimento na suspensão sobre juntas do asfalto",
+  "totalBytes": 18682476,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "8904624438affc5fc304db4dab8442ace635a34baf57f9d2475368dfc3bb5ecf",
-      "size": 48130
+      "sha256": "d859e88a388d7bdd3fc79173c039e58813fef5e58b996fffdcade425d6ea0f0c",
+      "size": 48564
     },
     "js/game.js": {
-      "sha256": "33c0ce8978896098457c1764fab91545509147caa3df6cbcf902de5d321610ce",
-      "size": 387309
+      "sha256": "910dadf0f13eddd370ed55dc6e118c872b511c6815e2618696c02e43a4336b1b",
+      "size": 388067
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",

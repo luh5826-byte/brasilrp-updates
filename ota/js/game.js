@@ -7055,14 +7055,15 @@
           w.lastRoadCell = rc;
 
           // Detecta impacto real de degrau de escada / desnível súbito na malha 3D sob esta roda!
-          if (v.grounded && wh !== null && w.lastGroundY !== undefined && absSpd > 0.5) {
+          // Limiar 0.095m ignora micro-juntas de polígonos no asfalto para evitar trepidação ao andar na rua
+          if (v.grounded && wh !== null && w.lastGroundY !== undefined && absSpd > 0.8) {
             const stepJump = wh - w.lastGroundY;
-            if (Math.abs(stepJump) > 0.055 && Math.abs(stepJump) < 0.48) {
-              w.suspVel = (w.suspVel || 0) + stepJump * 11.5;
-              v.suspHeaveVel = (v.suspHeaveVel || 0) + stepJump * 1.8;
-              if (v === player.inCar && absSpd > 1.4 && stepJump > 0.065) {
-                AudioFX.curbThump(Math.min(0.85, 0.25 + stepJump * 2.2));
-                vibrate(8);
+            if (Math.abs(stepJump) > 0.095 && Math.abs(stepJump) < 0.48) {
+              w.suspVel = (w.suspVel || 0) + stepJump * 6.5;
+              v.suspHeaveVel = (v.suspHeaveVel || 0) + stepJump * 0.95;
+              if (v === player.inCar && absSpd > 1.8 && stepJump > 0.11) {
+                AudioFX.curbThump(Math.min(0.75, 0.22 + stepJump * 1.8));
+                vibrate(6);
               }
             }
           }
@@ -7145,10 +7146,19 @@
           v.velY *= 0.25;
         }
 
-        // Mola-amortecedor criticamente amortecida: sobe degraus, escadas e meio-fios com fluidez real sem nunca pular em 1 frame!
-        const errY = gy - v.pos.y;
-        const springK = errY > 0 ? 74.0 : 88.0;
-        const dampC = 16.5;
+        // Filtro passa-baixa suave em gy para eliminar micro-trepidação de juntas da malha no asfalto plano
+        if (v.smoothGy === undefined || Math.abs(gy - v.smoothGy) > 0.45) {
+          v.smoothGy = gy;
+        } else {
+          const alphaGy = 1.0 - Math.exp(-(Math.abs(gy - v.smoothGy) < 0.07 ? 14.0 : 28.0) * dt);
+          v.smoothGy += (gy - v.smoothGy) * alphaGy;
+        }
+        const targetGy = v.smoothGy;
+
+        // Mola-amortecedor super-amortecida: sobe degraus, escadas e meio-fios com fluidez real sem trepidar no asfalto!
+        const errY = targetGy - v.pos.y;
+        const springK = errY > 0 ? 62.0 : 72.0;
+        const dampC = 19.5;
         v.velY += (errY * springK - v.velY * dampC) * dt;
         // Limita velocidade máxima de subida em degrau para manter movimento 100% orgânico e sedoso
         if (v.velY > 4.2) v.velY = 4.2;
@@ -7156,13 +7166,13 @@
         v.pos.y += v.velY * dt;
 
         // Batente mecânico inferior da suspensão (comprime até 16cm no máximo para o assoalho nunca entrar no chão)
-        if (v.pos.y < gy - 0.16) {
-          v.pos.y = gy - 0.16;
+        if (v.pos.y < targetGy - 0.16) {
+          v.pos.y = targetGy - 0.16;
           if (v.velY < 0) v.velY = 0;
         }
         // Quando quase em repouso no plano, estabiliza sem micro-tremor
-        if (Math.abs(gy - v.pos.y) < 0.004 && Math.abs(v.velY) < 0.02) {
-          v.pos.y = gy;
+        if (Math.abs(targetGy - v.pos.y) < 0.008 && Math.abs(v.velY) < 0.04) {
+          v.pos.y = targetGy;
           v.velY = 0;
         }
 
@@ -7211,10 +7221,12 @@
         v.pitch = (v.pitch || 0) + v.pitchVel * dt;
       }
 
-      // Inclinação 3D do veículo com mola-amortecedor criticamente amortecida (transição cinematográfica em escadas e rampas!)
+      // Inclinação 3D do veículo com mola-amortecedor super-amortecida (zero trepidação no asfalto!)
       if (v.grounded) {
-        v.slopePitchVel = (v.slopePitchVel || 0) + ((targetSlopePitch - (v.slopePitch || 0)) * 56 - (v.slopePitchVel || 0) * 14.5) * dt;
-        v.slopeRollVel = (v.slopeRollVel || 0) + ((targetSlopeRoll - (v.slopeRoll || 0)) * 56 - (v.slopeRollVel || 0) * 14.5) * dt;
+        const cleanPitch = Math.abs(targetSlopePitch) < 0.018 ? 0 : targetSlopePitch;
+        const cleanRoll = Math.abs(targetSlopeRoll) < 0.018 ? 0 : targetSlopeRoll;
+        v.slopePitchVel = (v.slopePitchVel || 0) + ((cleanPitch - (v.slopePitch || 0)) * 44 - (v.slopePitchVel || 0) * 16.5) * dt;
+        v.slopeRollVel = (v.slopeRollVel || 0) + ((cleanRoll - (v.slopeRoll || 0)) * 44 - (v.slopeRollVel || 0) * 16.5) * dt;
         v.slopePitch = Math.max(-0.56, Math.min(0.56, (v.slopePitch || 0) + v.slopePitchVel * dt));
         v.slopeRoll = Math.max(-0.40, Math.min(0.40, (v.slopeRoll || 0) + v.slopeRollVel * dt));
       } else {
@@ -8943,16 +8955,22 @@
     }
 
     const realTarget = player.inCar ? player.inCar.pos : player.pos;
-    if (player.inCar || !camFollowInit || camFollow.distanceTo(realTarget) > 2.5) {
+    if (!camFollowInit || camFollow.distanceTo(realTarget) > 4.0) {
       camFollow.copy(realTarget);
       camFollowInit = true;
+    } else if (player.inCar) {
+      // No carro: trava X/Z diretamente no carro (ZERO judder/trepidação ao acelerar!) e suaviza apenas Y
+      camFollow.x = realTarget.x;
+      camFollow.z = realTarget.z;
+      const ky = 1.0 - Math.exp(-12.0 * dt);
+      camFollow.y += (realTarget.y - camFollow.y) * ky;
     } else {
       const kXZ = Math.min(1, dt * GTA.camFollowRate);
       camFollow.x += (realTarget.x - camFollow.x) * kXZ;
       camFollow.z += (realTarget.z - camFollow.z) * kXZ;
       camFollow.y += (realTarget.y - camFollow.y) * Math.min(1, dt * GTA.camFollowRateY);
     }
-    const target = player.inCar ? realTarget : camFollow;
+    const target = camFollow;
     const baseDist = player.inCar ? 5.2 : 3.2;
     const dist = Math.max(player.inCar ? 1.05 : 0.65, Math.min(14.0, baseDist + input.camZoomOffset));
     const closeT = player.inCar ? Math.max(0, Math.min(1, (3.4 - dist) / 2.35)) : 0;
@@ -8966,7 +8984,7 @@
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
       const followRate = player.inCar.speed >= 0 ? 2.4 : 1.6;
-      input.camYaw += diff * Math.min(1, dt * followRate);
+      input.camYaw += diff * (1.0 - Math.exp(-followRate * dt));
     }
 
     const cx = target.x + Math.sin(input.camYaw) * Math.cos(input.camPitch) * dist;
@@ -8977,12 +8995,9 @@
     if (!player.inCar) {
       const camGy = getWalkableGround(cx, cz, target.y, 2.5);
       if (camGy !== null && cy < camGy + 0.35) cy = camGy + 0.35;
-      // A pé: câmera 3ª pessoa firme mantendo o personagem 100% centralizado enquanto o mapa gira ao redor
-      camera.position.set(cx, cy, cz);
-    } else {
-      const lerpSpeed = (camManualTimer > 0 || player.carFreeCam360 || camTouchId !== null) ? 24 : 12;
-      camera.position.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, dt * lerpSpeed));
     }
+    // Posicionamento direto sem lerp defasado em X/Z = 100% fluido e ZERO trepidação em qualquer velocidade!
+    camera.position.set(cx, cy, cz);
     if (camShakeTimer > 0) {
       const s = camShakePower * (camShakeTimer / 0.65);
       camera.position.x += (Math.random() - 0.5) * s;
