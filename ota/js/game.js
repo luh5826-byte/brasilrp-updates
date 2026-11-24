@@ -5473,14 +5473,14 @@
   if (el('phGoMcEnter')) {
     el('phGoMcEnter').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-133.3, -73.1, "McDonald's (Salão)");
+      setGpsDestination(-57.0, 13.5, "McDonald's (Salão)");
       AudioFX.coin();
     };
   }
   if (el('phGoMcDrive')) {
     el('phGoMcDrive').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-143.4, -56.9, "McDonald's Drive-Thru");
+      setGpsDestination(-67.1, 29.7, "McDonald's Drive-Thru");
       AudioFX.coin();
     };
   }
@@ -5746,9 +5746,9 @@
         rpProps.push({ type: 'safehouse', label: 'Minha Casa', pos: hGrp.position, mesh: hGrp });
       })();
 
-      // McDonald's Drive-Thru real (engadine_mcdonalds_restaurant_low_poly.glb otimizado) na praça plana em (-139, -60)
+      // McDonald's Drive-Thru real (mcdonalds_drivethru.glb) em terreno plano aberto ao lado do meio-fio da Av. Sul (-63, 27)
       (function buildMcDonalds() {
-        const mcOx = -139.3, mcOz = -59.6;
+        const mcOx = -63.0, mcOz = 27.0;
         loadGLB('models/props/mcdonalds_drivethru.glb').then((mcScene) => {
           const mcY = getSafeGroundForSpawn(mcOx + 3.3, mcOz - 0.4, groundY);
           mcScene.position.set(mcOx, mcY, mcOz);
@@ -5757,12 +5757,12 @@
           });
           scene.add(mcScene);
           mcBuildings.push({ mesh: mcScene, x: mcOx + 3.3, z: mcOz - 0.4 });
-          // Balcão de atendimento a pé (face sul do salão)
-          const counterPos = new THREE.Vector3(-133.3, getSafeGroundForSpawn(-133.3, -73.1, mcY), -73.1);
+          // Balcão de atendimento a pé (calçada do meio-fio da avenida)
+          const counterPos = new THREE.Vector3(-57.0, getSafeGroundForSpawn(-57.0, 13.5, mcY), 13.5);
           rpProps.push({ type: 'mcdonalds', label: "McDonald's", pos: counterPos, mesh: mcScene });
-          // Janela do Drive-Thru (pista de carros)
+          // Janela do Drive-Thru (pista aberta para carros)
           driveThrus.push({
-            pos: new THREE.Vector3(-143.4, mcY, -56.9),
+            pos: new THREE.Vector3(-67.1, mcY, 29.7),
             label: "McDonald's Drive-Thru",
             cooldown: 0
           });
