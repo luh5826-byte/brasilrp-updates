@@ -6,6 +6,12 @@
     cash: 1500,
     bank: 5000,
     deliveries: 0,
+    storyIdx: 0,
+    xp: 0,
+    level: 1,
+    completedMissions: [],
+    bestRaceTime: null,
+    sideDone: 0,
     starterCar: 'volkswagen_saveiro',
     paint: '#ffffff',
     camSens: 1.0,
@@ -5407,6 +5413,7 @@
       const targetId = btn.getAttribute('data-open');
       document.querySelectorAll('#phoneModal .ifruit-screen').forEach((s) => s.classList.add('hidden'));
       if (el(targetId)) el(targetId).classList.remove('hidden');
+      if (targetId === 'phScreenMissions' && window.BrasilMissions) window.BrasilMissions.renderPhoneUI();
       AudioFX.beep(680, 0.05, 'sine', 0.07);
     };
   });
@@ -5767,11 +5774,25 @@
         scene,
         player,
         npcs,
+        vehicles,
         trafficCars,
+        save,
+        persistSave,
+        refreshMoneyUI,
+        AudioFX,
+        vibrate,
+        spawnVehicle,
+        paintVehicle,
+        spawnNPC,
+        getSafeGroundForSpawn,
+        getRoadCellAt,
+        applyEnv,
+        roadCells,
         getGameMode: () => gameMode,
         getSoundEnabled: () => soundEnabled,
         showToast,
         setGpsDestination,
+        clearGpsDestination,
         createRemoteCharVisual: () => {
           if (!playableCharCache.npc1) return null;
           const mesh = cloneSkinnedObject(playableCharCache.npc1);
@@ -5941,6 +5962,7 @@
     updateWaterWaves(now * 0.001);
     updateCamera(dt);
     updateDelivery(dt);
+    if (window.BrasilMissions && window.BrasilMissions.tick) window.BrasilMissions.tick(dt);
     updateWanted(dt);
     minimapTimer += dt;
     if (minimapTimer >= 0.16) {
@@ -8912,6 +8934,18 @@
       ctx.fillStyle = '#d500f9';
       ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
     }
+    if (window.BrasilMissions && typeof window.BrasilMissions.getActiveMarker === 'function') {
+      const mm = window.BrasilMissions.getActiveMarker();
+      if (mm) {
+        const pt = toMini(mm.x, mm.z);
+        const cx = Math.max(8, Math.min(W - 8, pt.x));
+        const cy = Math.max(8, Math.min(H - 8, pt.y));
+        ctx.fillStyle = '#' + (mm.color || 0xffd41f).toString(16).padStart(6, '0');
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(cx, cy, 5.8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+    }
 
     // Seta do jogador apontando para onde o personagem/carro realmente está virado
     let hx, hz;
@@ -9028,6 +9062,16 @@
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2 / fullMapZoom;
       ctx.beginPath(); ctx.arc(pt.x, pt.y, 7 / fullMapZoom, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    if (window.BrasilMissions && typeof window.BrasilMissions.getActiveMarker === 'function') {
+      const mm = window.BrasilMissions.getActiveMarker();
+      if (mm) {
+        const pt = toFull(mm.x, mm.z);
+        ctx.fillStyle = '#' + (mm.color || 0xffd41f).toString(16).padStart(6, '0');
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.2 / fullMapZoom;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 8 / fullMapZoom, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
     }
 
     const p = player.inCar ? player.inCar.pos : player.pos;

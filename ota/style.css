@@ -1410,3 +1410,145 @@ body.gamepad-mode .weapon-phone-col {
   letter-spacing: 0.5px;
   color: #ffd41f;
 }
+
+/* =========================================================
+   MODO HISTÓRIA, DIÁLOGOS ESTILO GTA & APP MISSÕES iFRUIT
+   ========================================================= */
+.rp-lv-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #0b0e14;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  margin-right: 4px;
+}
+
+.mission-timer {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 212, 31, 0.2);
+  border: 1px solid rgba(255, 212, 31, 0.65);
+  color: #ffd41f;
+  font-size: 11px;
+  font-weight: 900;
+}
+.mission-timer.urgent {
+  background: rgba(255, 23, 68, 0.28);
+  border-color: #ff1744;
+  color: #ff6b81;
+}
+.mission-cancel-x {
+  pointer-events: auto;
+  margin-left: 2px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 23, 68, 0.35);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gta-dialogue {
+  position: fixed;
+  bottom: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 86vw);
+  z-index: 45;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(6, 10, 18, 0.92), rgba(14, 20, 34, 0.94));
+  border: 1.5px solid rgba(255, 212, 31, 0.55);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+}
+.gta-dialogue.hidden { display: none; }
+.dlg-ico {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.dlg-name { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px; }
+.dlg-text { font-size: 12.5px; font-weight: 600; color: #f1f5f9; line-height: 1.32; }
+
+.mission-result {
+  position: fixed;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 95;
+  pointer-events: none;
+  text-align: center;
+  padding: 16px 30px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(8, 12, 22, 0.95), rgba(18, 24, 38, 0.95));
+  border: 2px solid #ffd41f;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.85), 0 0 32px rgba(255, 212, 31, 0.35);
+}
+.mission-result.fail {
+  border-color: #ff1744;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.85), 0 0 32px rgba(255, 23, 68, 0.4);
+}
+.mission-result.hidden { display: none; }
+.mr-title {
+  font-size: 24px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: #ffd41f;
+  text-shadow: 0 2px 12px rgba(255, 212, 31, 0.5);
+}
+.mission-result.fail .mr-title { color: #ff4757; text-shadow: 0 2px 12px rgba(255, 23, 68, 0.5); }
+.mr-sub { font-size: 13px; font-weight: 800; color: #e2e8f0; margin-top: 4px; }
+.mr-reward { font-size: 13px; font-weight: 900; color: #4ade80; margin-top: 6px; }
+.mission-result.fail .mr-reward { color: #fca5a5; }
+
+.ifruit-app-ico.g-gold { background: linear-gradient(135deg, #f59e0b, #fde047); color: #111; }
+.m-xp-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 212, 31, 0.25);
+  border-radius: 12px;
+  padding: 7px 10px;
+}
+.m-xp-top { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #fde68a; margin-bottom: 5px; }
+.m-xp-top small { color: #cbd5e1; font-size: 9.5px; }
+.m-xp-bar { width: 100%; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.m-xp-bar div { height: 100%; background: linear-gradient(90deg, #f59e0b, #4ade80); transition: width 0.25s ease; }
+.m-story-card {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.86));
+  border: 1.5px solid rgba(255, 212, 31, 0.45);
+  border-radius: 14px;
+  padding: 9px 11px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.m-card-head { display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; font-weight: 800; }
+.m-badge { padding: 2px 6px; border-radius: 6px; background: rgba(255, 212, 31, 0.2); color: #fde047; }
+.m-badge.active { background: rgba(34, 197, 94, 0.25); color: #4ade80; }
+.m-badge.done { background: rgba(56, 189, 248, 0.25); color: #38bdf8; }
+.m-reward { color: #4ade80; font-weight: 900; }
+.m-card-title { font-size: 13px; font-weight: 900; color: #fff; }
+.m-card-desc { font-size: 10.5px; color: #cbd5e1; line-height: 1.3; }
+.m-btn {
+  margin-top: 3px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: none;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.m-btn.gold { background: linear-gradient(180deg, #ffd41f, #f59e0b); color: #0a0d14; }
+.m-btn.danger { background: linear-gradient(180deg, #ef4444, #b91c1c); color: #fff; }
+.m-sec-title { font-size: 9.5px; font-weight: 900; color: #94a3b8; letter-spacing: 0.7px; margin-top: 2px; }

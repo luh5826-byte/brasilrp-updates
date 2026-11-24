@@ -198,6 +198,13 @@
           <div class="config-title">LOG DE ATUALIZAÇÕES</div>
           <div class="changelog-list">
             <div class="changelog-entry">
+              <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #16</span></div>
+              <ul class="changelog-items">
+                <li>Modo História — Capítulo 1 "Ascensão em Liberty BR" com 6 missões encadeadas, legendas/diálogos estilo GTA, checkpoints 3D luminosos, cronômetro e recompensas (+R$, +XP e Lexus LC 500 Wald Dourado no final)</li>
+                <li>Novo App "Missões" no Smartphone iFruit com Nível RP (Lv. 1–50) e 3 missões secundárias infinitas: Motorista App (Uber RP), Time Trial (com recorde) e Patrulha PM-BR</li>
+              </ul>
+            </div>
+            <div class="changelog-entry">
               <div class="changelog-ver"><span class="changelog-badge">v1.0.42 • OTA #15</span></div>
               <ul class="changelog-items">
                 <li>Suavização completa da suspensão em escadas e meio-fios: eliminado o salto instantâneo para cima com perfil circular de pneu (3 amostras por roda) e mola-amortecedor contínua no chassi, pitch e roll</li>
@@ -366,7 +373,25 @@
       <div id="missionBanner" class="mission-banner hidden">
         <span class="dot"></span>
         <span id="missionText">Entrega em andamento...</span>
+        <span id="missionTimerTag" class="mission-timer hidden">00:00</span>
+        <button id="btnCancelStoryMission" class="mission-cancel-x hidden" title="Cancelar Missão">✕</button>
       </div>
+    </div>
+
+    <!-- Legendas / Diálogo estilo GTA -->
+    <div id="gtaDialogueBar" class="gta-dialogue hidden" title="Toque para avançar">
+      <div class="dlg-ico" id="dlgIcon">📱</div>
+      <div class="dlg-body">
+        <div class="dlg-name" id="dlgName">Contato</div>
+        <div class="dlg-text" id="dlgText">...</div>
+      </div>
+    </div>
+
+    <!-- Banner Cinematográfico de Missão Concluída / Falhou -->
+    <div id="missionResultBanner" class="mission-result hidden">
+      <div class="mr-title" id="mrTitle">MISSÃO CONCLUÍDA!</div>
+      <div class="mr-sub" id="mrSub">01. Primeiro Corre</div>
+      <div class="mr-reward" id="mrReward">+R$ 1.200 • +150 XP</div>
     </div>
 
     <div class="hud-top-right">
@@ -389,6 +414,7 @@
             </span>
           </div>
           <div class="meta-row">
+            <span id="rpLevelBadge" class="rp-lv-badge">LV 1</span>
             <span id="wantedStars" class="stars">☆☆☆☆☆</span>
             <span id="clockText" class="clock">08:30</span>
             <span class="meta-sep">•</span>
@@ -480,6 +506,10 @@
         </div>
 
         <div class="ifruit-grid">
+          <button class="ifruit-app-tile" data-open="phScreenMissions" id="phTileMissions">
+            <div class="ifruit-app-ico g-gold">🎯</div>
+            <span>Missões</span>
+          </button>
           <button class="ifruit-app-tile" data-open="phScreenCars">
             <div class="ifruit-app-ico g-red">🏎️</div>
             <span>Garagem</span>
@@ -500,10 +530,6 @@
             <div class="ifruit-app-ico g-pink">💃</div>
             <span>Contato VIP</span>
           </button>
-          <button class="ifruit-app-tile" id="phOpenJobApp">
-            <div class="ifruit-app-ico g-teal">📦</div>
-            <span>Delivery</span>
-          </button>
           <button class="ifruit-app-tile" data-open="phScreenTime">
             <div class="ifruit-app-ico g-blue">🌤️</div>
             <span>Clima/Hora</span>
@@ -512,6 +538,29 @@
             <div class="ifruit-app-ico g-indigo">🗺️</div>
             <span>Satélite</span>
           </button>
+        </div>
+      </div>
+
+      <!-- SUB-TELA: HISTÓRIA & MISSÕES (CAPÍTULO 1 + SECUNDÁRIAS) -->
+      <div id="phScreenMissions" class="ifruit-screen hidden">
+        <div class="ifruit-subhead">
+          <button class="ifruit-back" data-back="phScreenHome">‹ Início</button>
+          <b>História &amp; Missões</b>
+        </div>
+        <div class="m-xp-box">
+          <div class="m-xp-top">
+            <b id="phMissionLv">Nível RP 1</b>
+            <small id="phMissionXpText">0 / 300 XP • Cap. 1 (0/6)</small>
+          </div>
+          <div class="m-xp-bar"><div id="phMissionXpFill" style="width:0%"></div></div>
+        </div>
+        <div id="phStoryCard" class="m-story-card"></div>
+        <div class="m-sec-title">MISSÕES SECUNDÁRIAS (RP LIVRE)</div>
+        <div class="ifruit-list" style="max-height:26vh">
+          <button class="phone-app" id="phSideUber"><span class="ico">🚕</span><div><b>Motorista App (Uber RP)</b><small>Leve passageiros • +R$ 550–1.300 + Bônus</small></div></button>
+          <button class="phone-app" id="phSideRace"><span class="ico">🏁</span><div><b>Time Trial — Racha Rápido</b><small id="phRaceRecordSub">5 checkpoints contra o relógio • +R$ 1.200</small></div></button>
+          <button class="phone-app" id="phSidePolice"><span class="ico">🚓</span><div><b>Patrulha PM-BR</b><small>Atender ocorrência policial • +R$ 950</small></div></button>
+          <button class="phone-app" id="phOpenJobApp"><span class="ico">📦</span><div><b>Central Delivery</b><small>Entrega expressa aleatória</small></div></button>
         </div>
       </div>
 
@@ -704,5 +753,6 @@
   <script src="js/game.js"></script>
   <script src="js/audio_world.js"></script>
   <script src="js/multiplayer.js"></script>
+  <script src="js/missions.js"></script>
 </body>
 </html>
