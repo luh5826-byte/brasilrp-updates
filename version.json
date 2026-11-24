@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 16,
+  "otaVersion": 17,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/4668c4c08de09696a883b38158e9e170e5950a80/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/4668c4c08de09696a883b38158e9e170e5950a80/ota_manifest.json",
-  "otaChangelog": "• Modo História — Capítulo 1 'Ascensão em Liberty BR' com 6 missões encadeadas, legendas/diálogos estilo GTA, checkpoints 3D luminosos, cronômetro e recompensas (+R$, +XP e Lexus LC 500 Wald Dourado no final)\n• Novo App 'Missões' no Smartphone iFruit com Nível RP (Lv. 1–50) e 3 missões secundárias infinitas: Motorista App (Uber RP), Time Trial (com recorde) e Patrulha PM-BR"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/03c508090bb441716448d75c290f9eb4129f72a3/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/03c508090bb441716448d75c290f9eb4129f72a3/ota_manifest.json",
+  "otaChangelog": "• Adicionado McDonald's 3D real com Drive-Thru funcional na praça próxima à Central (combo pelo carro na janela e salão para recuperar vida a pé), integrado ao GPS e à missão 'Primeiro Corre'"
 }
