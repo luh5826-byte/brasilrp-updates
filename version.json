@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 20,
+  "otaVersion": 21,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/0f7bf6671e7e39d2b80100ba1c3b8e178f00e836/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/0f7bf6671e7e39d2b80100ba1c3b8e178f00e836/ota_manifest.json",
-  "otaChangelog": "• Corrigido bug visual de transparência/Z-sorting do McDonald's 3D (paredes agora 100% sólidas), proporção real para o carro caber folgado no Drive-Thru (3.9m x 2.53m) e entrada virada direto para a Av. Sul com anel luminoso"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/5a0290856c57627a5866ea60c8734836990cdbcf/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/5a0290856c57627a5866ea60c8734836990cdbcf/ota_manifest.json",
+  "otaChangelog": "• Saveiro vermelha removida e substituída pela nova VW Pickup Azul (4 rodas independentes, portas articuladas e mesma física, velocidade 270 km/h e som V8 do Lexus LC 500 Wald)\n• Personagem padrão fixado no Cool Man (outros personagens ocultos da seleção)\n• NPC do Job na Central Delivery agora se reveza automaticamente entre NPC 1 e NPC 2"
 }
