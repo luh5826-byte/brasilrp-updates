@@ -5648,9 +5648,10 @@
     setBoneDelta(n, 'GluteL', s * 0.12 * mb - n.springPos * 0.65, 0, 0);
     setBoneDelta(n, 'GluteR', -s * 0.12 * mb - n.springPos * 0.65, 0, 0);
 
-    // Cabelo longo balançando em ondas
-    setBoneDelta(n, 'HairMid', n.hairSway, 0, c * 0.07 * mb + Math.sin(t * 1.4) * 0.03 * ib);
-    setBoneDelta(n, 'HairTip', n.hairSway * 1.3, 0, -s * 0.09 * mb + Math.cos(t * 1.4) * 0.04 * ib);
+    // Cabelo longo balançando para trás (nunca atravessa as costas/cintura)
+    const hairBack = -Math.max(0.06, Math.abs(n.hairSway) * 0.95);
+    setBoneDelta(n, 'HairMid', hairBack, 0, c * 0.07 * mb + Math.sin(t * 1.4) * 0.03 * ib);
+    setBoneDelta(n, 'HairTip', hairBack * 1.25, 0, -s * 0.09 * mb + Math.cos(t * 1.4) * 0.04 * ib);
 
     // Braços, joelhos, tornozelos e cabeça com transição suave (idle / caminhada / sprint / pulo)
     const armRestZ = (n.armRestZ !== undefined) ? n.armRestZ : 0.38;

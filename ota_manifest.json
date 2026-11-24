@@ -1,12 +1,12 @@
 {
-  "otaVersion": 2,
+  "otaVersion": 3,
   "minApkCodeForOta": 42,
-  "changelog": "• Movimentação estilo GTA V aplicada (Patch A/B/C):\n  - Marchas analógicas suaves (andar 1.7 m/s, correr 3.8 m/s no máximo do stick, sprint 5.6 m/s)\n  - Cadência dos passos sincronizada pela distância percorrida\n  - Câmera a pé com acompanhamento suave (camFollowRate 9/6) e +8° de FOV no sprint",
-  "totalBytes": 277179,
+  "changelog": "• Corrige cabelo longo preto da personagem (HairMid/HairTip) para balançar apenas para trás, sem atravessar a cintura/corpo",
+  "totalBytes": 277281,
   "files": {
     "js/game.js": {
-      "sha256": "2edabb5e387474b97e553f0c110000a22c499bc10b791df36373650dc9bcb36f",
-      "size": 277179
+      "sha256": "8c3337328ffcc15597da248d2f89170cfec9edc94b3664714be609ae6b385982",
+      "size": 277281
     }
   },
   "deleted": []
