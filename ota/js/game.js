@@ -1159,7 +1159,7 @@
 
     const spawnProp = (kind, x, z, yaw = 0) => {
       const gy = getGroundHeight(x, z);
-      if (gy === null || gy > 30) return;
+      if (gy === null || gy < -28 || gy > 70) return;
       const grp = new THREE.Group();
       grp.position.set(x, gy, z);
       grp.rotation.y = yaw;
@@ -1948,63 +1948,84 @@
   }
 
   function getWalkableGround(x, z, curY, maxStep = 1.25) {
-    const outside = isOutsideIsland(x, z);
-    if (colMeta && colGrid) {
-      const fx = (x - colMeta.minX) / colMeta.step - 0.5;
-      const fy = (-z - colMeta.minY) / colMeta.step - 0.5;
-      const ix0 = Math.floor(fx);
-      const iy0 = Math.floor(fy);
-      const tx = fx - ix0;
-      const ty = fy - iy0;
-      const h00 = sampleCellWalkableH(ix0, iy0, curY, maxStep);
-      const h10 = sampleCellWalkableH(ix0 + 1, iy0, curY, maxStep);
-      const h01 = sampleCellWalkableH(ix0, iy0 + 1, curY, maxStep);
-      const h11 = sampleCellWalkableH(ix0 + 1, iy0 + 1, curY, maxStep);
-      if (h00 !== null && h10 !== null && h01 !== null && h11 !== null) {
-        const maxH = Math.max(h00, h10, h01, h11);
-        const minH = Math.min(h00, h10, h01, h11);
-        if (maxH - minH <= 1.45) {
-          const hx0 = h00 + (h10 - h00) * tx;
-          const hx1 = h01 + (h11 - h01) * tx;
-          return hx0 + (hx1 - hx0) * ty;
-        }
+    if (!colMeta || !colGrid) return null;
+    const fx = (x - colMeta.minX) / colMeta.step - 0.5;
+    const fy = (-z - colMeta.minY) / colMeta.step - 0.5;
+    const ix0 = Math.floor(fx);
+    const iy0 = Math.floor(fy);
+    const tx = fx - ix0;
+    const ty = fy - iy0;
+    const h00 = sampleCellWalkableH(ix0, iy0, curY, maxStep);
+    const h10 = sampleCellWalkableH(ix0 + 1, iy0, curY, maxStep);
+    const h01 = sampleCellWalkableH(ix0, iy0 + 1, curY, maxStep);
+    const h11 = sampleCellWalkableH(ix0 + 1, iy0 + 1, curY, maxStep);
+    if (h00 !== null && h10 !== null && h01 !== null && h11 !== null) {
+      const maxH = Math.max(h00, h10, h01, h11);
+      const minH = Math.min(h00, h10, h01, h11);
+      if (maxH - minH <= 1.45) {
+        const hx0 = h00 + (h10 - h00) * tx;
+        const hx1 = h01 + (h11 - h01) * tx;
+        return hx0 + (hx1 - hx0) * ty;
       }
     }
-    const gy = getGroundHeight(x, z);
-    if (gy === null) {
-      if (outside) return null;
-      const uf = getUnderFloorWorld(x, z, curY, maxStep);
-      return uf !== null ? uf : Math.max(0.05, curY);
+
+    const ix = Math.floor((x - colMeta.minX) / colMeta.step);
+    const iy = Math.floor((-z - colMeta.minY) / colMeta.step);
+    const exactH = sampleCellWalkableH(ix, iy, curY, maxStep);
+    if (exactH !== null) return exactH;
+
+    const raw = getCellRaw(ix, iy);
+    if (raw === -32768) {
+      // Apenas costura micro-frestas de 1 célula se >= 2 vizinhos cardinais tiverem piso real próximo de curY;
+      // no mar/canal ou fora da borda retorna null para a gravidade atuar (nunca cria piso invisível no ar!)
+      const cDirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      let sum = 0;
+      let cnt = 0;
+      for (let i = 0; i < 4; i++) {
+        const nh = sampleCellWalkableH(ix + cDirs[i][0], iy + cDirs[i][1], curY, maxStep);
+        if (nh !== null && Math.abs(nh - curY) <= maxStep + 0.65) {
+          sum += nh;
+          cnt++;
+        }
+      }
+      return cnt >= 2 ? (sum / cnt) : null;
     }
-    if (gy - curY > maxStep) {
-      const uf = getUnderFloorWorld(x, z, curY, maxStep);
-      if (uf !== null) return uf;
-      if (getRoadCellAt(x, z) === 1) return Math.max(0.05, curY);
-      if (colMeta && colGrid) {
-        const ix = Math.floor((x - colMeta.minX) / colMeta.step);
-        const iy = Math.floor((-z - colMeta.minY) / colMeta.step);
-        for (let dy = -2; dy <= 2; dy++) {
-          for (let dx = -2; dx <= 2; dx++) {
-            const r = getCellRaw(ix + dx, iy + dy);
-            if (r !== -32768 && r < 29500 && Math.abs(r * 0.01 - curY) <= maxStep) {
-              return r * 0.01;
-            }
+
+    // Encostou na borda de parede/pilar/pórtico: usa o piso transitável real mais próximo na vizinhança imediata
+    const searchR = getRoadCellAt(x, z) >= 1 ? 2 : 1;
+    let bestH = null;
+    let bestDiff = maxStep + 0.85;
+    for (let dy = -searchR; dy <= searchR; dy++) {
+      for (let dx = -searchR; dx <= searchR; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nh = sampleCellWalkableH(ix + dx, iy + dy, curY, maxStep);
+        if (nh !== null) {
+          const d = Math.abs(nh - curY);
+          if (d < bestDiff) {
+            bestDiff = d;
+            bestH = nh;
           }
         }
       }
-      return outside ? null : Math.max(0.05, curY);
     }
-    return gy;
+    return bestH;
   }
 
-  // Escolhe sempre o piso térreo real ao spawnar carros/NPCs (evita nascer flutuando em árvores, marquises ou escadarias)
+  // Escolhe o piso real ao spawnar carros/NPCs respeitando a elevação local da região (-28m a +75m)
   function getSafeGroundForSpawn(x, z, fallbackY = 0.05) {
-    const uf = getUnderFloorWorld(x, z, 0.15, 60.0, 2.0);
+    const refY = Number.isFinite(fallbackY) ? fallbackY : 0.05;
     const top = getGroundHeight(x, z);
-    if (uf !== null && top !== null && top - uf > 1.7) return uf;
-    if (top !== null && top < 45) return top;
+    const uf = getUnderFloorWorld(x, z, refY, 65.0, 2.0);
+    if (top !== null && uf !== null) {
+      // Se o piso superior está perto da altura de referência e o inferior é um túnel profundo (> 6m abaixo), fica na rua da superfície
+      if (Math.abs(top - refY) <= 4.5 && (top - uf) > 6.0) return top;
+      // Se o topo é viaduto/marquise alta acima da referência, usa o piso inferior
+      if (top - refY > 4.5) return uf;
+      return Math.abs(uf - refY) < Math.abs(top - refY) ? uf : top;
+    }
+    if (top !== null && top < 80) return top;
     if (uf !== null) return uf;
-    return fallbackY;
+    return refY;
   }
 
   // --- Partículas de Fumaça Drift & Motor Danificado ---
@@ -5140,12 +5161,13 @@
     const dist = Math.hypot(chosen.pos.x - player.pos.x, chosen.pos.z - player.pos.z);
     // Se a mais próxima estiver muito longe (>80m), aproxima para uma rua a ~28m para vir andando
     if (dist > 80) {
-      for (let t = 0; t < 16; t++) {
+      for (let t = 0; t < 20; t++) {
         const ang = Math.random() * Math.PI * 2;
         const rx = player.pos.x + Math.cos(ang) * 26;
         const rz = player.pos.z + Math.sin(ang) * 26;
-        const rgy = getGroundHeight(rx, rz);
-        if (rgy !== null && rgy >= -0.3 && rgy <= 6.0) {
+        if (getRoadCellAt(rx, rz) < 1) continue;
+        const rgy = getSafeGroundForSpawn(rx, rz, player.pos.y);
+        if (rgy !== null && Math.abs(rgy - player.pos.y) <= 12.0) {
           chosen.pos.set(rx, rgy, rz);
           break;
         }
@@ -5263,14 +5285,14 @@
   if (el('phGpsStadium')) {
     el('phGpsStadium').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-110.0, -985.0, '🏟️ Estádio Memorial');
+      setGpsDestination(-52.0, -750.0, '🏟️ Estádio Memorial');
       AudioFX.coin();
     };
   }
   if (el('phGpsAirport')) {
     el('phGpsAirport').onclick = () => {
       el('phoneModal').classList.add('hidden');
-      setGpsDestination(-552.0, -512.0, '✈️ Aeroporto Internacional');
+      setGpsDestination(-560.0, -360.0, '✈️ Aeroporto Internacional');
       AudioFX.coin();
     };
   }
@@ -5360,13 +5382,14 @@
 
   function startDeliveryMission() {
     let found = null;
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 40; i++) {
       const ang = Math.random() * Math.PI * 2;
-      const dist = 110 + Math.random() * 140;
+      const dist = 110 + Math.random() * 180;
       const tx = player.pos.x + Math.cos(ang) * dist;
       const tz = player.pos.z + Math.sin(ang) * dist;
-      const gy = getGroundHeight(tx, tz);
-      if (gy !== null && gy > 0.5 && gy < 28) { found = new THREE.Vector3(tx, gy, tz); break; }
+      if (getRoadCellAt(tx, tz) < 1) continue;
+      const gy = getSafeGroundForSpawn(tx, tz, player.pos.y);
+      if (gy !== null && gy >= -26 && gy <= 65) { found = new THREE.Vector3(tx, gy, tz); break; }
     }
     if (!found) found = new THREE.Vector3(player.pos.x + 120, player.pos.y, player.pos.z - 80);
     delivery.active = true;
@@ -6203,7 +6226,10 @@
           }
         }
         player.pos.y = gy; player.velY = 0; player.grounded = true;
-      } else if (player.pos.y < -15) {
+      } else if (gy === null && player.pos.y < -15.5) {
+        respawnAtHospital('Caiu no mar!');
+        return;
+      } else if (player.pos.y < -36) {
         respawnAtHospital('Caiu fora do mapa!');
         return;
       }
@@ -6510,10 +6536,20 @@
         if (!isSolidMapCell(v.pos.x, v.pos.z, v.pos.y, 1.65)) {
           v.lastSafePos.copy(v.pos);
         }
-      } else if (!outside && v.pos.y < -3.0) {
-        // Proteção absoluta contra limbo: restaura para o último ponto seguro
+      } else if (gy === null && v.pos.y < -15.5) {
+        if (v === player.inCar) {
+          respawnAtHospital('Carro caiu no mar!');
+          return;
+        }
         v.pos.copy(v.lastSafePos);
-        v.pos.y = Math.max(v.pos.y, (getGroundHeight(v.pos.x, v.pos.z) ?? 0.2)) + 0.15;
+        v.pos.y = getSafeGroundForSpawn(v.pos.x, v.pos.z, v.lastSafePos.y) + 0.12;
+        v.velY = 0;
+        v.vel.set(0, 0, 0);
+        v.grounded = true;
+      } else if (!outside && v.pos.y < -36.0) {
+        // Proteção absoluta contra limbo profundo (abaixo dos túneis subterrâneos de -28.6m)
+        v.pos.copy(v.lastSafePos);
+        v.pos.y = getSafeGroundForSpawn(v.pos.x, v.pos.z, v.lastSafePos.y) + 0.15;
         v.velY = 0;
         v.vel.multiplyScalar(0.2);
         v.grounded = true;
@@ -7064,8 +7100,8 @@
     if (colMeta && colGrid) {
       const ix = Math.floor((x - colMeta.minX) / colMeta.step);
       const iy = Math.floor((-z - colMeta.minY) / colMeta.step);
-      const raw = getCellRaw(ix, iy);
-      if (raw === -32768 || raw >= 29500 || (raw * 0.01) - curY > 1.15) return true;
+      const h = sampleCellWalkableH(ix, iy, curY, 1.15);
+      if (h === null || curY - h > 1.65) return true;
     }
     for (const v of vehicles) {
       if (Math.hypot(x - v.pos.x, z - v.pos.z) < 2.35) return true;
@@ -7241,13 +7277,14 @@
       // Culling de distância: oculta e pula animação de NPCs > 85m
       n.mesh.visible = distP < 85;
       if (distP > 100 || (n.dead && n.knockTimer <= 0.1)) {
-        for (let t = 0; t < 12; t++) {
+        for (let t = 0; t < 16; t++) {
           const a = Math.random() * Math.PI * 2;
           const r = 18 + Math.random() * 44;
           const rx = player.pos.x + Math.cos(a) * r;
           const rz = player.pos.z + Math.sin(a) * r;
-          const rgy = getGroundHeight(rx, rz);
-          if (rgy !== null && rgy >= -0.25 && rgy <= 2.0 && !isNpcBlockedAt(rx, rz, rgy, n)) {
+          if (getRoadCellAt(rx, rz) < 1) continue;
+          const rgy = getSafeGroundForSpawn(rx, rz, player.pos.y);
+          if (rgy !== null && Math.abs(rgy - player.pos.y) <= 14.0 && !isNpcBlockedAt(rx, rz, rgy, n)) {
             n.pos.set(rx, rgy, rz);
             n.hp = 100; n.dead = false; n.knockTimer = 0; n.velY = 0;
             n.mesh.rotation.x = 0;
@@ -7275,7 +7312,7 @@
           n.mesh.rotation.z = 0.18 * stg;
         }
         const gy = getWalkableGround(n.pos.x, n.pos.z, n.pos.y) ?? getGroundHeight(n.pos.x, n.pos.z);
-        if (gy !== null && gy >= -0.22 && n.pos.y <= gy + 0.06) { n.pos.y = gy; n.velY = 0; }
+        if (gy !== null && n.pos.y <= gy + 0.06) { n.pos.y = gy; n.velY = 0; }
         continue;
       }
       n.fallTilt = 0;
@@ -7447,16 +7484,15 @@
       }
 
       const gy = getWalkableGround(n.pos.x, n.pos.z, n.pos.y) ?? getGroundHeight(n.pos.x, n.pos.z);
-      if (gy !== null && gy >= -0.22 && gy <= 2.4 && Math.abs(gy - n.pos.y) < 1.5) {
+      if (gy !== null && gy >= -30.0 && gy <= 75.0 && Math.abs(gy - n.pos.y) < 1.8) {
         n.pos.y = gy;
       } else {
-        // Evita afundar dentro do solo ou em buracos do mapa de colisão
+        // Evita cair em bordas de cais/pontes ou entrar em paredes
         n.yaw += Math.PI * 0.75;
         n.pos.x -= Math.sin(n.yaw) * 0.45;
         n.pos.z -= Math.cos(n.yaw) * 0.45;
-        const safeGy = getGroundHeight(n.pos.x, n.pos.z);
-        if (safeGy !== null && safeGy >= -0.22) n.pos.y = safeGy;
-        else if (n.pos.y < -0.22) n.pos.y = Math.max(0.05, n.homePos ? n.homePos.y : 0.05);
+        const safeGy = getWalkableGround(n.pos.x, n.pos.z, n.pos.y);
+        if (safeGy !== null && Math.abs(safeGy - n.pos.y) < 2.2) n.pos.y = safeGy;
       }
 
       n.mesh.rotation.y = n.yaw;
@@ -7531,13 +7567,13 @@
         const iy = Math.floor((-wz - colMeta.minY) / colMeta.step);
         if (ix < 0 || iy < 0 || ix >= colMeta.W || iy >= colMeta.H) continue;
         const raw = getCellRaw(ix, iy);
-        const hasTop = (raw !== -32768 && raw < 29500 && raw >= -2000 && raw <= 6500);
+        const hasTop = (raw !== -32768 && raw < 29500 && raw >= -3000 && raw <= 7500);
         let hasUnder = false;
         if (colFloor) {
           const fi = (iy * colMeta.W + ix) * 2;
           const f = colFloor[fi];
           const c = colFloor[fi + 1];
-          if (f !== -32768 && (c - f) >= 200 && f >= -2000 && f <= 6500) hasUnder = true;
+          if (f !== -32768 && (c - f) >= 200 && f >= -3000 && f <= 7500) hasUnder = true;
         }
         if (!hasTop && !hasUnder) continue;
         driveableGrid[gy * N + gx] = 1;
@@ -7588,8 +7624,8 @@
     const topY = getGroundHeight(wx, wz);
     if (refY === undefined || refY === null) {
       const uf0 = getUnderFloorWorld(wx, wz, 0.2, 65.0, 2.1);
-      if (topY !== null && topY >= -20 && topY <= 65 && !isSolidMapCell(wx, wz, topY, 0.42)) return topY;
-      if (uf0 !== null && uf0 >= -20 && uf0 <= 65 && !isSolidMapCell(wx, wz, uf0, 0.42)) return uf0;
+      if (topY !== null && topY >= -30 && topY <= 75 && !isSolidMapCell(wx, wz, topY, 0.42)) return topY;
+      if (uf0 !== null && uf0 >= -30 && uf0 <= 75 && !isSolidMapCell(wx, wz, uf0, 0.42)) return uf0;
       return null;
     }
     let best = null;
@@ -8091,7 +8127,7 @@
     const cz = target.z + Math.cos(input.camYaw) * Math.cos(input.camPitch) * dist;
 
     if (!player.inCar) {
-      const camGy = getGroundHeight(cx, cz);
+      const camGy = getWalkableGround(cx, cz, target.y, 2.5);
       if (camGy !== null && cy < camGy + 0.35) cy = camGy + 0.35;
       // A pé: câmera 3ª pessoa firme mantendo o personagem 100% centralizado enquanto o mapa gira ao redor
       camera.position.set(cx, cy, cz);

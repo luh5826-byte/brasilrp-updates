@@ -1,28 +1,32 @@
 {
-  "otaVersion": 11,
+  "otaVersion": 12,
   "minApkCodeForOta": 42,
-  "changelog": "• Corrigida altura e posição do motorista sentado na cabine (nunca atravessa o teto solar nem o para-brisa)\n• Corrigido enquadramento local dos cones de farol para saírem exclusivamente das lentes dianteiras para frente",
-  "totalBytes": 7376488,
+  "changelog": "• Reconstruída a malha física de elevação de todo o mapa (-30m a +80m): eliminados carros e personagem andando no ar próximo ao Estádio de Futebol, Aeroporto, Portland, colinas e pontes\n• Removidos pisos invisíveis de fallback e travas antigas de altura (-3m / -15m), garantindo contato 100% real com o asfalto em ladeiras, viadutos e túneis subterrâneos",
+  "totalBytes": 9858290,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "1061a0e44913dbe15ac9f61f2bf63baab29347070713d7d1aba934279270a57a",
-      "size": 39032
+      "sha256": "dedf9533e54319980dd43e501783923131dc18b91e0ebf2881fbd2a5db26f5c5",
+      "size": 39670
     },
     "js/game.js": {
-      "sha256": "6d5226f9678636d7f3652a0ffe8ce73591b7bbef6141ef785a74b8150b2f86b1",
-      "size": 343008
+      "sha256": "d8f54e59e5cf92fb38491fcf067ded3dc9b1a28e2811ae8d59d94ef7cc63ebc6",
+      "size": 344630
     },
     "js/multiplayer.js": {
       "sha256": "d90cd7b73590a542adb7ba4b315592a10dc29584254ef8044590a192237515d4",
       "size": 23937
     },
     "models/map/collision_floor.bin": {
-      "sha256": "2a7a98d279bb8e7b5fdbe39c8723ae76131c419298230fd8cf2a3f4286bcd403",
+      "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",
       "size": 4959084
+    },
+    "models/map/collision_map.bin": {
+      "sha256": "75dec4359b8ed03d24f23d36a414025400a2b427bd05d349fb5bada7aab1c9d4",
+      "size": 2479542
     },
     "models/map/road_grid.bin": {
       "sha256": "da821324dd6c3da171838b11339a9eda0fc7f828af03cfee491506b3d61893aa",
