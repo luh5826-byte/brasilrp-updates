@@ -390,7 +390,7 @@
     low: { dpr: 0.70, shadows: false, shadowSize: 512, far: 185 },
     medium: { dpr: Math.min(window.devicePixelRatio || 1, 0.95), shadows: false, shadowSize: 1024, far: 245 },
     high: { dpr: Math.min(window.devicePixelRatio || 1, 1.25), shadows: true, shadowSize: 1024, far: 295 },
-    ultra: { dpr: Math.min(window.devicePixelRatio || 1, 1.55), shadows: true, shadowSize: 2048, far: 350 }
+    ultra: { dpr: Math.min(window.devicePixelRatio || 1, 1.50), shadows: true, shadowSize: 1024, far: 350 }
   };
   let currentGfxQuality = 'medium';
   let targetFps = 90;
@@ -480,26 +480,38 @@
   scene.add(sunLight.target);
 
   function applyGfxQuality(q) {
-    currentGfxQuality = gfxQualities[q] ? q : 'medium';
-    const cfg = gfxQualities[currentGfxQuality];
-    renderer.setPixelRatio(cfg.dpr);
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
-    renderer.shadowMap.enabled = cfg.shadows;
-    sunLight.castShadow = cfg.shadows;
-    if (cfg.shadows && sunLight.shadow.mapSize.width !== cfg.shadowSize) {
-      sunLight.shadow.mapSize.set(cfg.shadowSize, cfg.shadowSize);
-      if (sunLight.shadow.map) { sunLight.shadow.map.dispose(); sunLight.shadow.map = null; }
+    try {
+      currentGfxQuality = gfxQualities[q] ? q : 'medium';
+      const cfg = gfxQualities[currentGfxQuality];
+      const shadowsChanged = (renderer.shadowMap.enabled !== cfg.shadows);
+      renderer.setPixelRatio(cfg.dpr);
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+      renderer.shadowMap.enabled = cfg.shadows;
+      sunLight.castShadow = cfg.shadows;
+      if (cfg.shadows && sunLight.shadow.mapSize.width !== cfg.shadowSize) {
+        sunLight.shadow.mapSize.set(cfg.shadowSize, cfg.shadowSize);
+        if (sunLight.shadow.map) { sunLight.shadow.map.dispose(); sunLight.shadow.map = null; }
+      }
+      if (typeof loadedChunks !== 'undefined') {
+        loadedChunks.forEach((entry) => {
+          if (entry && entry.group) {
+            entry.group.traverse((o) => { if (o.isMesh) o.receiveShadow = cfg.shadows; });
+          }
+        });
+      }
+      if (shadowsChanged && scene) {
+        scene.traverse((o) => {
+          if (!o.isMesh || !o.material) return;
+          if (Array.isArray(o.material)) o.material.forEach((m) => { if (m) m.needsUpdate = true; });
+          else o.material.needsUpdate = true;
+        });
+      }
+      camera.far = cfg.far;
+      camera.updateProjectionMatrix();
+      renderer.shadowMap.needsUpdate = true;
+    } catch (e) {
+      console.warn('applyGfxQuality fallback:', e);
     }
-    if (typeof loadedChunks !== 'undefined') {
-      loadedChunks.forEach((entry) => {
-        if (entry && entry.group) {
-          entry.group.traverse((o) => { if (o.isMesh) o.receiveShadow = cfg.shadows; });
-        }
-      });
-    }
-    camera.far = cfg.far;
-    camera.updateProjectionMatrix();
-    renderer.shadowMap.needsUpdate = true;
   }
 
   function applyTargetFps(fps) {
@@ -4916,8 +4928,18 @@
   }
 
   el('btnLobbySettings').onclick = () => ui.modalOverlay.classList.remove('hidden');
-  el('btnCloseSettings').onclick = () => ui.modalOverlay.classList.add('hidden');
-  el('btn-cfg-play').onclick = () => { ui.modalOverlay.classList.add('hidden'); el('btn-start-game').click(); };
+  el('btnCloseSettings').onclick = () => {
+    ui.modalOverlay.classList.add('hidden');
+    if (gameMode === 'playing' && isPaused) setGamePaused(false);
+  };
+  el('btn-cfg-play').onclick = () => {
+    ui.modalOverlay.classList.add('hidden');
+    if (gameMode === 'playing') {
+      setGamePaused(false);
+    } else {
+      el('btn-start-game').click();
+    }
+  };
 
   // --- Sistema de Atualização Online do App ---
   let pendingUpdateInfo = null;
@@ -5065,6 +5087,7 @@
       if (AudioFX.ctx && AudioFX.ctx.state === 'running') AudioFX.ctx.suspend().catch(() => {});
       if (window.BrasilAudio && window.BrasilAudio.setPaused) window.BrasilAudio.setPaused(true);
     } else {
+      lastTime = performance.now();
       if (soundEnabled && AudioFX.ctx && AudioFX.ctx.state === 'suspended') AudioFX.ctx.resume().catch(() => {});
       if (window.BrasilAudio && window.BrasilAudio.setPaused) window.BrasilAudio.setPaused(false);
       if (player.inCar && gameMode === 'playing') setTimeout(() => { if (player.inCar && !isPaused) GtaRadio.start(); }, 100);

@@ -1,20 +1,20 @@
 {
-  "otaVersion": 27,
+  "otaVersion": 28,
   "minApkCodeForOta": 42,
-  "changelog": "• Com controle Bluetooth conectado, tocar na tela touch libera imediatamente os controles na tela (e volta para tela limpa ao voltar a usar o controle)",
-  "totalBytes": 18684245,
+  "changelog": "• Corrigido travamento ao alterar gráficos nas Configurações e voltar a jogar (despausa automática ao fechar Configurações + atualização segura de sombras/materiais WebGL)",
+  "totalBytes": 18685368,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "bdf1523e40c95a47120c7bd2e6e9d91674e22444122fc200cf22e82596b5bac3",
-      "size": 48989
+      "sha256": "6b8f35773d93145033cb2180ac22d4006e56b8664af6e7fd719b244139743556",
+      "size": 49420
     },
     "js/game.js": {
-      "sha256": "04b41414681a94258a7d9326ecab97de50db436514bb987225b8b0ea406b133e",
-      "size": 389411
+      "sha256": "c494204d757626f22e4fcd699db181528012f31bd87406dc9ac12a9c58c540be",
+      "size": 390103
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
