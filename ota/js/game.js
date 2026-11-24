@@ -1679,16 +1679,19 @@
   }
 
   function getWalkableGround(x, z, curY, maxStep = 1.25) {
+    const outside = isOutsideIsland(x, z);
     const gy = getGroundHeight(x, z);
-    if (gy === null) return null;
+    if (gy === null) {
+      return outside ? null : Math.max(0.05, curY);
+    }
     if (gy - curY > maxStep) {
-      // Se estiver em rua/ponte ou sobre piso com vizinhos no nível atual e o raycast pegou arco/marquise acima, mantém o nível
-      if (getRoadCellAt(x, z) === 1) return curY;
+      // Embaixo de viaduto/ponte/marquise: busca nível do piso ao redor ou mantém o nível atual dentro da ilha
+      if (getRoadCellAt(x, z) === 1) return Math.max(0.05, curY);
       if (colMeta && colGrid) {
         const ix = Math.floor((x - colMeta.minX) / colMeta.step);
         const iy = Math.floor((-z - colMeta.minY) / colMeta.step);
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+          for (let dx = -2; dx <= 2; dx++) {
             const r = getCellRaw(ix + dx, iy + dy);
             if (r !== -32768 && r < 29500 && Math.abs(r * 0.01 - curY) <= maxStep) {
               return r * 0.01;
@@ -1696,7 +1699,7 @@
           }
         }
       }
-      return null;
+      return outside ? null : Math.max(0.05, curY);
     }
     return gy;
   }
@@ -5182,13 +5185,7 @@
       v.velY -= 22 * dt;
       v.pos.y += v.velY * dt;
       const outside = isOutsideIsland(v.pos.x, v.pos.z);
-      let gy = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.65);
-      if (gy === null && !outside) {
-        const fallbackGy = getGroundHeight(v.pos.x, v.pos.z);
-        if (fallbackGy !== null && (v.pos.y < fallbackGy || fallbackGy - v.pos.y < 3.5)) {
-          gy = fallbackGy;
-        }
-      }
+      const gy = getWalkableGround(v.pos.x, v.pos.z, v.pos.y, 1.65);
 
       if (outside && v.pos.y < WATER_Y + 0.1) {
         // Empuxo & arrasto na água
@@ -5403,14 +5400,15 @@
       }
     }
 
-    // Cabelo longo balançando em ondas (eixo mundial idêntico à protagonista)
+    // Cabelo longo balançando apenas para trás (nunca entra na cintura/corpo)
+    const doaHairBack = -Math.max(0.08, Math.abs(n.hairSway) * 0.95);
     ['hair_root_tail_left_0234', 'hair_tail_left_a_0235', 'hair_tail_left_b_0236', 'hair_tail_left_c_0237'].forEach((hn, hi) => {
       const m = hi === 0 ? 0.9 : 0.4;
-      setBoneWorldDelta(n, hn, n.hairSway * m, 0, (isWalking ? c * 0.07 : Math.sin(t * 1.4 + hi * 0.5) * 0.03) * m);
+      setBoneWorldDelta(n, hn, doaHairBack * m, 0, (isWalking ? c * 0.07 : Math.sin(t * 1.4 + hi * 0.5) * 0.03) * m);
     });
     ['hair_root_tail_right_0249', 'hair_tail_right_a_0250', 'hair_tail_right_b_0251', 'hair_tail_right_c_0252'].forEach((hn, hi) => {
       const m = hi === 0 ? 0.9 : 0.4;
-      setBoneWorldDelta(n, hn, n.hairSway * m, 0, (isWalking ? -s * 0.09 : Math.cos(t * 1.4 + hi * 0.5) * 0.04) * m);
+      setBoneWorldDelta(n, hn, doaHairBack * m, 0, (isWalking ? -s * 0.09 : Math.cos(t * 1.4 + hi * 0.5) * 0.04) * m);
     });
 
     // Pernas fechadas naturalmente (corrige A-pose 15° da DOA!) + joelhos, tornozelos, braços, cotovelos e pescoço articulados!

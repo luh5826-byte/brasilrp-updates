@@ -1,12 +1,12 @@
 {
-  "otaVersion": 3,
+  "otaVersion": 4,
   "minApkCodeForOta": 42,
-  "changelog": "• Corrige cabelo longo preto da personagem (HairMid/HairTip) para balançar apenas para trás, sem atravessar a cintura/corpo",
-  "totalBytes": 277281,
+  "changelog": "• Corrige colisão sob viadutos/pontes (personagem e veículos não afundam no asfalto)\n• Corrige cabelo da personagem DOA para balançar apenas para trás, sem atravessar a cintura\n• Movimentação e câmera estilo GTA (marchas suaves, cadência de passos e FOV no sprint)",
+  "totalBytes": 277241,
   "files": {
     "js/game.js": {
-      "sha256": "8c3337328ffcc15597da248d2f89170cfec9edc94b3664714be609ae6b385982",
-      "size": 277281
+      "sha256": "c60bb805202122ce20791ec1c1b73bb5654f8723e06f4f8b68d703dc3f2b8cbf",
+      "size": 277241
     }
   },
   "deleted": []
