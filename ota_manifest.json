@@ -1,10 +1,10 @@
 {
-  "otaVersion": 32,
+  "otaVersion": 33,
   "minApkCode": 42,
-  "generatedAt": "2026-11-24T21:20:58.585Z",
-  "changelog": "• Detector automático de hardware/GPU (otimização para celulares fracos e intermediários como Galaxy A52 / Adreno 618)\n• Carregamento em lotes pequenos e streaming sob demanda com descarga automática de chunks distantes (evita crash de RAM/VRAM)\n• Desativa MSAA/PMREM pesado e ajusta resolução/distância/tráfego automaticamente conforme o celular",
+  "generatedAt": "2026-11-24T21:29:50.627Z",
+  "changelog": "• Revertidas alterações gráficas do OTA #32 — gráficos restaurados exatamente ao padrão original",
   "fileCount": 13,
-  "totalSize": 18739586,
+  "totalSize": 18732071,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -19,8 +19,8 @@
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "cffd6497c2bdaa978b5b9a84ce2b60c3d9f20fd3d33bb8c2a8cca32018c5abe2",
-      "size": 411634
+      "sha256": "bd82a8f3eb8fc78b1b5d4a015bae03c98b92e1ed7730288919ea48c9196226dc",
+      "size": 404119
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
