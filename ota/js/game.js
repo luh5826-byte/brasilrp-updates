@@ -2997,17 +2997,18 @@
     scene.add(mesh);
 
     const isSaveiro = typeKey === 'volkswagen_saveiro';
+    const isSaveiroBrasil = typeKey === 'saveiro_brasil';
     const isMustang = typeKey === 'ford_mustang_gtd';
     const isLexus = typeKey === 'lexus_lc_500_wald';
-    // Todos os 5 veículos (VW Pickup Azul, Mustang, Lexus, Gol e PM) têm a frente real em +Z!
+    // Todos os 6 veículos têm a frente real em +Z!
     const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
 
-    const isLexusSpec = isLexus || isSaveiro;
+    const isLexusSpec = isLexus || isSaveiro || isSaveiroBrasil;
     const v = {
       type: typeKey,
       forwardSign: forwardPlusZ ? 1 : -1,
-      name: isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
+      name: isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
       mesh,
       parts,
       pos: mesh.position,
@@ -5440,6 +5441,7 @@
   if (el('phCallMustang')) el('phCallMustang').onclick = () => deliverPhoneCar('ford_mustang_gtd', '🏎️ Ford Mustang GTD');
   if (el('phCallLexus')) el('phCallLexus').onclick = () => deliverPhoneCar('lexus_lc_500_wald', '🏁 Lexus LC 500 Wald');
   if (el('phCallSaveiro')) el('phCallSaveiro').onclick = () => deliverPhoneCar('volkswagen_saveiro', '🛻 VW Pickup Azul');
+  if (el('phCallSaveiroBrasil')) el('phCallSaveiroBrasil').onclick = () => deliverPhoneCar('saveiro_brasil', '🇧🇷 Saveiro Cross Brasil');
   if (el('phCallGol')) el('phCallGol').onclick = () => deliverPhoneCar('car_gol', '🚗 VW Gol Quadrado');
   if (el('phCallPm')) el('phCallPm').onclick = () => deliverPhoneCar('car_pm', '🚓 Viatura PM-BR');
 
@@ -5642,12 +5644,13 @@
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
       ui.loadFill.style.width = '45%';
 
-      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
         loadGLB('models/chars/cool_man.glb'),
         loadGLB('models/chars/npc_outer_plane.glb'),
         loadGLB('models/chars/doa_npc_fighter.glb'),
         loadGLB('models/vehicles/traffic_rider_npc_vehicles.glb'),
         loadGLB('models/vehicles/vw_pickup_azul.glb'),
+        loadGLB('models/vehicles/saveiro_brasil.glb'),
         loadGLB('models/vehicles/ford_mustang_gtd.glb'),
         loadGLB('models/vehicles/lexus_lc_500_wald.glb'),
         loadGLB('models/vehicles/car_gol.glb'),
@@ -5662,6 +5665,7 @@
       ensureArticulatedCarDoors(golScene);
       ensureArticulatedCarDoors(pmScene);
       mergeStaticMeshesByMaterial(saveiroScene, carKeep);
+      mergeStaticMeshesByMaterial(saveiroBrasilScene, carKeep);
       mergeStaticMeshesByMaterial(mustangScene, carKeep);
       mergeStaticMeshesByMaterial(golScene, carKeep);
       mergeStaticMeshesByMaterial(pmScene, carKeep);
@@ -5672,6 +5676,7 @@
 
       vehicleTemplates = {
         volkswagen_saveiro: saveiroScene,
+        saveiro_brasil: saveiroBrasilScene,
         ford_mustang_gtd: mustangScene,
         lexus_lc_500_wald: normalizeApexVehicleScene(lexusScene, 4.55),
         car_gol: golScene,
@@ -5827,6 +5832,11 @@
 
       // Veículos alinhados ordenadamente nas faixas de estacionamento da avenida real (sem flutuar!)
       spawnVehicle(save.starterCar || 'volkswagen_saveiro', -172.0, getSafeGroundForSpawn(-172.0, -173.0, groundY) + 0.03, -173.0, 0.0);
+      if ((save.starterCar || 'volkswagen_saveiro') !== 'saveiro_brasil') {
+        spawnVehicle('saveiro_brasil', -172.0, getSafeGroundForSpawn(-172.0, -165.5, groundY) + 0.03, -165.5, 0.0);
+      } else {
+        spawnVehicle('volkswagen_saveiro', -172.0, getSafeGroundForSpawn(-172.0, -165.5, groundY) + 0.03, -165.5, 0.0);
+      }
       spawnVehicle('ford_mustang_gtd', -172.0, getSafeGroundForSpawn(-172.0, -180.5, groundY) + 0.03, -180.5, 0.0);
       spawnVehicle('lexus_lc_500_wald', -172.0, getSafeGroundForSpawn(-172.0, -188.0, groundY) + 0.03, -188.0, 0.0);
       spawnVehicle('car_pm', -172.0, getSafeGroundForSpawn(-172.0, -195.5, groundY) + 0.03, -195.5, 0.0);

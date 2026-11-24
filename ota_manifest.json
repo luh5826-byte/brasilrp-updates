@@ -1,20 +1,20 @@
 {
-  "otaVersion": 21,
+  "otaVersion": 22,
   "minApkCodeForOta": 42,
-  "changelog": "• Saveiro vermelha removida e substituída pela nova VW Pickup Azul (4 rodas independentes, portas articuladas e mesma física, velocidade 270 km/h e som V8 do Lexus LC 500 Wald)\n• Personagem padrão fixado no Cool Man (outros personagens ocultos da seleção)\n• NPC do Job na Central Delivery agora se reveza automaticamente entre NPC 1 e NPC 2",
-  "totalBytes": 12998298,
+  "changelog": "• VW Pickup Azul reconstruída com acabamento PBR nível Lexus: pintura azul metálica espelhada, vidros transparentes fumê, interior 3D com painel/bancos/volante, aros cromados e faróis/lanternas LED\n• Adicionada Saveiro Cross Brasil (FRW4A84) azul metálica com Bandeira do Brasil no capô, placas Mercosul, interior completo preservado (painel, console, volante e bancos), 4 rodas independentes, portas articuladas e motor V8 (270 km/h)",
+  "totalBytes": 16850227,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "3f700d07f91257bba6fa8157deadd2202325fd9a7ecd95c6adc547533a020334",
-      "size": 45507
+      "sha256": "c311296be877ffd38a443e9ba6ea441babd46e95fa1d5c0130ef7eea6650a353",
+      "size": 46474
     },
     "js/game.js": {
-      "sha256": "3cb705d19cf2ebfa448953d82bf51318db60a3395fe46490f7635e5afc038f8a",
-      "size": 383186
+      "sha256": "e302eef977242234e482b926a081476b3cedd76cb6f469b957ac6a7ecdda8922",
+      "size": 383924
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -40,9 +40,13 @@
       "sha256": "a4fc79a7e6a74a4f42192fca4d855e642a777f04696b909578a04b3b6e61c8ab",
       "size": 1223680
     },
+    "models/vehicles/saveiro_brasil.glb": {
+      "sha256": "b82ba8caeaa1e342430093c4a1b88378e0762c9480823b2e22ef814b30df373e",
+      "size": 3765344
+    },
     "models/vehicles/vw_pickup_azul.glb": {
-      "sha256": "844bffff3b8da3bc2a69dd2f56ec2c848ff278e925f0735b4d50dd7db12065a5",
-      "size": 1829944
+      "sha256": "e41946bfd775a8e4fdf940c9ddea619851b85dbe075d286aba8332f73f0f1778",
+      "size": 1914824
     },
     "style.css": {
       "sha256": "34cf84dbae482ab5d8ce489d07af71c173c95f8ee6737f609a7e27529e7482c8",
