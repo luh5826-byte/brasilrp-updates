@@ -959,7 +959,11 @@
   const mapAiImage = new Image();
   let mapAiReady = false;
   mapAiImage.onload = () => { mapAiReady = true; };
-  mapAiImage.src = 'images/minimap_ai.jpg';
+  // Vista de cima REAL renderizada da geometria/texturas do mapa (tools/render_minimap.py); fallback na antiga
+  mapAiImage.onerror = () => {
+    if (!mapAiImage.src.includes('minimap_ai.jpg')) mapAiImage.src = 'images/minimap_ai.jpg';
+  };
+  mapAiImage.src = 'images/minimap_real.jpg';
 
   let fullMapZoom = 1.0;
   let fullMapPanX = 0;
@@ -6155,39 +6159,48 @@
         if (isOutsideIsland(wx, wz)) continue;
         const ix = Math.floor((wx - colMeta.minX) / colMeta.step);
         const iy = Math.floor((-wz - colMeta.minY) / colMeta.step);
+        if (ix < 0 || iy < 0 || ix >= colMeta.W || iy >= colMeta.H) continue;
         const raw = getCellRaw(ix, iy);
-        if (raw === -32768 || raw >= 29500) continue;
-        const h = raw * 0.01;
-        if (h < -0.25 || h > 9.0) continue;
+        const hasTop = (raw !== -32768 && raw < 29500 && raw >= -2000 && raw <= 6500);
+        let hasUnder = false;
+        if (colFloor) {
+          const fi = (iy * colMeta.W + ix) * 2;
+          const f = colFloor[fi];
+          const c = colFloor[fi + 1];
+          if (f !== -32768 && (c - f) >= 200 && f >= -2000 && f <= 6500) hasUnder = true;
+        }
+        if (!hasTop && !hasUnder) continue;
         driveableGrid[gy * N + gx] = 1;
       }
     }
-    const stride = N >= 512 ? 2 : 1;
-    for (let gy = 4; gy < N - 4; gy += stride) {
-      for (let gx = 4; gx < N - 4; gx += stride) {
-        if (driveableGrid[gy * N + gx] !== 1) continue;
-        if (driveableGrid[gy * N + (gx + 1)] === 1 || driveableGrid[gy * N + (gx - 1)] === 1 ||
-            driveableGrid[(gy + 1) * N + gx] === 1 || driveableGrid[(gy - 1) * N + gx] === 1) {
-          const wx = colMeta.minX + ((gx + 0.5) / N) * worldW;
-          const wz = -(colMeta.minY + (1.0 - (gy + 0.5) / N) * worldH);
-          roadCells.push({ gx, gy, wx, wz });
+    // Marca com 2 o miolo seguro da via (afastado >= 1 célula de meio-fio, calçada ou mureta)
+    for (let gy = 5; gy < N - 5; gy++) {
+      const row = gy * N;
+      for (let gx = 5; gx < N - 5; gx++) {
+        if (driveableGrid[row + gx] === 0) continue;
+        if (driveableGrid[row + gx + 1] > 0 &&
+            driveableGrid[row + gx - 1] > 0 &&
+            driveableGrid[row + N + gx] > 0 &&
+            driveableGrid[row - N + gx] > 0) {
+          driveableGrid[row + gx] = 2;
         }
+      }
+    }
+    const stride = N >= 512 ? 2 : 1;
+    for (let gy = 6; gy < N - 6; gy += stride) {
+      for (let gx = 6; gx < N - 6; gx += stride) {
+        if (driveableGrid[gy * N + gx] !== 2) continue;
+        const wx = colMeta.minX + ((gx + 0.5) / N) * worldW;
+        const wz = -(colMeta.minY + (1.0 - (gy + 0.5) / N) * worldH);
+        roadCells.push({ gx, gy, wx, wz });
       }
     }
   }
 
-  function isDriveableCell(gx, gy) {
+  function getDriveableLevel(gx, gy) {
     const N = roadGridN;
-    if (!driveableGrid || gx < 4 || gy < 4 || gx >= N - 4 || gy >= N - 4) return false;
-    return driveableGrid[gy * N + gx] === 1;
-  }
-
-  function canStepDir(gx, gy, dirIdx, stepCells = 2) {
-    const d = TRAFFIC_DIRS[dirIdx];
-    for (let k = 1; k <= stepCells; k++) {
-      if (!isDriveableCell(gx + d.dx * k, gy + d.dy * k)) return false;
-    }
-    return true;
+    if (!driveableGrid || gx < 4 || gy < 4 || gx >= N - 4 || gy >= N - 4) return 0;
+    return driveableGrid[gy * N + gx];
   }
 
   function gridCellToWorld(gx, gy) {
@@ -6200,40 +6213,93 @@
     };
   }
 
-  function getLaneTargetPos(gx, gy, dirIdx) {
+  // Retorna altura real de pista contínua (funciona embaixo de viadutos E em cima de pontes/ladeiras, sem subir muretas)
+  function getTrafficGroundY(wx, wz, refY) {
+    const topY = getGroundHeight(wx, wz);
+    if (refY === undefined || refY === null) {
+      const uf0 = getUnderFloorWorld(wx, wz, 0.2, 65.0, 2.1);
+      if (topY !== null && topY >= -20 && topY <= 65 && !isSolidMapCell(wx, wz, topY, 0.42)) return topY;
+      if (uf0 !== null && uf0 >= -20 && uf0 <= 65 && !isSolidMapCell(wx, wz, uf0, 0.42)) return uf0;
+      return null;
+    }
+    let best = null;
+    let bestDiff = 0.72;
+    const uf = getUnderFloorWorld(wx, wz, refY, 0.72, 2.0);
+    if (uf !== null) {
+      const d = Math.abs(uf - refY);
+      if (d <= bestDiff) { best = uf; bestDiff = d; }
+    }
+    if (topY !== null) {
+      const d = Math.abs(topY - refY);
+      if (d <= bestDiff) { best = topY; bestDiff = d; }
+    }
+    return best;
+  }
+
+  function isCarPoseClear(wx, wz, y, pad = 1.0) {
+    if (getRoadCellAt(wx, wz) !== 1) return false;
+    if (isSolidMapCell(wx, wz, y, 0.40)) return false;
+    if (isSolidMapCell(wx + pad, wz, y, 0.40)) return false;
+    if (isSolidMapCell(wx - pad, wz, y, 0.40)) return false;
+    if (isSolidMapCell(wx, wz + pad, y, 0.40)) return false;
+    if (isSolidMapCell(wx, wz - pad, y, 0.40)) return false;
+    return true;
+  }
+
+  function canStepTraffic(gx, gy, curY, dirIdx, stepCells = 3, requireCore = true) {
+    const d = TRAFFIC_DIRS[dirIdx];
+    const minLv = requireCore ? 2 : 1;
+    let runY = curY;
+    for (let k = 1; k <= stepCells; k++) {
+      const nx = gx + d.dx * k;
+      const ny = gy + d.dy * k;
+      if (getDriveableLevel(nx, ny) < minLv) return false;
+      const wp = gridCellToWorld(nx, ny);
+      const hy = getTrafficGroundY(wp.x, wp.z, runY);
+      if (hy === null || Math.abs(hy - runY) > 0.65) return false;
+      if (!isCarPoseClear(wp.x, wp.z, hy, 0.92)) return false;
+      runY = hy;
+    }
+    return true;
+  }
+
+  function getLaneTargetPos(gx, gy, curY, dirIdx) {
     const c = gridCellToWorld(gx, gy);
+    const baseH = getTrafficGroundY(c.x, c.z, curY) ?? curY;
     const d = TRAFFIC_DIRS[dirIdx];
     const rightDir = TRAFFIC_DIRS[(dirIdx + 2) % 8];
-    const stepCheck = roadGridN >= 512 ? 3 : 1;
-    const hasWideRight = isDriveableCell(gx + rightDir.dx * stepCheck, gy + rightDir.dy * stepCheck);
-    const laneOffset = hasWideRight ? 1.45 : 0.0;
     const rx = -Math.cos(d.yaw);
     const rz = Math.sin(d.yaw);
-    const tx = c.x + rx * laneOffset;
-    const tz = c.z + rz * laneOffset;
-    if (laneOffset > 0 && getRoadCellAt(tx, tz) !== 1) {
-      return { x: c.x, z: c.z };
+    if (getDriveableLevel(gx + rightDir.dx * 2, gy + rightDir.dy * 2) >= 2) {
+      for (const off of [1.30, 0.75]) {
+        const tx = c.x + rx * off;
+        const tz = c.z + rz * off;
+        const th = getTrafficGroundY(tx, tz, baseH);
+        if (th !== null && Math.abs(th - baseH) <= 0.35 && isCarPoseClear(tx, tz, th, 1.05)) {
+          return { x: tx, y: th, z: tz };
+        }
+      }
     }
-    return { x: tx, z: tz };
+    return { x: c.x, y: baseH, z: c.z };
   }
 
   function pickTrafficSpawnNear(px, pz, minDist, maxDist) {
     if (roadCells.length === 0) return null;
     const stepCells = roadGridN >= 512 ? 4 : 1;
-    for (let t = 0; t < 80; t++) {
+    for (let t = 0; t < 110; t++) {
       const cell = roadCells[Math.floor(Math.random() * roadCells.length)];
       const dist = Math.hypot(cell.wx - px, cell.wz - pz);
       if (dist < minDist || dist > maxDist) continue;
-      const gyH = getGroundHeight(cell.wx, cell.wz);
-      if (gyH === null || gyH < -0.25 || gyH > 9.0) continue;
-      // Prefere spawnar nas 4 direções principais da via (0, 2, 4, 6)
+      const gyH = getTrafficGroundY(cell.wx, cell.wz, null);
+      if (gyH === null || !isCarPoseClear(cell.wx, cell.wz, gyH, 1.1)) continue;
+      // Prefere spawnar nas 4 direções cardinais da via (0, 2, 4, 6) com pista longa à frente
       const validDirs = [];
       for (let di = 0; di < 8; di += 2) {
-        if (canStepDir(cell.gx, cell.gy, di, stepCells)) validDirs.push(di);
+        if (canStepTraffic(cell.gx, cell.gy, gyH, di, stepCells + 2, true)) validDirs.push(di);
       }
       if (validDirs.length === 0) {
         for (let di = 1; di < 8; di += 2) {
-          if (canStepDir(cell.gx, cell.gy, di, stepCells)) validDirs.push(di);
+          if (canStepTraffic(cell.gx, cell.gy, gyH, di, stepCells + 2, true)) validDirs.push(di);
         }
       }
       if (validDirs.length === 0) continue;
@@ -6241,8 +6307,9 @@
       const d = TRAFFIC_DIRS[dirIdx];
       const nextGx = cell.gx + d.dx * stepCells;
       const nextGy = cell.gy + d.dy * stepCells;
-      const startPos = getLaneTargetPos(cell.gx, cell.gy, dirIdx);
-      const endPos = getLaneTargetPos(nextGx, nextGy, dirIdx);
+      const startPos = getLaneTargetPos(cell.gx, cell.gy, gyH, dirIdx);
+      const endPos = getLaneTargetPos(nextGx, nextGy, startPos.y, dirIdx);
+      const segYaw = Math.atan2(endPos.x - startPos.x, endPos.z - startPos.z);
       let busy = false;
       for (const tc of trafficCars) {
         if (Math.hypot(tc.pos.x - startPos.x, tc.pos.z - startPos.z) < 18.0) { busy = true; break; }
@@ -6258,7 +6325,7 @@
         segStartX: startPos.x, segStartZ: startPos.z,
         segEndX: endPos.x, segEndZ: endPos.z,
         segLen: Math.max(0.5, Math.hypot(endPos.x - startPos.x, endPos.z - startPos.z)),
-        x: startPos.x, y: gyH, z: startPos.z, yaw: d.yaw
+        x: startPos.x, y: startPos.y, z: startPos.z, yaw: segYaw
       };
     }
     return null;
@@ -6268,7 +6335,7 @@
     if (trafficTemplates.length === 0 || roadCells.length === 0) return;
     const TARGET_TRAFFIC = 10;
     for (let i = 0; i < TARGET_TRAFFIC; i++) {
-      const sp = pickTrafficSpawnNear(px, pz, i < 8 ? 14 : 32, i < 8 ? 50 : 98);
+      const sp = pickTrafficSpawnNear(px, pz, i < 8 ? 16 : 34, i < 8 ? 55 : 102);
       if (!sp) continue;
       const tpl = trafficTemplates[Math.floor(Math.random() * trafficTemplates.length)];
       const mesh = tpl.mesh.clone(true);
@@ -6283,8 +6350,8 @@
         pos: mesh.position,
         radius: tpl.radius,
         yaw: sp.yaw,
-        speed: 5.5 + Math.random() * 3.0,
-        maxSpeed: tpl.isHeavy ? (6.8 + Math.random() * 2.0) : (8.5 + Math.random() * 3.2),
+        speed: 5.5 + Math.random() * 2.5,
+        maxSpeed: tpl.isHeavy ? (6.5 + Math.random() * 1.8) : (8.2 + Math.random() * 2.8),
         gx: sp.gx,
         gy: sp.gy,
         nextGx: sp.nextGx,
@@ -6313,11 +6380,11 @@
 
     for (const tc of trafficCars) {
       const distP = Math.hypot(tc.pos.x - pFocus.x, tc.pos.z - pFocus.z);
-      tc.mesh.visible = distP < 110;
+      tc.mesh.visible = distP < 115;
 
-      // Recicla se foi muito longe ou saiu da ilha
-      if (distP > 120 || isOutsideIsland(tc.pos.x, tc.pos.z)) {
-        const sp = pickTrafficSpawnNear(pFocus.x, pFocus.z, 40, 100);
+      // Recicla se foi muito longe ou saiu dos limites da cidade
+      if (distP > 125 || isOutsideIsland(tc.pos.x, tc.pos.z)) {
+        const sp = pickTrafficSpawnNear(pFocus.x, pFocus.z, 42, 105);
         if (sp) {
           tc.pos.set(sp.x, sp.y, sp.z);
           tc.gx = sp.gx; tc.gy = sp.gy;
@@ -6330,6 +6397,7 @@
           tc.speed = tc.maxSpeed * 0.6;
           tc.turning = false;
           tc.waitTimer = 0;
+          tc.stuckTimer = 0;
         }
         continue;
       }
@@ -6340,14 +6408,12 @@
         continue;
       }
 
-      // Sensor frontal: semáforo vermelho/amarelo, veículos ou pedestres à frente
       const fwdX = Math.sin(tc.yaw);
       const fwdZ = Math.cos(tc.yaw);
       let shouldBrake = false;
       let hardStop = false;
-
-      // Sensor de semáforo: só conta se não estiver travado por outro carro
       let stoppedByLight = false;
+
       const curAxis = TRAFFIC_DIRS[tc.dirIdx].axis;
       if ((curAxis === 'NS' && nsRed) || (curAxis === 'EW' && ewRed)) {
         for (const tl of trafficLights) {
@@ -6356,7 +6422,7 @@
           const cdz = tl.z - tc.pos.z;
           const proj = cdx * fwdX + cdz * fwdZ;
           const lat = Math.abs(-cdx * fwdZ + cdz * fwdX);
-          if (proj > 2.5 && proj < 18.0 && lat < 9.5) {
+          if (proj > 2.5 && proj < 18.0 && lat < 9.5 && Math.abs((tl.y || tc.pos.y) - tc.pos.y) < 4.0) {
             shouldBrake = true;
             stoppedByLight = true;
             if (proj < 8.5) hardStop = true;
@@ -6368,49 +6434,51 @@
       if (!shouldBrake) {
         for (const other of trafficCars) {
           if (other === tc) continue;
+          if (Math.abs(other.pos.y - tc.pos.y) > 2.8) continue;
           const odx = other.pos.x - tc.pos.x;
           const odz = other.pos.z - tc.pos.z;
           const proj = odx * fwdX + odz * fwdZ;
           const lat = Math.abs(-odx * fwdZ + odz * fwdX);
-          if (proj > 0 && proj < tc.radius + other.radius + 5.2 && lat < 2.6) {
+          if (proj > 0 && proj < tc.radius + other.radius + 5.8 && lat < 2.4) {
             shouldBrake = true;
-            if (proj < tc.radius + other.radius + 2.2) hardStop = true;
+            if (proj < tc.radius + other.radius + 2.4) hardStop = true;
             break;
           }
         }
       }
       if (!shouldBrake) {
         for (const v of vehicles) {
+          if (Math.abs(v.pos.y - tc.pos.y) > 2.8) continue;
           const vdx = v.pos.x - tc.pos.x;
           const vdz = v.pos.z - tc.pos.z;
           const proj = vdx * fwdX + vdz * fwdZ;
           const lat = Math.abs(-vdx * fwdZ + vdz * fwdX);
-          if (proj > 0 && proj < tc.radius + 6.2 && lat < 2.8) {
+          if (proj > 0 && proj < tc.radius + 6.5 && lat < 2.7) {
             shouldBrake = true;
-            if (proj < tc.radius + 3.0) hardStop = true;
+            if (proj < tc.radius + 3.2) hardStop = true;
             break;
           }
         }
       }
-      if (!shouldBrake && !player.inCar) {
+      if (!shouldBrake && !player.inCar && Math.abs(player.pos.y - tc.pos.y) < 2.8) {
         const pdx = player.pos.x - tc.pos.x;
         const pdz = player.pos.z - tc.pos.z;
         const proj = pdx * fwdX + pdz * fwdZ;
         const lat = Math.abs(-pdx * fwdZ + pdz * fwdX);
-        if (proj > 0 && proj < tc.radius + 5.0 && lat < 2.3) { shouldBrake = true; hardStop = true; }
+        if (proj > 0 && proj < tc.radius + 5.2 && lat < 2.3) { shouldBrake = true; hardStop = true; }
       }
       if (!shouldBrake) {
         for (const n of npcs) {
-          if (n.dead) continue;
+          if (n.dead || Math.abs(n.pos.y - tc.pos.y) > 2.8) continue;
           const ndx = n.pos.x - tc.pos.x;
           const ndz = n.pos.z - tc.pos.z;
           const proj = ndx * fwdX + ndz * fwdZ;
           const lat = Math.abs(-ndx * fwdZ + ndz * fwdX);
-          if (proj > 0 && proj < tc.radius + 4.2 && lat < 2.0) { shouldBrake = true; break; }
+          if (proj > 0 && proj < tc.radius + 4.4 && lat < 2.0) { shouldBrake = true; break; }
         }
       }
 
-      const cruiseSpeed = tc.turning ? Math.min(tc.maxSpeed, 5.2) : tc.maxSpeed;
+      const cruiseSpeed = tc.turning ? Math.min(tc.maxSpeed, 4.8) : tc.maxSpeed;
       const targetSpd = shouldBrake ? 0 : cruiseSpeed;
       if (hardStop) {
         tc.speed = Math.max(0, tc.speed - 28 * dt);
@@ -6418,7 +6486,6 @@
         tc.speed += (targetSpd - tc.speed) * Math.min(1, dt * (shouldBrake ? 10.0 : 2.8));
       }
 
-      // Avança estritamente sobre o segmento de rua asfaltada em 8 direções (fiel à avenida, sem ziguezague)
       const stepCells = roadGridN >= 512 ? 3 : 1;
       tc.segProgress += tc.speed * dt;
       if (tc.segProgress >= tc.segLen) {
@@ -6429,35 +6496,34 @@
         const diagL = (tc.dirIdx + 7) % 8;
         const right = (tc.dirIdx + 2) % 8;
         const left = (tc.dirIdx + 6) % 8;
-        const back = (tc.dirIdx + 4) % 8;
 
-        const canS = canStepDir(tc.gx, tc.gy, straight, stepCells);
-        const softTurns = [];
-        if (canStepDir(tc.gx, tc.gy, diagR, stepCells)) softTurns.push(diagR);
-        if (canStepDir(tc.gx, tc.gy, diagL, stepCells)) softTurns.push(diagL);
-        const sharpTurns = [];
-        if (canStepDir(tc.gx, tc.gy, right, stepCells)) sharpTurns.push(right);
-        if (canStepDir(tc.gx, tc.gy, left, stepCells)) sharpTurns.push(left);
-
-        let chosenDir = straight;
-        if (canS) {
-          if (sharpTurns.length > 0 && Math.random() < 0.06) {
-            chosenDir = sharpTurns[Math.floor(Math.random() * sharpTurns.length)];
-          } else {
-            chosenDir = straight;
+        const chooseNextDir = (requireCore) => {
+          const canS = canStepTraffic(tc.gx, tc.gy, tc.pos.y, straight, stepCells, requireCore);
+          const sharp = [];
+          if (canStepTraffic(tc.gx, tc.gy, tc.pos.y, right, stepCells, requireCore)) sharp.push(right);
+          if (canStepTraffic(tc.gx, tc.gy, tc.pos.y, left, stepCells, requireCore)) sharp.push(left);
+          if (canS) {
+            if (sharp.length > 0 && Math.random() < 0.08) {
+              return sharp[Math.floor(Math.random() * sharp.length)];
+            }
+            return straight;
           }
-        } else if (softTurns.length > 0) {
-          chosenDir = softTurns[Math.floor(Math.random() * softTurns.length)];
-        } else if (sharpTurns.length > 0) {
-          chosenDir = sharpTurns[Math.floor(Math.random() * sharpTurns.length)];
-        } else if (canStepDir(tc.gx, tc.gy, back, stepCells)) {
-          chosenDir = back;
-        } else {
-          // Beco sem saída: só recicla se estiver longe; se perto, para e aguarda sem sumir na frente do jogador
-          if (distP > 75) tc.pos.x = 99999;
-          else { tc.speed = 0; tc.waitTimer = 1.6; }
+          const soft = [];
+          if (canStepTraffic(tc.gx, tc.gy, tc.pos.y, diagR, stepCells, requireCore)) soft.push(diagR);
+          if (canStepTraffic(tc.gx, tc.gy, tc.pos.y, diagL, stepCells, requireCore)) soft.push(diagL);
+          if (soft.length > 0) return soft[Math.floor(Math.random() * soft.length)];
+          if (sharp.length > 0) return sharp[Math.floor(Math.random() * sharp.length)];
+          return -1;
+        };
+
+        let chosenDir = chooseNextDir(true);
+        if (chosenDir < 0) chosenDir = chooseNextDir(false);
+        if (chosenDir < 0) {
+          if (distP > 60) tc.pos.x = 99999;
+          else { tc.speed = 0; tc.waitTimer = 1.2; tc.stuckTimer = (tc.stuckTimer || 0) + 1.2; }
           continue;
         }
+
         tc.turning = (chosenDir !== tc.dirIdx);
         tc.dirIdx = chosenDir;
         const nd = TRAFFIC_DIRS[chosenDir];
@@ -6465,7 +6531,7 @@
         tc.nextGy = tc.gy + nd.dy * stepCells;
         tc.segStartX = tc.pos.x;
         tc.segStartZ = tc.pos.z;
-        const nextLane = getLaneTargetPos(tc.nextGx, tc.nextGy, chosenDir);
+        const nextLane = getLaneTargetPos(tc.nextGx, tc.nextGy, tc.pos.y, chosenDir);
         tc.segEndX = nextLane.x;
         tc.segEndZ = nextLane.z;
         tc.segLen = Math.max(0.5, Math.hypot(tc.segEndX - tc.segStartX, tc.segEndZ - tc.segStartZ));
@@ -6475,23 +6541,32 @@
       const u = Math.min(1, tc.segProgress / tc.segLen);
       tc.pos.x = tc.segStartX + (tc.segEndX - tc.segStartX) * u;
       tc.pos.z = tc.segStartZ + (tc.segEndZ - tc.segStartZ) * u;
-      if (distP < 58) {
-        resolveMapWallCollision(tc.pos, tc.radius * 0.85, null, 0.90);
+      if (distP < 70) {
+        if (resolveMapWallCollision(tc.pos, tc.radius * 0.78, null, 0.42)) {
+          // Não puxa o carro de volta contra a mureta; realinha o segmento a partir da posição limpa
+          tc.segStartX = tc.pos.x;
+          tc.segStartZ = tc.pos.z;
+          tc.segProgress = tc.segLen;
+          tc.speed *= 0.35;
+        }
       }
-      const gy = getGroundHeight(tc.pos.x, tc.pos.z);
-      if (gy !== null && gy >= -0.3 && gy <= 2.6 && Math.abs(gy - tc.pos.y) < 1.35) {
+      const gy = getTrafficGroundY(tc.pos.x, tc.pos.z, tc.pos.y);
+      if (gy !== null) {
         tc.pos.y += (gy - tc.pos.y) * Math.min(1, dt * 14);
       }
 
-      const segYaw = Math.atan2(tc.segEndX - tc.segStartX, tc.segEndZ - tc.segStartZ);
-      let yDiff = segYaw - tc.yaw;
-      while (yDiff > Math.PI) yDiff -= Math.PI * 2;
-      while (yDiff < -Math.PI) yDiff += Math.PI * 2;
-      tc.yaw += yDiff * Math.min(1, dt * 12.0);
+      const segDx = tc.segEndX - tc.segStartX;
+      const segDz = tc.segEndZ - tc.segStartZ;
+      if (segDx * segDx + segDz * segDz > 0.04) {
+        const segYaw = Math.atan2(segDx, segDz);
+        let yDiff = segYaw - tc.yaw;
+        while (yDiff > Math.PI) yDiff -= Math.PI * 2;
+        while (yDiff < -Math.PI) yDiff += Math.PI * 2;
+        tc.yaw += yDiff * Math.min(1, dt * 9.5);
+      }
 
-      // Separação física anti-sobreposição entre carros de tráfego
       for (const other of trafficCars) {
-        if (other === tc) continue;
+        if (other === tc || Math.abs(other.pos.y - tc.pos.y) > 2.5) continue;
         const odx = tc.pos.x - other.pos.x;
         const odz = tc.pos.z - other.pos.z;
         const od = Math.hypot(odx, odz);
@@ -6503,10 +6578,9 @@
         }
       }
 
-      // Evita carros travados frente-a-frente por muito tempo fora de semáforo
       if (!stoppedByLight && tc.speed < 0.35) {
         tc.stuckTimer = (tc.stuckTimer || 0) + dt;
-        if (tc.stuckTimer > 2.4) {
+        if (tc.stuckTimer > 2.2) {
           tc.stuckTimer = 0;
           tc.pos.x = 99999;
           continue;
@@ -6685,18 +6759,19 @@
 
       ctx.save();
       ctx.translate(R, R);
-      ctx.rotate(-input.camYaw);
+      // Frente da câmera = -(sin yaw, cos yaw) → gira +camYaw para a frente ficar sempre para cima
+      ctx.rotate(input.camYaw);
       ctx.scale(drawScale, drawScale);
       ctx.drawImage(mapAiImage, -pImgX, -pImgY);
       ctx.restore();
     }
 
+    const rotCos = Math.cos(input.camYaw);
+    const rotSin = Math.sin(input.camYaw);
     function toMini(wx, wz) {
       const dx = (wx - p.x) * scale;
       const dz = (wz - p.z) * scale;
-      const cos = Math.cos(-input.camYaw);
-      const sin = Math.sin(-input.camYaw);
-      return { x: R + dx * cos - dz * sin, y: R + dx * sin + dz * cos };
+      return { x: R + dx * rotCos - dz * rotSin, y: R + dx * rotSin + dz * rotCos };
     }
 
     if (gpsRoute.active && gpsRoute.waypoints.length > 1) {
@@ -6742,13 +6817,33 @@
       ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
     }
 
+    // Seta do jogador apontando para onde o personagem/carro realmente está virado
+    let hx, hz;
+    if (player.inCar) {
+      const fs = player.inCar.forwardSign || -1;
+      hx = Math.sin(player.inCar.yaw) * fs;
+      hz = Math.cos(player.inCar.yaw) * fs;
+    } else {
+      hx = -Math.sin(player.yaw);
+      hz = -Math.cos(player.yaw);
+    }
+    const sdx = hx * rotCos - hz * rotSin;
+    const sdy = hx * rotSin + hz * rotCos;
+    ctx.save();
+    ctx.translate(R, R);
+    ctx.rotate(Math.atan2(sdx, -sdy));
     ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(R, R - 6);
-    ctx.lineTo(R - 4.5, R + 5);
-    ctx.lineTo(R + 4.5, R + 5);
+    ctx.moveTo(0, -7);
+    ctx.lineTo(-5, 5);
+    ctx.lineTo(0, 2.5);
+    ctx.lineTo(5, 5);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   // --- Mapa em Tela Cheia com Zoom & GPS ---

@@ -1,20 +1,28 @@
 {
-  "otaVersion": 6,
+  "otaVersion": 7,
   "minApkCodeForOta": 42,
-  "changelog": "• Fim das paredes invisíveis embaixo de viadutos, passarelas, marquises e árvores (nova camada de colisão gerada da geometria real)\n• Personagem e veículos usam o piso real sob viadutos\n• Mar ao redor da cidade removido; limite do mapa na borda da cidade",
-  "totalBytes": 5297064,
+  "changelog": "• Minimapa e Mapa Completo 100% reais: vista ortográfica renderizada diretamente dos 79 chunks 3D da cidade, com rotação e seta corrigidas\n• Malha viária (road_grid.bin) reconstruída da geometria real das ruas e calçadas\n• IA de tráfego refeita: carros seguem fielmente as pistas sem subir muretas ou bater em paredes",
+  "totalBytes": 7280475,
   "files": {
+    "images/minimap_real.jpg": {
+      "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
+      "size": 930201
+    },
     "index.html": {
-      "sha256": "0b5124a3812b09d4542644fb21117e86ef98763d2fd9e17473c6d3d8de086300",
-      "size": 30024
+      "sha256": "f66a4de62e1bce7ff6633ad0be2ad6e920822ca5182d5c8b3f46f7b3c27d7dc9",
+      "size": 30769
     },
     "js/game.js": {
-      "sha256": "5fd384b5db5eabb0cc60973b56f949aab0bbe1e7baef29f7b499b3cf74e2edd2",
-      "size": 278745
+      "sha256": "cc7ea1c944aab894eb418af72b7ff3834790182313712053ba3dc751cf88a486",
+      "size": 282634
     },
     "models/map/collision_floor.bin": {
       "sha256": "177f8fcf89f8ff3b5c4338fc41b05ab7fdae87a7aa19af72615f2e234d499956",
       "size": 4959084
+    },
+    "models/map/road_grid.bin": {
+      "sha256": "27a2b404db13fe7973904979f2d24487585c4946695dcf3b137fe27f83dc49d7",
+      "size": 1048576
     },
     "style.css": {
       "sha256": "559f1dcd0c3957f983af90b50fd95bd1624258420402686daf7ec7eb72160a3d",
