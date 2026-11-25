@@ -1,0 +1,138 @@
+{
+  "models/2025_ford_mustang_gtd.glb": {
+    "sha256": "a12156f0fd5c27425b167392b8eb9dee2602f2f3f526d0ec736311dd79ba1db7",
+    "size": 11367212
+  },
+  "models/audi_r8_lms_2016.glb": {
+    "sha256": "16d26d9e754db570c3a675612e17e2a05e4cb4adea1a7ad99ffa52573eef656b",
+    "size": 11821544
+  },
+  "models/burnout_revenge_angel_valley_track.glb": {
+    "sha256": "431a1a3f8d9fcbcfcf331b7db47602b92143b12edcaf711426332d5502518514",
+    "size": 27255188
+  },
+  "models/drift_race_track_free.glb": {
+    "sha256": "ed242392097228ce5b4bf23ac03ec40fb45d0b144cc7fecca1974b384af2bf3d",
+    "size": 11144848
+  },
+  "models/ferrari_296_gt3.glb": {
+    "sha256": "404681353229befb8990abf4951b57227e9e80ce309636aff3541dbf8f077f10",
+    "size": 25146964
+  },
+  "models/ferrari_488_pista_widebody.glb": {
+    "sha256": "6c1d540718730a448d49b2e082d6e8001aec3406e6e7cec4dad7daaa6cd7b3b4",
+    "size": 8032584
+  },
+  "models/ferrari_laferrari_new.glb": {
+    "sha256": "ab63b4824caef994fabf52a363f2bce2add10e560a106fe73186f93944f9994f",
+    "size": 24833532
+  },
+  "models/ford_mustang_gt_drift_spec.glb": {
+    "sha256": "ec89a26832dcd9b248310888c3551260f402d9d1a17ef85a4dea652bbd290ea4",
+    "size": 27566032
+  },
+  "models/lb_works_ferrari_f40.glb": {
+    "sha256": "168e46ac3abb97efc60bf95624055a08d776f1530aefe554a2b9cb71f3da17ae",
+    "size": 23842852
+  },
+  "models/lexus_lc_500_wald.glb": {
+    "sha256": "d46bcd87a73cb6d8840f2bcbb428d2b605a7397a1a43ec90e50def1ef62e2df4",
+    "size": 26849240
+  },
+  "models/mclaren_mp45.glb": {
+    "sha256": "e330512eec73226d83b8dbb1799cbcfa8a99c4ad6e20c2a4f537c3f402220eac",
+    "size": 8927024
+  },
+  "models/monaco_gp_track.glb": {
+    "sha256": "aec46b6c89dbf15fab9b8b6c8009f8394a0e4aade1a7315a9bed4d6d37208d79",
+    "size": 969824
+  },
+  "models/showroom_hall.glb": {
+    "sha256": "76bfdec08ec17a4592dbbad882d99e8b3986c76d2284f5fec29de9ed609d96c9",
+    "size": 1729488
+  },
+  "models/showroom_turntable.glb": {
+    "sha256": "64e199352b94cd1c820df546e328cf03332ad8045993c25581293bae94655c1b",
+    "size": 158252
+  },
+  "models/toyota_gr_supra_gt300.glb": {
+    "sha256": "16f7051451bababd00ad471de54671cf0568ede21253b8ac982cc10c7aac76d1",
+    "size": 17125532
+  },
+  "audio/ford_door_chime.pcm": {
+    "sha256": "c3e10057e76660cd6c08535963a692392bbd84af7c00f263c9763ed815384ac9",
+    "size": 269010
+  },
+  "audio/mustang_v8_start.pcm": {
+    "sha256": "6941dcfef2e41b8cdfff0610bf148d10db47d076084ab964b2a7296e0cb4f048",
+    "size": 202860
+  },
+  "audio/shift_pop.pcm": {
+    "sha256": "5e037c0cd2154cb3dc1f8240ee74eada03789f80359c65e440588083bef3d14a",
+    "size": 28224
+  },
+  "audio/tire_screech.pcm": {
+    "sha256": "ff2b9e6d3196fb871a4f27f98b7a43f2e6aaca296c874708c37139b008de3f6d",
+    "size": 52920
+  },
+  "audio/v8_flatplane_0.pcm": {
+    "sha256": "bd89a36956a30ff226b12f996f2c2738619dd0483908d55bd5a091d7e7f473cb",
+    "size": 120960
+  },
+  "audio/v8_flatplane_1.pcm": {
+    "sha256": "958ad14c46853277dc5e98cb0bce5bead27c76d314452c8231cab3972b6564c5",
+    "size": 55224
+  },
+  "audio/v8_flatplane_2.pcm": {
+    "sha256": "de334a99b74acef48813cf258fce465ab4a8d202ccf99c36b930e5e3e9fc446b",
+    "size": 48852
+  },
+  "audio/v8_flatplane_3.pcm": {
+    "sha256": "f36f5ed4eabdba61a2ceede0a0158805c662aa079536002f5fc5967f51aae369",
+    "size": 32832
+  },
+  "audio/v8_flatplane_4.pcm": {
+    "sha256": "6b763c5903204e4c308274c937024903354c6293676f6d514640f95132f0d14b",
+    "size": 24732
+  },
+  "audio/v8_muscle_0.pcm": {
+    "sha256": "ce6e7f5e0583f26a5061374c62335737a2d481133ef04381f12a09d7f5ee35da",
+    "size": 120960
+  },
+  "audio/v8_muscle_1.pcm": {
+    "sha256": "390eec98bddef50e06da2c548a359837e0150ea00b99a959b60fad18f68d6a2b",
+    "size": 55224
+  },
+  "audio/v8_muscle_2.pcm": {
+    "sha256": "5ec1f21dbd1d942f48bd498759df77ddcfeddb259b2af159108a32e6b7f65b75",
+    "size": 48852
+  },
+  "audio/v8_muscle_3.pcm": {
+    "sha256": "83f2e6c581634d00a27ef0048274d06745cc8d4a15aaba84c209e80038514a3c",
+    "size": 32832
+  },
+  "audio/v8_muscle_4.pcm": {
+    "sha256": "fa220a22db27e93cf2cfc23d62d382dc13ef8fb8ac1917ffdb585711004dc22b",
+    "size": 24732
+  },
+  "audio/v8_twinturbo_0.pcm": {
+    "sha256": "3b3c9a0b6969def63d6cb6fd57ad2263fc3ddd91de19ec4ee393bcad3c8d6319",
+    "size": 120960
+  },
+  "audio/v8_twinturbo_1.pcm": {
+    "sha256": "4750a954620d30cfddae7be76fde9a0f3936a32ccada7735fbe1dec05283f58c",
+    "size": 55224
+  },
+  "audio/v8_twinturbo_2.pcm": {
+    "sha256": "c9c6b94cfc2b9f927fa705675c2d1edf9decafb45f29b5f1511fc74f21b68f3e",
+    "size": 48852
+  },
+  "audio/v8_twinturbo_3.pcm": {
+    "sha256": "fd0def8938f387eb9c68c55f002a9fb3e6d60e7551144008ed968aaa05d35f26",
+    "size": 32832
+  },
+  "audio/v8_twinturbo_4.pcm": {
+    "sha256": "ad768b185df242c8376b54a48c65fb342ca0b1a85829410b9fbb4b3d9e0dd941",
+    "size": 24732
+  }
+}

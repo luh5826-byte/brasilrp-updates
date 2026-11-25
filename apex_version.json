@@ -1,0 +1,12 @@
+{
+  "app": "apex_circuit",
+  "versionCode": 2,
+  "versionName": "1.0.2",
+  "mandatory": false,
+  "changelog": "• Sistema de atualizacao OTA automatico + instalador de APK completo (igual Brasil RP)\n• Suporte completo a Joystick Bluetooth nos menus (navegacao espacial + destaque visual + cursor fallback) e na corrida\n• Deteccao automatica de conexao/desconexao do controle e alternancia instantanea com toque na tela",
+  "apkUrl": "",
+  "otaVersion": 0,
+  "minApkCodeForOta": 2,
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/apex_ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/apex_ota_manifest.json"
+}
