@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 34,
+  "otaVersion": 35,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/18b2d4131852541f9f6d527affe5290a07d1d82f/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/18b2d4131852541f9f6d527affe5290a07d1d82f/ota_manifest.json",
-  "otaChangelog": "• Adicionado Toyota GR Supra GT300 direto do Apex Circuit com física completa (296 km/h / 348 km/h no Nitro, aceleração, drift e aderência lateral padrão Apex)\n• Rodas dianteiras e traseiras re-ancoradas por pivô individual (aro + pneu) com giro real e esterçamento de 0.44 rad\n• Disponível no seletor do Lobby, estacionado no spawn e no Celular RP"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/e616d80d51c820ec46e5ddb42c245a8267e29d85/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/e616d80d51c820ec46e5ddb42c245a8267e29d85/ota_manifest.json",
+  "otaChangelog": "• Adicionada Ferrari 296 GT3 direto do Apex Circuit com física de pista (315 km/h / 348 km/h no Nitro, aceleração, drift e esterçamento real das 4 rodas + discos)\n• Disponível no seletor do Lobby, estacionada no spawn e no Celular RP"
 }
