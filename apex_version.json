@@ -5,8 +5,9 @@
   "mandatory": false,
   "changelog": "• Sistema de Patch OTA automatico ao abrir o jogo (código patch.dex + assets .glb/.pcm) igual Brasil RP\n• Botao ATUALIZAR no Lobby exibindo versao + numero do Patch OTA\n• Modal de atualizacao automatica, APK completo e APP ATUALIZADO identicos ao Brasil RP\n• Performance lisa (abertura instantanea, troca de carro assincrona e corrida em paralelo) + Joystick Bluetooth total",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/apex-v1.0.5/ApexCircuit.apk",
-  "otaVersion": 0,
+  "otaVersion": 1,
   "minApkCodeForOta": 5,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/apex_ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/apex_ota_manifest.json"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/8a39082e87ade6c766f4be897dc2ee4780ab04a4/apex_ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/8a39082e87ade6c766f4be897dc2ee4780ab04a4/apex_ota_manifest.json",
+  "otaChangelog": "• Novo carro adicionado via Patch OTA: 2005 Maserati MC12 GT1 Red Bull (Classe S+, 6.0L V12, 630 cv, 330 km/h)"
 }
