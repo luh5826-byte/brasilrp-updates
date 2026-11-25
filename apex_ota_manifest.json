@@ -1,16 +1,16 @@
 {
-  "otaVersion": 1,
+  "otaVersion": 2,
   "minApkCodeForOta": 5,
-  "changelog": "• Novo carro adicionado via Patch OTA: 2005 Maserati MC12 GT1 Red Bull (Classe S+, 6.0L V12, 630 cv, 330 km/h)",
-  "totalBytes": 7359140,
+  "changelog": "• Joystick Bluetooth agora navega em 100% dos botoes do Lobby, Garagem, Pistas, Tuning e Pausa (leitura direta do Compose SemanticsOwner)\n• Tela limpa na corrida igual Brasil RP: oculta automaticamente os controles touch quando o joystick esta em uso (reaparecem ao tocar na tela)\n• Inclui 2005 Maserati MC12 GT1 Red Bull",
+  "totalBytes": 7934944,
   "files": {
     "models/maserati_mc12_gt1_redbull.glb": {
       "sha256": "0b636bf10c463e4e5ff26fb36ec0cd526e2948f3a415fa8f8d4d1a34d59be025",
       "size": 7311844
     },
     "patch.dex": {
-      "sha256": "81234b9650d04db215ecced7d98950a52cae5809ea8b65cdd4918d6ad0cff3c5",
-      "size": 47296
+      "sha256": "7b06de801c19091ddf1536f5588ea9c0b16e424a5c901454f5ed73b587f69861",
+      "size": 623100
     }
   },
   "deleted": []
