@@ -134,5 +134,9 @@
   "audio/v8_twinturbo_4.pcm": {
     "sha256": "ad768b185df242c8376b54a48c65fb342ca0b1a85829410b9fbb4b3d9e0dd941",
     "size": 24732
+  },
+  "patch.dex": {
+    "sha256": "700704976d96b099286304e7d3001036475330a602d358c92afdd817d339db78",
+    "size": 62528
   }
 }
