@@ -1,10 +1,10 @@
 {
-  "otaVersion": 35,
+  "otaVersion": 36,
   "minApkCode": 42,
-  "generatedAt": "2026-11-25T00:15:58.573Z",
-  "changelog": "• Adicionada Ferrari 296 GT3 direto do Apex Circuit com física de pista (315 km/h / 348 km/h no Nitro, aceleração, drift e esterçamento real das 4 rodas + discos)\n• Disponível no seletor do Lobby, estacionada no spawn e no Celular RP",
+  "generatedAt": "2026-11-25T00:22:20.221Z",
+  "changelog": "• Controle (Gamepad): desativa automaticamente o giroscópio ao conectar ou usar o controle",
   "fileCount": 15,
-  "totalSize": 43190537,
+  "totalSize": 43190966,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -19,8 +19,8 @@
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "748c5b1e7bcaf7ead17c476194845717a71c94d6ff418345002dbe682a74b903",
-      "size": 407360
+      "sha256": "1ff28bd0bb6c05814a2f4253fb0e625d7e308ba09da61ed43faf629d71a7fb77",
+      "size": 407789
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",

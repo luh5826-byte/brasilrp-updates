@@ -4873,7 +4873,12 @@
   window.addEventListener('gamepadconnected', (e) => {
     padState.touchOverride = false;
     setGamepadUiMode(true);
-    showToast(`🎮 Controle conectado: ${e.gamepad.id.slice(0, 26)} (Toque na tela para liberar controles touch)`, 3400);
+    if (save.steerMode === 'gyro') {
+      applySteerMode('buttons', false);
+      showToast(`🎮 Controle conectado — giroscópio desativado`, 3400);
+    } else {
+      showToast(`🎮 Controle conectado: ${e.gamepad.id.slice(0, 26)} (Toque na tela para liberar controles touch)`, 3400);
+    }
   });
   window.addEventListener('gamepaddisconnected', () => {
     padState.active = false; padState.touchOverride = false; padState.joyX = 0; padState.joyY = 0;
@@ -5017,6 +5022,10 @@
     // Se o jogador voltou a usar o controle Bluetooth após ter tocado na tela, reativa o modo tela limpa
     const anyPadInput = lx !== 0 || ly !== 0 || rx !== 0 || ry !== 0 ||
       gp.buttons.some((b) => b && (b.pressed || b.value > 0.2));
+    if (anyPadInput && save.steerMode === 'gyro') {
+      applySteerMode('buttons', false);
+      showToast('🎮 Giroscópio desativado automaticamente (controle ativo)', 2400);
+    }
     if (padState.touchOverride) {
       if (anyPadInput) {
         padState.touchOverride = false;
@@ -6896,14 +6905,15 @@
     const drift = input.drift || padState.drift || keys['Space'];
     const nitroBtn = input.nitro || padState.nitro || keys['ShiftLeft'];
 
-    if (save.steerMode === 'gyro') {
+    const useGyroNow = save.steerMode === 'gyro' && !(padState.active && !padState.touchOverride);
+    if (useGyroNow) {
       input.gyroSteer += (input.gyroTarget - input.gyroSteer) * Math.min(1, dt * 14.0);
     } else {
       input.gyroSteer = 0;
     }
     const targetSteer = padState.active && Math.abs(padState.steer) > 0.05
       ? -padState.steer
-      : (save.steerMode === 'gyro'
+      : (useGyroNow
           ? Math.max(-1, Math.min(1, input.gyroSteer + (left ? 1 : 0) - (right ? 1 : 0)))
           : ((left ? 1 : 0) - (right ? 1 : 0)));
     car.steerAngle += (targetSteer - car.steerAngle) * Math.min(1, dt * 11.0);
