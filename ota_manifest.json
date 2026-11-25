@@ -1,26 +1,26 @@
 {
-  "otaVersion": 34,
+  "otaVersion": 35,
   "minApkCode": 42,
-  "generatedAt": "2026-11-24T21:51:37.596Z",
-  "changelog": "• Adicionado Toyota GR Supra GT300 direto do Apex Circuit com física completa (296 km/h / 348 km/h no Nitro, aceleração, drift e aderência lateral padrão Apex)\n• Rodas dianteiras e traseiras re-ancoradas por pivô individual (aro + pneu) com giro real e esterçamento de 0.44 rad\n• Disponível no seletor do Lobby, estacionado no spawn e no Celular RP",
-  "fileCount": 14,
-  "totalSize": 27495870,
+  "generatedAt": "2026-11-25T00:15:58.573Z",
+  "changelog": "• Adicionada Ferrari 296 GT3 direto do Apex Circuit com física de pista (315 km/h / 348 km/h no Nitro, aceleração, drift e esterçamento real das 4 rodas + discos)\n• Disponível no seletor do Lobby, estacionada no spawn e no Celular RP",
+  "fileCount": 15,
+  "totalSize": 43190537,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "4efde988188c34878140ae58486d0f53890ba6980b192a0ea822e1b753100915",
-      "size": 51323
+      "sha256": "c3d6d9ce3d4f1b51b91acce519a59cfe67c7c0ddbccdd03fd3a21594561d19f0",
+      "size": 51584
     },
     "js/audio_world.js": {
       "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "add5ea0a235d3cfb96e0aa4300a7af09af21b49a5210c2278e66803d1ab2348f",
-      "size": 406286
+      "sha256": "748c5b1e7bcaf7ead17c476194845717a71c94d6ff418345002dbe682a74b903",
+      "size": 407360
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -45,6 +45,10 @@
     "models/props/mcdonalds_drivethru.glb": {
       "sha256": "a4fc79a7e6a74a4f42192fca4d855e642a777f04696b909578a04b3b6e61c8ab",
       "size": 1223680
+    },
+    "models/vehicles/ferrari_296_gt3.glb": {
+      "sha256": "2442da547c0e3e5bfc81b0e7fb546fd7eb805d449b1ec8b84ede5434f8f9cb74",
+      "size": 15693332
     },
     "models/vehicles/saveiro_brasil.glb": {
       "sha256": "08efb607a12a9ff425ca8548bd2653c3542e54418c9236363939116a87ed6426",

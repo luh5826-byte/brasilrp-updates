@@ -2989,10 +2989,10 @@
       { re: /^R_door/i, target: 'DoorR', mode: 'door' }
     ];
     const matWheelRules = [
-      { re: /^(rim|tire)_FL$/i, target: 'WheelFL' },
-      { re: /^(rim|tire)_FR$/i, target: 'WheelFR' },
-      { re: /^(rim|tire)_RL$/i, target: 'WheelRL' },
-      { re: /^(rim|tire)_RR$/i, target: 'WheelRR' }
+      { re: /^(rim|tire|brakedisc(?:_hub)?)_FL(?:_\d+)?$/i, target: 'WheelFL' },
+      { re: /^(rim|tire|brakedisc(?:_hub)?)_FR(?:_\d+)?$/i, target: 'WheelFR' },
+      { re: /^(rim|tire|brakedisc(?:_hub)?)_RL(?:_\d+)?$/i, target: 'WheelRL' },
+      { re: /^(rim|tire|brakedisc(?:_hub)?)_RR(?:_\d+)?$/i, target: 'WheelRR' }
     ];
     const groupedParts = new Map(); // targetName -> { objs: [], mode }
     root.traverse((obj) => {
@@ -3043,6 +3043,13 @@
     });
 
     wrapper.add(chassis);
+    // Garante automaticamente que a frente do carro (WheelFL) esteja em +Z
+    const wFL = chassis.getObjectByName('WheelFL');
+    const wRL = chassis.getObjectByName('WheelRL');
+    if (wFL && wRL && wFL.position.z < wRL.position.z) {
+      chassis.rotation.y += Math.PI;
+      chassis.updateMatrixWorld(true);
+    }
     const keepSeparate = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'SteeringWheel', 'LightBlue', 'LightRed']);
     mergeStaticMeshesByMaterial(chassis, keepSeparate);
     groupedParts.forEach((_, targetName) => {
@@ -3065,6 +3072,8 @@
     const isMustang = typeKey === 'ford_mustang_gtd';
     const isLexus = typeKey === 'lexus_lc_500_wald';
     const isGt300 = typeKey === 'toyota_gr_supra_gt300';
+    const isFerrari = typeKey === 'ferrari_296_gt3';
+    const isApexRace = isGt300 || isFerrari;
     // Todos os veículos têm a frente real em +Z!
     const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
@@ -3072,9 +3081,9 @@
     const isLexusSpec = isLexus || isSaveiro || isSaveiroBrasil;
     const v = {
       type: typeKey,
-      apexPhysics: isGt300,
+      apexPhysics: isApexRace,
       forwardSign: forwardPlusZ ? 1 : -1,
-      name: isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
+      name: isFerrari ? 'Ferrari 296 GT3' : isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
       mesh,
       parts,
       pos: mesh.position,
@@ -3089,7 +3098,7 @@
       rollVel: 0,
       pitchVel: 0,
       angVel: 0,
-      mass: isGt300 ? 1.28 : isLexusSpec ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
+      mass: isFerrari ? 1.24 : isGt300 ? 1.28 : isLexusSpec ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
       hp: 100,
       broken: false,
       nitro: 100,
@@ -3101,12 +3110,12 @@
       sirenOn: false,
       reverseHoldTimer: 0,
       inReverseGear: false,
-      // GT300 usa física, aceleração, esterçamento e drift fiéis ao Apex Circuit!
-      maxTopSpeedMs: isGt300 ? (296 / 3.6) : isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : typeKey === 'car_pm' ? (168 / 3.6) : (145 / 3.6),
-      accelPower: isGt300 ? 34.0 : isMustang ? 19.0 : isLexusSpec ? 17.5 : typeKey === 'car_pm' ? 16.5 : 14.5,
-      turnRate: isGt300 ? 2.15 : isLexusSpec ? 1.92 : 1.98,
-      wheelSteerMax: isGt300 ? 0.44 : 0.34,
-      soundProfile: (isGt300 || isLexusSpec) ? 'v8_muscle' : null
+      // GT300 e Ferrari 296 GT3 usam física, aceleração, esterçamento e drift fiéis ao Apex Circuit!
+      maxTopSpeedMs: isFerrari ? (315 / 3.6) : isGt300 ? (296 / 3.6) : isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : typeKey === 'car_pm' ? (168 / 3.6) : (145 / 3.6),
+      accelPower: isFerrari ? 36.5 : isGt300 ? 34.0 : isMustang ? 19.0 : isLexusSpec ? 17.5 : typeKey === 'car_pm' ? 16.5 : 14.5,
+      turnRate: isFerrari ? 2.22 : isGt300 ? 2.15 : isLexusSpec ? 1.92 : 1.98,
+      wheelSteerMax: isApexRace ? 0.44 : 0.34,
+      soundProfile: (isApexRace || isLexusSpec) ? 'v8_muscle' : null
     };
     if (isMustang) paintVehicle(v, save.paint);
     vehicles.push(v);
@@ -5677,6 +5686,7 @@
   });
 
   if (el('phCallMustang')) el('phCallMustang').onclick = () => deliverPhoneCar('ford_mustang_gtd', '🏎️ Ford Mustang GTD');
+  if (el('phCallFerrari')) el('phCallFerrari').onclick = () => deliverPhoneCar('ferrari_296_gt3', '🏎️ Ferrari 296 GT3');
   if (el('phCallGt300')) el('phCallGt300').onclick = () => deliverPhoneCar('toyota_gr_supra_gt300', '🏁 Toyota GR Supra GT300');
   if (el('phCallLexus')) el('phCallLexus').onclick = () => deliverPhoneCar('lexus_lc_500_wald', '🏁 Lexus LC 500 Wald');
   if (el('phCallSaveiro')) el('phCallSaveiro').onclick = () => deliverPhoneCar('volkswagen_saveiro', '🛻 VW Pickup Azul');
@@ -5883,7 +5893,7 @@
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
       ui.loadFill.style.width = '45%';
 
-      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, ferrariScene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
         loadGLB('models/chars/cool_man.glb'),
         loadGLB('models/chars/npc_outer_plane.glb'),
         loadGLB('models/chars/doa_npc_fighter.glb'),
@@ -5893,6 +5903,7 @@
         loadGLB('models/vehicles/ford_mustang_gtd.glb'),
         loadGLB('models/vehicles/lexus_lc_500_wald.glb'),
         loadGLB('models/vehicles/toyota_gr_supra_gt300.glb'),
+        loadGLB('models/vehicles/ferrari_296_gt3.glb'),
         loadGLB('models/vehicles/car_gol.glb'),
         loadGLB('models/vehicles/car_pm.glb'),
         loadGLB('models/props/prop_atm.glb'),
@@ -5920,6 +5931,7 @@
         ford_mustang_gtd: mustangScene,
         lexus_lc_500_wald: normalizeApexVehicleScene(lexusScene, 4.55),
         toyota_gr_supra_gt300: normalizeApexVehicleScene(gt300Scene, 4.62),
+        ferrari_296_gt3: normalizeApexVehicleScene(ferrariScene, 4.58),
         car_gol: golScene,
         car_pm: pmScene
       };
@@ -6081,6 +6093,7 @@
       spawnVehicle('ford_mustang_gtd', -172.0, getSafeGroundForSpawn(-172.0, -180.5, groundY) + 0.03, -180.5, 0.0);
       spawnVehicle('lexus_lc_500_wald', -172.0, getSafeGroundForSpawn(-172.0, -188.0, groundY) + 0.03, -188.0, 0.0);
       spawnVehicle('toyota_gr_supra_gt300', -172.0, getSafeGroundForSpawn(-172.0, -195.5, groundY) + 0.03, -195.5, 0.0);
+      spawnVehicle('ferrari_296_gt3', -172.0, getSafeGroundForSpawn(-172.0, -203.0, groundY) + 0.03, -203.0, 0.0);
       spawnVehicle('car_pm', -172.0, getSafeGroundForSpawn(-172.0, -195.5, groundY) + 0.03, -195.5, 0.0);
 
       // Semáforos nativos do mapa funcionando + Tráfego de veículos
@@ -6203,7 +6216,7 @@
           animateJobNpcBones(st, dt, walking);
         },
         createRemoteCarVisual: (idNum, carType) => {
-          const keys = ['toyota_gr_supra_gt300', 'lexus_lc_500_wald', 'ford_mustang_gtd', 'volkswagen_saveiro', 'car_gol', 'car_pm'];
+          const keys = ['ferrari_296_gt3', 'toyota_gr_supra_gt300', 'lexus_lc_500_wald', 'ford_mustang_gtd', 'volkswagen_saveiro', 'car_gol', 'car_pm'];
           const k = (carType && vehicleTemplates[carType]) ? carType : keys[Math.abs(idNum || 0) % keys.length];
           const tpl = vehicleTemplates[k];
           if (!tpl) return null;
