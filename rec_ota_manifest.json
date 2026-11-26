@@ -1,8 +1,9 @@
 {
   "app": "rec_ptbr",
-  "patch_version": 5,
-  "version_name": "0.6.0.1.1-ptbr-p5",
-  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v5.zip",
-  "changelog": "Reinicio automatico do jogo apos aplicar Patch OTA (via ProcessPhoenix nativo do Godot Android)",
-  "telegram_url": "https://t.me/hentaigamestranslated"
+  "patch_version": 6,
+  "version_name": "0.6.0.1.1-ptbr-p6",
+  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v6.zip",
+  "changelog": "Patch cumulativo v6: traducao nativa completa dos 4292 dialogos PT-BR/EN (dupla camada Dialogic + OtaTimelineLoader), popup em ingles com icone tradutor, tela cheia padrao e reinicio automatico",
+  "telegram_url": "https://t.me/hentaigamestranslated",
+  "cumulative": true
 }
