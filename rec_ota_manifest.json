@@ -1,8 +1,8 @@
 {
   "app": "rec_ptbr",
-  "patch_version": 2,
-  "version_name": "0.6.0.1.1-ptbr-p2",
-  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v2.zip",
-  "changelog": "Teste do sistema OTA Patch v2: atualizacao instantanea via ZIP interno (sem reinstalar APK)",
+  "patch_version": 3,
+  "version_name": "0.6.0.1.1-ptbr-p3",
+  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v3.zip",
+  "changelog": "Tela cheia por padrao (fullscreen sem tarjas pretas) e remocao do aviso F11 via Patch OTA v3",
   "telegram_url": "https://t.me/hentaigamestranslated"
 }
