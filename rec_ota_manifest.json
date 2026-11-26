@@ -1,0 +1,8 @@
+{
+  "app": "rec_ptbr",
+  "patch_version": 1,
+  "version_name": "0.6.0.1.1-ptbr-p1",
+  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v1.zip",
+  "changelog": "Versão inicial da tradução completa PT-BR por DeveSerBug (@hentaigamestranslated).",
+  "telegram_url": "https://t.me/hentaigamestranslated"
+}
