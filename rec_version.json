@@ -1,11 +1,11 @@
 {
   "app": "rec_ptbr",
   "baseGameVersion": "0.6.0.1.1",
-  "otaVersion": 3,
-  "versionName": "0.6.0.1.1-ptbr-p3",
+  "otaVersion": 4,
+  "versionName": "0.6.0.1.1-ptbr-p4",
   "translator": "DeveSerBug",
   "telegram": "https://t.me/hentaigamestranslated",
   "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/",
   "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota_manifest.json",
-  "otaChangelog": "Tela cheia por padrao (fullscreen sem tarjas pretas) e remocao do aviso F11 via Patch OTA v3"
+  "otaChangelog": "Correcao definitiva dos dialogos PT-BR (loader Dialogic sem recursao + 60 DTLs no patch.pck) e popup inicial em ingles com icone de tradutor"
 }
