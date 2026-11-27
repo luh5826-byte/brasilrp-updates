@@ -1,8 +1,8 @@
 {
-  "otaVersion": 38,
+  "otaVersion": 39,
   "minApkCodeForOta": 42,
-  "changelog": "• Coleta de ID/dados do aparelho e envio automático de log de travamento/crash para o painel",
-  "totalBytes": 27510914,
+  "changelog": "• Envio contínuo de dados do aparelho (GPU, RAM, Tela) e tipo de rede (Wi-Fi / Dados Móveis) para o painel",
+  "totalBytes": 27512250,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -25,12 +25,12 @@
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "ac7dc623b873287f56229b3ecf1cc7beb758cecb18353ea96fabb6a4fed86f3f",
-      "size": 30520
+      "sha256": "1da225ded03ba45f4ea06b54bfb7bde29205db8a0c597623c5085226cb0b2a22",
+      "size": 30857
     },
     "js/telemetry_crash.js": {
-      "sha256": "901fce20459e09211f3185864fa6e2bd9a0d252f678c112a8e5ae55ae97f0614",
-      "size": 10506
+      "sha256": "5179cb5cc6c648a2b5b2ced5dcfe587743d8217c7a11679acb3c8cb8521b6c4d",
+      "size": 11505
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",

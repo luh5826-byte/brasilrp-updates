@@ -65,8 +65,20 @@
     return null;
   }
 
-  function collectDeviceSpecs() {
+  function getNetworkInfo() {
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!conn) return 'Desconhecida';
+    const rawType = String(conn.type || '').toLowerCase();
+    const eff = conn.effectiveType ? String(conn.effectiveType).toUpperCase() : '';
+    if (rawType === 'wifi') return eff ? `Wi-Fi (${eff})` : 'Wi-Fi';
+    if (rawType === 'cellular') return eff ? `Dados Móveis (${eff})` : 'Dados Móveis';
+    if (rawType === 'ethernet') return 'Ethernet';
+    if (rawType === 'none') return 'Sem Rede';
+    if (eff) return `Rede (${eff})`;
+    return 'Online';
+  }
+
+  function collectDeviceSpecs() {
     const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
     return {
       deviceId: getDeviceId(),
@@ -78,7 +90,7 @@
       ramGb: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : '-',
       cpuCores: navigator.hardwareConcurrency || null,
       screen: `${screen.width}x${screen.height} (${dpr}x)`,
-      network: conn && conn.effectiveType ? String(conn.effectiveType) : '-',
+      network: getNetworkInfo(),
       userAgent: (navigator.userAgent || '').slice(0, 220)
     };
   }
@@ -210,15 +222,25 @@
   window.addEventListener('beforeunload', () => saveAliveState(true));
 
   // 2. Envia abertura do jogo com dados completos do aparelho para o painel
-  setTimeout(() => {
+  function sendDeviceSpecs(evName) {
     try {
+      specs.network = getNetworkInfo();
+      specs.playerName = (localStorage.getItem(STORAGE_NAME_KEY) || specs.playerName || 'Jogador').slice(0, 20);
+      specs.appVersion = getAppVersion();
       fetch(API_BASE + '/api/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({ event: 'game_open' }, specs))
+        body: JSON.stringify(Object.assign({ event: evName || 'game_open' }, specs))
       }).catch(() => {});
     } catch (_) {}
-  }, 1500);
+  }
+  setTimeout(() => sendDeviceSpecs('game_open'), 1500);
+  try {
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn && conn.addEventListener) {
+      conn.addEventListener('change', () => sendDeviceSpecs('device_info'));
+    }
+  } catch (_) {}
 
   // 3. Captura erros JS nao tratados e Promises rejeitadas
   window.addEventListener('error', (ev) => {

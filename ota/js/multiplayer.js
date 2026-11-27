@@ -574,13 +574,20 @@
     ws.onopen = () => {
       connected = true;
       const curChar = (window.BrasilRPBridge && window.BrasilRPBridge.player && window.BrasilRPBridge.player.charId) || 'cool_man';
+      const dev = window.BrasilDeviceInfo || {};
       sendWS({
         type: 'join',
         name: playerName,
         charId: curChar,
-        deviceId,
-        appVersion: (window.BrasilRPVersion && window.BrasilRPVersion.versionName) || '1.0.42',
-        otaVersion: (window.BrasilRPVersion && window.BrasilRPVersion.otaVersion) || '31'
+        deviceId: dev.deviceId || deviceId,
+        device: dev.device || undefined,
+        gpu: dev.gpu || undefined,
+        ramGb: dev.ramGb || undefined,
+        cpuCores: dev.cpuCores || undefined,
+        screen: dev.screen || undefined,
+        network: dev.network || undefined,
+        appVersion: dev.appVersion || (window.BrasilRPVersion && window.BrasilRPVersion.versionName) || '1.0.42',
+        otaVersion: (window.BrasilRPVersion && window.BrasilRPVersion.otaVersion) || '38'
       });
       updateStatusUI();
       addChatLine('🟢 Conectado ao servidor Brasil RP!', 'sys');
