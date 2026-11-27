@@ -4,6 +4,8 @@
   const DEFAULT_SERVER_URL = 'wss://brasilrp-server.onrender.com';
   const STORAGE_SERVER_KEY = 'brasilrp_mp_server';
   const STORAGE_NAME_KEY = 'brasilrp_mp_name';
+  const STORAGE_LAST_PUSH_KEY = 'brasilrp_last_push_id';
+  let pushHideTimer = null;
 
   const VOICE_MIN_DIST = 6;   // 100% volume ate 6 metros
   const VOICE_MAX_DIST = 35;  // mudo acima de 35 metros
@@ -70,6 +72,60 @@
     if (window.BrasilRPBridge && typeof window.BrasilRPBridge.showToast === 'function') {
       window.BrasilRPBridge.showToast(msg);
     }
+  }
+
+  function showServerPush(push) {
+    if (!push || !push.id || !push.body) return;
+    let lastId = '';
+    try { lastId = localStorage.getItem(STORAGE_LAST_PUSH_KEY) || ''; } catch (_) {}
+    if (lastId === String(push.id)) return;
+    try { localStorage.setItem(STORAGE_LAST_PUSH_KEY, String(push.id)); } catch (_) {}
+
+    const box = el('pushNotifyBox');
+    const titleEl = el('pushNotifyTitle');
+    const textEl = el('pushNotifyText');
+    const closeBtn = el('btnClosePushNotify');
+
+    const title = String(push.title || 'Brasil RP • Novidade');
+    const body = String(push.body);
+
+    if (box && titleEl && textEl) {
+      titleEl.textContent = title;
+      textEl.textContent = body;
+      box.classList.remove('hidden');
+      if (closeBtn && !closeBtn.dataset.bound) {
+        closeBtn.dataset.bound = '1';
+        closeBtn.addEventListener('click', () => {
+          box.classList.add('hidden');
+          clearTimeout(pushHideTimer);
+        });
+      }
+      clearTimeout(pushHideTimer);
+      pushHideTimer = setTimeout(() => {
+        box.classList.add('hidden');
+      }, 14000);
+    } else {
+      toast('🔔 ' + title + ': ' + body);
+    }
+
+    addChatLine('🔔 [' + title + '] ' + body, 'sys');
+    try {
+      if (window.BrasilNative && typeof window.BrasilNative.vibrate === 'function') {
+        window.BrasilNative.vibrate(90);
+      } else if (navigator.vibrate) {
+        navigator.vibrate(90);
+      }
+    } catch (_) {}
+  }
+
+  async function fetchLatestPush() {
+    try {
+      const httpBase = serverUrl.replace(/^wss:\/\//i, 'https://').replace(/^ws:\/\//i, 'http://').replace(/\/+$/, '');
+      const res = await fetch(httpBase + '/api/push', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && data.push) showServerPush(data.push);
+    } catch (_) {}
   }
 
   function addChatLine(text, kind) {
@@ -540,6 +596,7 @@
           myId = msg.id;
           onlineCount = msg.onlineCount || 1;
           updateStatusUI();
+          if (msg.latestPush) showServerPush(msg.latestPush);
           if (Array.isArray(msg.players)) {
             for (const p of msg.players) {
               upsertRemotePlayer(p);
@@ -579,6 +636,9 @@
           break;
         case 'chat':
           addPlayerChat(msg.name || 'Jogador', msg.text || '');
+          break;
+        case 'push':
+          if (msg.push) showServerPush(msg.push);
           break;
         case 'rtc_offer':
           handleRtcOffer(msg.from, msg.data);
@@ -802,4 +862,8 @@
 
   window.BrasilMP = { tick, connect, toggleVoice, getRemotePlayers };
   setTimeout(connect, 900);
+  setTimeout(fetchLatestPush, 1800);
+  setInterval(() => {
+    if (!connected) fetchLatestPush();
+  }, 60000);
 })();

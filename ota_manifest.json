@@ -1,34 +1,32 @@
 {
-  "otaVersion": 36,
-  "minApkCode": 42,
-  "generatedAt": "2026-11-25T00:22:20.221Z",
-  "changelog": "• Controle (Gamepad): desativa automaticamente o giroscópio ao conectar ou usar o controle",
-  "fileCount": 15,
-  "totalSize": 43190966,
+  "otaVersion": 37,
+  "minApkCodeForOta": 42,
+  "changelog": "• Notificações Push em tempo real direto do Painel Admin (banner no jogo)",
+  "totalBytes": 27500360,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "c3d6d9ce3d4f1b51b91acce519a59cfe67c7c0ddbccdd03fd3a21594561d19f0",
-      "size": 51584
+      "sha256": "f06ef45c5ec2e7f9506fd778f1293ceacebfdc092a8030d7edcc357de937679d",
+      "size": 51786
     },
     "js/audio_world.js": {
       "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "1ff28bd0bb6c05814a2f4253fb0e625d7e308ba09da61ed43faf629d71a7fb77",
-      "size": 407789
+      "sha256": "add5ea0a235d3cfb96e0aa4300a7af09af21b49a5210c2278e66803d1ab2348f",
+      "size": 406286
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "a7742f58b3368be3a71d4ed737251238f2ac1c11fccf2d2bbb6496305d857a02",
-      "size": 28326
+      "sha256": "ac7dc623b873287f56229b3ecf1cc7beb758cecb18353ea96fabb6a4fed86f3f",
+      "size": 30520
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",
@@ -46,10 +44,6 @@
       "sha256": "a4fc79a7e6a74a4f42192fca4d855e642a777f04696b909578a04b3b6e61c8ab",
       "size": 1223680
     },
-    "models/vehicles/ferrari_296_gt3.glb": {
-      "sha256": "2442da547c0e3e5bfc81b0e7fb546fd7eb805d449b1ec8b84ede5434f8f9cb74",
-      "size": 15693332
-    },
     "models/vehicles/saveiro_brasil.glb": {
       "sha256": "08efb607a12a9ff425ca8548bd2653c3542e54418c9236363939116a87ed6426",
       "size": 5652144
@@ -63,8 +57,11 @@
       "size": 1854040
     },
     "style.css": {
-      "sha256": "d520270a41e289e54233caca9d1831661a01845207c571cfbca98590d61dc664",
-      "size": 39187
+      "sha256": "e608040c39973a74167a954eee3dab97b96ffb149cec3f9746ece8c102a6a2b7",
+      "size": 41020
     }
-  }
+  },
+  "deleted": [
+    "models/vehicles/volkswagen_saveiro.glb"
+  ]
 }

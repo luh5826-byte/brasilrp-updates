@@ -1615,3 +1615,72 @@ body.gamepad-mode .weapon-phone-col {
 .m-btn.gold { background: linear-gradient(180deg, #ffd41f, #f59e0b); color: #0a0d14; }
 .m-btn.danger { background: linear-gradient(180deg, #ef4444, #b91c1c); color: #fff; }
 .m-sec-title { font-size: 9.5px; font-weight: 900; color: #94a3b8; letter-spacing: 0.7px; margin-top: 2px; }
+
+/* Notificação Push em destaque (Painel Admin -> Jogo) */
+.push-notify-box {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: min(440px, calc(100vw - 28px));
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(10, 15, 28, 0.96), rgba(17, 24, 39, 0.94));
+  border: 1.5px solid rgba(0, 229, 255, 0.65);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), 0 0 22px rgba(0, 229, 255, 0.22);
+  backdrop-filter: blur(10px);
+  color: #f8fafc;
+  animation: pushSlideIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: auto;
+}
+.push-notify-box.hidden { display: none !important; }
+.push-notify-icon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00e5ff, #0284c7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.35);
+}
+.push-notify-body { flex: 1; min-width: 0; }
+.push-notify-title {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  color: #38bdf8;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.push-notify-text {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: #f1f5f9;
+  word-break: break-word;
+}
+.push-notify-close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+@keyframes pushSlideIn {
+  from { opacity: 0; transform: translate(-50%, -18px) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
