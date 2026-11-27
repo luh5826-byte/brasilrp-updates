@@ -1,8 +1,8 @@
 {
-  "otaVersion": 41,
+  "otaVersion": 42,
   "minApkCodeForOta": 42,
-  "changelog": "• ID próprio fixo (BRP-XXXXXX) por usuário para controle no painel",
-  "totalBytes": 27518467,
+  "changelog": "• Sincroniza e recupera o ID próprio (BRP-XXXXXX) direto do servidor mesmo se limpar os dados",
+  "totalBytes": 27520220,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -25,12 +25,12 @@
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "1875fb211365c41574339c360586b466bd8fb08ef984033406d7baf3ab40be1e",
-      "size": 31421
+      "sha256": "e846093fa012d03c1a604749b4c17242f4fee73d8f88e51053640f4b931fc965",
+      "size": 31923
     },
     "js/telemetry_crash.js": {
-      "sha256": "81df7592aae66e3abfd31ee8d9c485ededa5767188c43283c82bbb50cdd95cbc",
-      "size": 17158
+      "sha256": "b7240877ddd2c2daf70c4ef9b55839127cd863687d93e3c0159fb3b1772483ce",
+      "size": 18409
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",

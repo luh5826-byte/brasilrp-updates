@@ -887,7 +887,26 @@
     });
   }
 
-  window.BrasilMP = { tick, connect, toggleVoice, getRemotePlayers, setMinimized, sendDeviceInfo };
+  function setDeviceId(newId) {
+    if (!newId) return;
+    deviceId = String(newId);
+    if (connected) {
+      const dev = window.BrasilDeviceInfo || {};
+      sendWS({
+        type: 'join',
+        name: playerName,
+        deviceId,
+        device: dev.device || undefined,
+        os: dev.os || undefined,
+        gpu: dev.gpu || undefined,
+        ramGb: dev.ramGb || undefined,
+        screen: dev.screen || undefined,
+        network: dev.network || undefined
+      });
+    }
+  }
+
+  window.BrasilMP = { tick, connect, toggleVoice, getRemotePlayers, setMinimized, sendDeviceInfo, setDeviceId };
   setTimeout(connect, 900);
   setTimeout(fetchLatestPush, 1800);
   setInterval(() => {

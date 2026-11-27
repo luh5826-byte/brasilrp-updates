@@ -164,6 +164,41 @@
   const specs = collectDeviceSpecs();
   window.BrasilDeviceInfo = specs;
 
+  // Sincroniza/recupera ID permanente no servidor (sobrevive mesmo se limpar localStorage)
+  (async function syncServerIdentity() {
+    try {
+      let hasSaved = false;
+      try {
+        const cur = localStorage.getItem(STORAGE_USER_UID) || '';
+        hasSaved = /^BRP-[A-Z0-9]{6}$/.test(cur);
+      } catch (_) {}
+      const res = await fetch(API_BASE + '/api/device/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentId: hasSaved ? specs.deviceId : '',
+          gpu: specs.gpu,
+          screen: specs.screen,
+          cpuCores: specs.cpuCores,
+          ramGb: specs.ramGb
+        })
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && data.userId && data.userId !== specs.deviceId) {
+        specs.deviceId = data.userId;
+        try {
+          localStorage.setItem(STORAGE_USER_UID, data.userId);
+          localStorage.setItem(STORAGE_DEVICE_ID, data.userId);
+        } catch (_) {}
+        if (window.BrasilMP && typeof window.BrasilMP.setDeviceId === 'function') {
+          window.BrasilMP.setDeviceId(data.userId);
+        }
+        sendDeviceSpecs('device_info');
+      }
+    } catch (_) {}
+  })();
+
   function getJsHeapMb() {
     try {
       if (performance && performance.memory && performance.memory.usedJSHeapSize) {
