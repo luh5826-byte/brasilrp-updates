@@ -1,8 +1,8 @@
 {
-  "otaVersion": 44,
+  "otaVersion": 45,
   "minApkCodeForOta": 42,
-  "changelog": "• Corrige pivô/excentricidade das rodas da Saveiro (alinhamento estilo Lexus) e adiciona abertura do capô no Lexus para ver o motor",
-  "totalBytes": 27530172,
+  "changelog": "• Abre somente a porta do lado correspondente (motorista/passageiro), reforça animação dos braços fechando a porta e ajusta limiter de FPS",
+  "totalBytes": 27530874,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -17,8 +17,8 @@
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "934ff7118c285ed0f6d4fe560fd8646710aa38ce37d9a03fcf611afa24b16ecb",
-      "size": 415940
+      "sha256": "aac34f25e5adbbc7dde25543fd0216442153f3d9dcf6d6cad3d2c433ba1f6b07",
+      "size": 416642
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",

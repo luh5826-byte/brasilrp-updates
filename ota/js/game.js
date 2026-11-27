@@ -3937,7 +3937,10 @@
 
     car.doorsOpen = false;
     car.doorAutoTimer = 0;
-    car.driverDoorAnimAngle = 0;
+    const isDrvSide = seat.doorSide === (car.parts && car.parts.driverSeatOffset ? (car.parts.driverSeatOffset.x >= 0 ? 1 : -1) : 1);
+    const useLeft = (car.parts && car.parts.driverIsLeftNode !== false) ? isDrvSide : !isDrvSide;
+    if (useLeft) car.leftDoorAnimAngle = 0;
+    else car.rightDoorAnimAngle = 0;
 
     carAccessAnim.active = true;
     carAccessAnim.mode = 'enter';
@@ -6421,7 +6424,7 @@
   function loop(now) {
     requestAnimationFrame(loop);
     const rawElapsed = now - lastTime;
-    if (targetFrameMs > 0 && rawElapsed < targetFrameMs * 0.85) return;
+    if (targetFrameMs > 0 && rawElapsed < Math.max(0, targetFrameMs - 2.0)) return;
     const dt = Math.min(0.05, rawElapsed / 1000);
     lastTime = now;
     if (oceanWarnCooldown > 0) oceanWarnCooldown -= dt;
@@ -6559,10 +6562,11 @@
     const st = (steerAngle || 0) * 0.45 * s;
     const duck = duckBlend * 0.36;
     const doorLeftArm = sideSign > 0; // LHD (+X) usa braço esquerdo para puxar a porta; RHD (-X) usa direito
-    const reachL = doorLeftArm ? (reachHandle * 0.95 + pullDoor * 0.75) : 0;
-    const reachR = !doorLeftArm ? (reachHandle * 0.95 + pullDoor * 0.75) : 0;
-    const pullSpreadL = doorLeftArm ? pullDoor * 0.65 : 0;
-    const pullSpreadR = !doorLeftArm ? pullDoor * 0.65 : 0;
+    const reachL = doorLeftArm ? (reachHandle * 1.10 + pullDoor * 0.95) : 0;
+    const reachR = !doorLeftArm ? (reachHandle * 1.10 + pullDoor * 0.95) : 0;
+    const pullSpreadL = doorLeftArm ? (pullDoor * 1.15 + reachHandle * 0.35) : 0;
+    const pullSpreadR = !doorLeftArm ? (pullDoor * 1.15 + reachHandle * 0.35) : 0;
+    const torsoTurnDoor = (pullDoor * 0.28 + reachHandle * 0.16) * sideSign;
 
     if (player.isDoa && player.bones && player.bones['pelvis_07']) {
       setBoneWorldDelta(player, 'spine_upper_025', duck, 0, 0);
@@ -6576,19 +6580,19 @@
       setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.48 * s - reachR * 0.35, 0, 0);
     } else if (player.isCustomChar && player.customRig) {
       const r = player.customRig;
-      if (r.spine) setBoneWorldDelta(player, r.spine, duck * 0.6, 0, 0);
-      if (r.chest) setBoneWorldDelta(player, r.chest, duck * 0.5, 0, 0);
+      if (r.spine) setBoneWorldDelta(player, r.spine, duck * 0.6, torsoTurnDoor * 0.5, 0);
+      if (r.chest) setBoneWorldDelta(player, r.chest, duck * 0.5, torsoTurnDoor * 0.5, 0);
       if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.46 * s, 0, 0);
       if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.46 * s, 0, 0);
       if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.48 * s, 0, 0);
       if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.48 * s, 0, 0);
       if (r.armL) setBoneWorldDelta(player, r.armL, (-0.86 + st) * s - reachL, 0, 0.12 + pullSpreadL);
       if (r.armR) setBoneWorldDelta(player, r.armR, (-0.86 - st) * s - reachR, 0, -0.12 - pullSpreadR);
-      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.46 * s - reachL * 0.3, 0, 0);
-      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.46 * s - reachR * 0.3, 0, 0);
+      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.46 * s - reachL * 0.45, 0, 0);
+      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.46 * s - reachR * 0.45, 0, 0);
     } else if (player.bones && player.bones.Hips) {
-      setBoneDelta(player, 'Spine', duck * 0.55, 0, 0);
-      setBoneDelta(player, 'Chest', duck * 0.45, 0, 0);
+      setBoneDelta(player, 'Spine', duck * 0.55, torsoTurnDoor * 0.5, 0);
+      setBoneDelta(player, 'Chest', duck * 0.45, torsoTurnDoor * 0.5, 0);
       setBoneDelta(player, 'ThighL', -1.46 * s, 0, 0);
       setBoneDelta(player, 'ThighR', -1.46 * s, 0, 0);
       setBoneDelta(player, 'ShinL', 1.48 * s, 0, 0);
@@ -6611,6 +6615,13 @@
       const baseSeat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
       const seat = ca.seat || { id: 'driver', x: baseSeat.x, y: baseSeat.y, z: baseSeat.z, standX: (baseSeat.x >= 0 ? 1 : -1) * 1.44, standZ: baseSeat.z - 0.05, doorSide: baseSeat.x >= 0 ? 1 : -1 };
       const sideSign = seat.doorSide || (seat.x >= 0 ? 1 : -1);
+      const drvSideSign = baseSeat.x >= 0 ? 1 : -1;
+      const isDrvSide = sideSign === drvSideSign;
+      const useLeftDoor = (car.parts && car.parts.driverIsLeftNode !== false) ? isDrvSide : !isDrvSide;
+      const setSeatDoorAngle = (ang) => {
+        if (useLeftDoor) car.leftDoorAnimAngle = ang;
+        else car.rightDoorAnimAngle = ang;
+      };
       const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
 
       const seatWX = car.pos.x + seat.x * cosY + seat.z * sinY;
@@ -6649,7 +6660,7 @@
             if (!isPaused) GtaRadio.start();
           }
         }
-        car.driverDoorAnimAngle = dAng;
+        setSeatDoorAngle(dAng);
 
         if (player.mesh) {
           player.mesh.visible = !player.firstPersonCar || u < 0.68;
@@ -6688,7 +6699,7 @@
 
         if (u >= 1.0) {
           ca.active = false;
-          car.driverDoorAnimAngle = 0;
+          setSeatDoorAngle(0);
         }
         return;
       } else {
@@ -6710,7 +6721,7 @@
             vibrate(32);
           }
         }
-        car.driverDoorAnimAngle = dAng;
+        setSeatDoorAngle(dAng);
 
         const outW = smoothStep01(0.20, 0.68, u);
         const sitBlend = 1.0 - outW;
@@ -6748,7 +6759,7 @@
 
         if (u >= 1.0) {
           ca.active = false;
-          car.driverDoorAnimAngle = 0;
+          setSeatDoorAngle(0);
           if (player.mesh) player.mesh.scale.setScalar(1.0);
         }
         return;
@@ -7898,10 +7909,8 @@
       }
       const targetDoor = v.doorsOpen ? 1.05 : 0.0;
       v.doorAngle += (targetDoor - v.doorAngle) * Math.min(1, dt * 8.5);
-      const drvAnimAng = v.driverDoorAnimAngle || 0;
-      const dLeftIsDrv = v.parts.driverIsLeftNode !== false;
-      const angL = dLeftIsDrv ? Math.max(v.doorAngle, drvAnimAng) : v.doorAngle;
-      const angR = !dLeftIsDrv ? Math.max(v.doorAngle, drvAnimAng) : v.doorAngle;
+      const angL = Math.max(v.doorAngle, v.leftDoorAnimAngle || 0);
+      const angR = Math.max(v.doorAngle, v.rightDoorAnimAngle || 0);
       if (v.parts.doorL) v.parts.doorL.rotation.y = (v.parts.doorLSign || -1) * angL;
       if (v.parts.doorR) v.parts.doorR.rotation.y = (v.parts.doorRSign || 1) * angR;
       if (v.parts.hood) {
@@ -7928,7 +7937,7 @@
         w.spinObj.rotation.x = (w.spinObj.rotation.x + spin) % (Math.PI * 2);
       });
 
-      const interiorLit = v.doorsOpen || (v.driverDoorAnimAngle > 0.06) || (v === player.inCar && v.lightsOn && v.doorsOpen);
+      const interiorLit = v.doorsOpen || (v.leftDoorAnimAngle > 0.06) || (v.rightDoorAnimAngle > 0.06) || (v === player.inCar && v.lightsOn && v.doorsOpen);
       const braking = (v === player.inCar) && (input.brake || padState.brake || keys['KeyS'] || keys['ArrowDown']);
       if (v.parts.headLightGroup) {
         v.parts.headLightGroup.visible = Boolean(v.lightsOn);
