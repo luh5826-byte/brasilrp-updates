@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 47,
+  "otaVersion": 48,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b6b108074dadd7aa1ec468e0ea4aea410ec2471c/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/b6b108074dadd7aa1ec468e0ea4aea410ec2471c/ota_manifest.json",
-  "otaChangelog": "• Serviço Policial PM-BR completo (algemar, revistar, viatura, interrogar, prender), personagem policial com rig 68 ossos, Viatura Crown Victoria, SWAT e kit na Delegacia"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/1a073f389a06e8510a3a1179534c2cf52ed6f90d/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/1a073f389a06e8510a3a1179534c2cf52ed6f90d/ota_manifest.json",
+  "otaChangelog": "• Inicia sempre com personagem civil, equipa farda PM-BR articulada ao aceitar serviço, libera revista/enquadro na NPC do Job e usa Viatura PM-BR com física Lexus"
 }
