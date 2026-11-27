@@ -3772,8 +3772,9 @@
     active: false,
     mode: 'enter', // 'enter' | 'exit'
     car: null,
+    seat: null,
     t: 0,
-    dur: 1.28,
+    dur: 1.15,
     startX: 0,
     startY: 0,
     startZ: 0,
@@ -3782,9 +3783,118 @@
     slamPlayed: false
   };
 
-  function enterVehicle(car) {
+  const carWalkApproach = {
+    active: false,
+    car: null,
+    seat: null,
+    waypoints: [],
+    wpIdx: 0,
+    timeout: 0
+  };
+
+  function getVehicleSeats(car) {
+    const base = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.35, y: -0.31, z: -0.22 };
+    const dx = base.x;
+    const dy = base.y;
+    const dz = base.z;
+    const sideSign = dx >= 0 ? 1 : -1;
+    const isSedan4Doors = car.type === 'lexus_lc_500_wald' || car.type === 'car_gol' || car.type === 'car_pm';
+    const seats = [
+      { id: 'driver', label: 'Motorista', x: dx, y: dy, z: dz, standX: sideSign * 1.44, standZ: dz - 0.05, doorSide: sideSign },
+      { id: 'front_pass', label: 'Passageiro', x: -dx, y: dy, z: dz, standX: -sideSign * 1.44, standZ: dz - 0.05, doorSide: -sideSign }
+    ];
+    if (isSedan4Doors) {
+      seats.push(
+        { id: 'rear_left', label: 'Banco Traseiro Esq.', x: dx, y: dy, z: dz - 0.80, standX: sideSign * 1.44, standZ: dz - 0.82, doorSide: sideSign },
+        { id: 'rear_right', label: 'Banco Traseiro Dir.', x: -dx, y: dy, z: dz - 0.80, standX: -sideSign * 1.44, standZ: dz - 0.82, doorSide: -sideSign },
+        { id: 'rear_mid', label: 'Banco Traseiro Centro', x: 0, y: dy, z: dz - 0.80, standX: -sideSign * 1.44, standZ: dz - 0.82, doorSide: -sideSign }
+      );
+    }
+    return seats;
+  }
+
+  function getOccupiedSeatIds(car) {
+    const occ = new Set();
+    if (window.BrasilMP && typeof window.BrasilMP.getRemotePlayers === 'function') {
+      const list = window.BrasilMP.getRemotePlayers();
+      for (let i = 0; i < list.length; i++) {
+        const rp = list[i];
+        if (!rp || !rp.inCar) continue;
+        const d = Math.hypot((rp.x || 0) - car.pos.x, (rp.z || 0) - car.pos.z);
+        if (d < 3.5) occ.add(rp.seatId || 'driver');
+      }
+    }
+    return occ;
+  }
+
+  function chooseSeatForPlayer(car) {
+    const seats = getVehicleSeats(car);
+    const occ = getOccupiedSeatIds(car);
+    const free = seats.filter((s) => !occ.has(s.id));
+    if (!free.length) return null;
+
+    const dx = player.pos.x - car.pos.x;
+    const dz = player.pos.z - car.pos.z;
+    const cosY = Math.cos(car.yaw), sinY = Math.sin(car.yaw);
+    const lx = dx * cosY - dz * sinY;
+    const lz = dx * sinY + dz * cosY;
+    const base = seats[0];
+    const sideSign = base.doorSide;
+    const onDriverSide = (lx * sideSign) >= -0.06;
+    const nearRear = seats.length > 2 && lz < (base.z - 0.36);
+
+    const priority = [];
+    if (nearRear) {
+      priority.push(onDriverSide ? 'rear_left' : 'rear_right', 'rear_mid', onDriverSide ? 'rear_right' : 'rear_left', onDriverSide ? 'driver' : 'front_pass', onDriverSide ? 'front_pass' : 'driver');
+    } else if (!onDriverSide) {
+      priority.push('front_pass', 'rear_right', 'rear_mid', 'rear_left', 'driver');
+    } else {
+      priority.push('driver', 'front_pass', 'rear_left', 'rear_right', 'rear_mid');
+    }
+    for (const pid of priority) {
+      const found = free.find((s) => s.id === pid);
+      if (found) return found;
+    }
+    return free[0];
+  }
+
+  function localCarToWorld(car, lx, lz) {
+    const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
+    const wx = car.pos.x + lx * cosY + lz * sinY;
+    const wz = car.pos.z - lx * sinY + lz * cosY;
+    return { x: wx, z: wz };
+  }
+
+  function buildCarApproachWaypoints(car, seat) {
+    const dx = player.pos.x - car.pos.x;
+    const dz = player.pos.z - car.pos.z;
+    const cosY = Math.cos(car.yaw), sinY = Math.sin(car.yaw);
+    const lx = dx * cosY - dz * sinY;
+    const lz = dx * sinY + dz * cosY;
+    const targetSide = seat.doorSide;
+    const pts = [];
+    const safeW = 1.52;
+    const safeL = 2.68;
+
+    // Se estiver do lado oposto ou atrás/na frente da caixa do carro, contorna pela extremidade mais próxima
+    if (lx * targetSide < 0.30) {
+      const curSide = lx >= 0 ? 1 : -1;
+      const goFront = lz >= -0.2;
+      const endZ = goFront ? safeL : -safeL;
+      if (Math.abs(lz) < safeL - 0.15) {
+        pts.push(localCarToWorld(car, curSide * safeW, endZ));
+      }
+      pts.push(localCarToWorld(car, targetSide * safeW, endZ));
+    }
+    pts.push(localCarToWorld(car, seat.standX, seat.standZ));
+    return pts;
+  }
+
+  function beginCarEnterAnimation(car, seat) {
     if (carAccessAnim.active) return;
+    carWalkApproach.active = false;
     player.inCar = car;
+    player.seat = seat;
     setSpin360Mode(false);
     if (ui.btnSpinPlayer) ui.btnSpinPlayer.classList.add('hidden');
     if (ui.btnFrontCam) ui.btnFrontCam.classList.add('hidden');
@@ -3797,8 +3907,9 @@
     carAccessAnim.active = true;
     carAccessAnim.mode = 'enter';
     carAccessAnim.car = car;
+    carAccessAnim.seat = seat;
     carAccessAnim.t = 0;
-    carAccessAnim.dur = 1.28;
+    carAccessAnim.dur = 1.05;
     carAccessAnim.startX = player.pos.x;
     carAccessAnim.startY = player.pos.y;
     carAccessAnim.startZ = player.pos.z;
@@ -3814,7 +3925,34 @@
     ui.btnCarCam.classList.toggle('on', player.firstPersonCar);
     input.camYaw = car.forwardSign > 0 ? (car.yaw + Math.PI) : car.yaw;
     vibrate(30);
-    showToast(`Entrando em: ${car.name}`);
+    showToast(seat.id === 'driver' ? `Entrando em: ${car.name}` : `🪑 Entrando como ${seat.label} • ${car.name}`);
+  }
+
+  function enterVehicle(car) {
+    if (carAccessAnim.active || player.inCar) return;
+    if (carWalkApproach.active && carWalkApproach.car === car) {
+      carWalkApproach.active = false;
+      showToast('Entrada cancelada');
+      return;
+    }
+    const seat = chooseSeatForPlayer(car);
+    if (!seat) {
+      const cap = getVehicleSeats(car).length;
+      showToast(`🚫 Veículo lotado (${cap}/${cap})!`);
+      return;
+    }
+    const doorPos = localCarToWorld(car, seat.standX, seat.standZ);
+    const distToDoor = Math.hypot(doorPos.x - player.pos.x, doorPos.z - player.pos.z);
+    if (distToDoor <= 0.45) {
+      beginCarEnterAnimation(car, seat);
+      return;
+    }
+    carWalkApproach.active = true;
+    carWalkApproach.car = car;
+    carWalkApproach.seat = seat;
+    carWalkApproach.waypoints = buildCarApproachWaypoints(car, seat);
+    carWalkApproach.wpIdx = 0;
+    carWalkApproach.timeout = 6.5;
   }
 
   function exitVehicle() {
@@ -3833,6 +3971,7 @@
     carAccessAnim.active = true;
     carAccessAnim.mode = 'exit';
     carAccessAnim.car = car;
+    carAccessAnim.seat = player.seat || getVehicleSeats(car)[0];
     carAccessAnim.t = 0;
     carAccessAnim.dur = 1.08;
     carAccessAnim.latchPlayed = true;
@@ -6324,11 +6463,15 @@
     const lockDriveForAnim = carAccessAnim.active && carAccessAnim.mode === 'enter' && (carAccessAnim.t / carAccessAnim.dur) < 0.78;
     if (!player.inCar) {
       if (!lockFootForAnim) updatePlayer(dt, jx, jy);
-    } else if (!lockDriveForAnim) {
+    } else if (!lockDriveForAnim && (!player.seat || player.seat.id === 'driver')) {
       updateDrivingApex(dt);
     } else {
-      player.inCar.vel.multiplyScalar(0.85);
-      player.inCar.speed *= 0.85;
+      if (!player.seat || player.seat.id === 'driver') {
+        player.inCar.vel.multiplyScalar(0.85);
+        player.inCar.speed *= 0.85;
+      } else {
+        AudioFX.updateEngine(false, 0);
+      }
       player.pos.copy(player.inCar.pos);
     }
 
@@ -6425,16 +6568,17 @@
       ca.t += dt;
       const u = Math.min(1, ca.t / ca.dur);
 
-      const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
-      const sideSign = seat.x >= 0 ? 1 : -1;
+      const baseSeat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
+      const seat = ca.seat || { id: 'driver', x: baseSeat.x, y: baseSeat.y, z: baseSeat.z, standX: (baseSeat.x >= 0 ? 1 : -1) * 1.44, standZ: baseSeat.z - 0.05, doorSide: baseSeat.x >= 0 ? 1 : -1 };
+      const sideSign = seat.doorSide || (seat.x >= 0 ? 1 : -1);
       const sinY = Math.sin(car.yaw), cosY = Math.cos(car.yaw);
 
       const seatWX = car.pos.x + seat.x * cosY + seat.z * sinY;
       const seatWY = car.pos.y + seat.y;
       const seatWZ = car.pos.z - seat.x * sinY + seat.z * cosY;
 
-      const standLocalX = sideSign * 1.44;
-      const standLocalZ = seat.z - 0.05;
+      const standLocalX = seat.standX !== undefined ? seat.standX : (sideSign * 1.44);
+      const standLocalZ = seat.standZ !== undefined ? seat.standZ : (seat.z - 0.05);
       const standWX = car.pos.x + standLocalX * cosY + standLocalZ * sinY;
       const standWZ = car.pos.z - standLocalX * sinY + standLocalZ * cosY;
       const standWY = getWalkableGround(standWX, standWZ, car.pos.y, 1.5) ?? car.pos.y;
@@ -6538,6 +6682,7 @@
           car.launchBoostTimer = 0;
           if (ui.burnoutBadge) ui.burnoutBadge.classList.add('hidden');
           player.inCar = null;
+          player.seat = null;
           player.pos.set(standWX, standWY + 0.05, standWZ);
           player.yaw = car.yaw + Math.PI;
           resolveMapWallCollision(player.pos, 0.55);
@@ -6574,7 +6719,7 @@
     if (!car || !player.mesh) return;
     player.mesh.visible = !player.firstPersonCar;
     if (!player.mesh.visible) return;
-    const seat = (car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.35, y: -0.31, z: -0.22 };
+    const seat = player.seat || ((car.parts && car.parts.driverSeatOffset) ? car.parts.driverSeatOffset : { x: 0.35, y: -0.31, z: -0.22 });
     car.mesh.updateMatrixWorld(true);
     const bodyRef = (car.parts && car.parts.chassis) ? car.parts.chassis : car.mesh;
     if (!window._seatWorldPos) {
@@ -6586,7 +6731,7 @@
     player.mesh.scale.setScalar(0.76);
     player.mesh.position.copy(window._seatWorldPos);
     player.mesh.quaternion.copy(window._seatWorldQuat);
-    applyDriverPoseBlend(1.0, 0, 0, 0, seat.x >= 0 ? 1 : -1, car.steerAngle);
+    applyDriverPoseBlend(1.0, 0, 0, 0, seat.x >= 0 ? 1 : -1, (!player.seat || player.seat.id === 'driver') ? car.steerAngle : 0);
   }
 
   // Colisão OBB retangular orientada (impede atravessar capô, portas e porta-malas de veículos!)
@@ -6706,7 +6851,42 @@
 
     let targetVx = 0, targetVz = 0;
     let yawDiffForLean = 0;
-    if (mag > 0.08) {
+    if (carWalkApproach.active) {
+      if (mag > 0.25) {
+        carWalkApproach.active = false;
+      } else {
+        carWalkApproach.timeout -= dt;
+        const tgt = carWalkApproach.waypoints[carWalkApproach.wpIdx];
+        if (!tgt || carWalkApproach.timeout <= 0) {
+          carWalkApproach.active = false;
+        } else {
+          const wdx = tgt.x - player.pos.x;
+          const wdz = tgt.z - player.pos.z;
+          const wdist = Math.hypot(wdx, wdz);
+          if (wdist < 0.28) {
+            carWalkApproach.wpIdx += 1;
+            if (carWalkApproach.wpIdx >= carWalkApproach.waypoints.length) {
+              const targetCar = carWalkApproach.car;
+              const targetSeat = carWalkApproach.seat;
+              carWalkApproach.active = false;
+              beginCarEnterAnimation(targetCar, targetSeat);
+              return;
+            }
+          } else {
+            const walkSpd = 4.35;
+            targetVx = (wdx / wdist) * walkSpd;
+            targetVz = (wdz / wdist) * walkSpd;
+            const moveAngle = Math.atan2(-wdx, -wdz);
+            let diff = moveAngle - player.yaw;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            yawDiffForLean = diff;
+            player.yaw += diff * Math.min(1, dt * 11.0);
+          }
+        }
+      }
+    }
+    if (!carWalkApproach.active && mag > 0.08) {
       const moveAngle = Math.atan2(-jx, -jy) + input.camYaw;
       const dirX = -Math.sin(moveAngle);
       const dirZ = -Math.cos(moveAngle);
@@ -6851,12 +7031,22 @@
     animateJobNpcBones(player, dt * animTimeScale, curHorizSpeed > 0.35);
 
     nearestCar = null;
-    let bestCDist = 4.3;
+    let bestCDist = 4.5;
     for (const v of vehicles) {
       const d = v.pos.distanceTo(player.pos);
       if (d < bestCDist) { bestCDist = d; nearestCar = v; }
     }
     ui.btnEnterCar.classList.toggle('hidden', !nearestCar);
+    if (nearestCar) {
+      const previewSeat = chooseSeatForPlayer(nearestCar);
+      const span = ui.btnEnterCar.querySelector('span');
+      if (span) {
+        if (!previewSeat) span.textContent = 'LOTADO';
+        else if (previewSeat.id === 'driver') span.textContent = 'ENTRAR';
+        else if (previewSeat.id === 'front_pass') span.textContent = 'CARONA';
+        else span.textContent = 'TRÁS';
+      }
+    }
 
     nearestProp = null;
     let bestPDist = 3.8;

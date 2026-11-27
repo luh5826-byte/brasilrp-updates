@@ -340,12 +340,14 @@
     if (Number.isFinite(p.rotY)) rp.targetRotY = p.rotY;
     rp.speed = p.speed || 0;
     rp.inCar = !!p.inCar;
+    rp.seatId = p.seatId || 'driver';
     rp.speaking = !!p.speaking;
 
-    if (rp.charState && rp.charState.mesh) rp.charState.mesh.visible = !rp.inCar;
-    if (rp.fallbackParts) rp.fallbackParts.root.visible = !rp.inCar;
-    if (rp.carVisual && rp.carVisual.mesh) rp.carVisual.mesh.visible = rp.inCar;
-    if (rp.labelSprite) rp.labelSprite.position.y = rp.inCar ? 2.35 : 2.05;
+    const showRemoteCar = rp.inCar && rp.seatId === 'driver';
+    if (rp.charState && rp.charState.mesh) rp.charState.mesh.visible = !showRemoteCar;
+    if (rp.fallbackParts) rp.fallbackParts.root.visible = !showRemoteCar;
+    if (rp.carVisual && rp.carVisual.mesh) rp.carVisual.mesh.visible = showRemoteCar;
+    if (rp.labelSprite) rp.labelSprite.position.y = showRemoteCar ? 2.35 : 2.05;
 
     const key = rp.name + '|' + (rp.speaking ? '1' : '0') + '|' + (rp.inCar ? '1' : '0');
     if (key !== rp.lastLabelKey) {
@@ -792,6 +794,7 @@
         rotY: Math.round(rotY * 1000) / 1000,
         speed: Math.round(speed * 10) / 10,
         inCar: !!p.inCar,
+        seatId: (p.seat && p.seat.id) ? p.seat.id : 'driver',
         speaking: isSpeaking
       });
     }
@@ -864,6 +867,7 @@
         y: rp.mesh.position.y,
         z: rp.mesh.position.z,
         inCar: rp.inCar,
+        seatId: rp.seatId || 'driver',
         speaking: rp.speaking
       });
     }

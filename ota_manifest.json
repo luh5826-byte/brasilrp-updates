@@ -1,8 +1,8 @@
 {
-  "otaVersion": 42,
+  "otaVersion": 43,
   "minApkCodeForOta": 42,
-  "changelog": "• Sincroniza e recupera o ID próprio (BRP-XXXXXX) direto do servidor mesmo se limpar os dados",
-  "totalBytes": 27520220,
+  "changelog": "• Caminhada real ao redor do carro até a porta, entrada como motorista/passageiro e lotação realista (5 lugares sedã / 2 esportivo)",
+  "totalBytes": 27528195,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -17,16 +17,16 @@
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "add5ea0a235d3cfb96e0aa4300a7af09af21b49a5210c2278e66803d1ab2348f",
-      "size": 406286
+      "sha256": "12480acb770ea30772b5344bbf70b95c99828e2855d63b5c8d33b2b75b5cd9cc",
+      "size": 414040
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "e846093fa012d03c1a604749b4c17242f4fee73d8f88e51053640f4b931fc965",
-      "size": 31923
+      "sha256": "ba16ca8c6c42d069cf141be58c9422b47dbf337e6a4cc58160679a18ba3dcf96",
+      "size": 32144
     },
     "js/telemetry_crash.js": {
       "sha256": "b7240877ddd2c2daf70c4ef9b55839127cd863687d93e3c0159fb3b1772483ce",
