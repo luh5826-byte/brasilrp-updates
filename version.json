@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 48,
+  "otaVersion": 49,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/1a073f389a06e8510a3a1179534c2cf52ed6f90d/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/1a073f389a06e8510a3a1179534c2cf52ed6f90d/ota_manifest.json",
-  "otaChangelog": "• Inicia sempre com personagem civil, equipa farda PM-BR articulada ao aceitar serviço, libera revista/enquadro na NPC do Job e usa Viatura PM-BR com física Lexus"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/f7d25a6117c708f83880d15d0d11a836240a495e/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/f7d25a6117c708f83880d15d0d11a836240a495e/ota_manifest.json",
+  "otaChangelog": "• Equipa colete tático, cinto com algemas, rádio e coldre no Cool Man em serviço PM-BR + algemas visuais no suspeito preso"
 }
