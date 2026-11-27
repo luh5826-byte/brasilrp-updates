@@ -41,20 +41,77 @@
     return (window.BrasilRPVersion && window.BrasilRPVersion.versionName) || '1.0.42';
   }
 
-  function getDeviceLabel() {
+  function getNativeDetails() {
+    try {
+      if (window.BrasilNative && typeof window.BrasilNative.getDeviceDetails === 'function') {
+        const raw = window.BrasilNative.getDeviceDetails();
+        if (raw) return JSON.parse(raw);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function getDeviceLabel(nativeInfo) {
+    if (nativeInfo && (nativeInfo.brand || nativeInfo.model)) {
+      const b = String(nativeInfo.brand || '').trim();
+      const m = String(nativeInfo.model || '').trim();
+      if (b && m && !m.toLowerCase().startsWith(b.toLowerCase())) return `${b} ${m}`.slice(0, 48);
+      return (m || b).slice(0, 48);
+    }
     const ua = navigator.userAgent || '';
     const m = ua.match(/Android\s+[^;)]+;\s*([^)]+)\)/i);
-    if (m && m[1]) return m[1].replace(/\s*Build\/.*/i, '').trim().slice(0, 44);
-    if (/Android/i.test(ua)) return 'Android Device';
+    if (m && m[1]) {
+      const cleaned = m[1].replace(/\s*Build\/.*/i, '').trim();
+      if (cleaned && cleaned !== 'K') return cleaned.slice(0, 44);
+    }
+    if (/Android/i.test(ua)) return 'Android (modelo oculto pelo WebView)';
     return navigator.platform || 'Web';
   }
 
-  function getOsLabel() {
+  function getOsLabel(nativeInfo) {
+    if (nativeInfo && nativeInfo.os) return String(nativeInfo.os).slice(0, 24);
     const ua = navigator.userAgent || '';
     const m = ua.match(/Android\s+([0-9.]+)/i);
     if (m) return 'Android ' + m[1];
     return /Android/i.test(ua) ? 'Android' : (navigator.platform || 'Web');
   }
+
+  function getNetworkInfo(nativeInfo) {
+    if (nativeInfo && nativeInfo.network && nativeInfo.network !== '-') {
+      return String(nativeInfo.network).slice(0, 24);
+    }
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!conn) return 'Desconhecida';
+    const rawType = String(conn.type || '').toLowerCase();
+    const eff = conn.effectiveType ? String(conn.effectiveType).toUpperCase() : '';
+    if (rawType === 'wifi') return eff ? `Wi-Fi (${eff})` : 'Wi-Fi';
+    if (rawType === 'cellular') return eff ? `Dados Móveis (${eff})` : 'Dados Móveis';
+    if (rawType === 'ethernet') return 'Ethernet';
+    if (rawType === 'none') return 'Sem Rede';
+    if (eff) return `Rede ${eff}${conn.downlink ? ' ' + conn.downlink + 'Mbps' : ''}`;
+    return 'Online';
+  }
+
+  function collectDeviceSpecs() {
+    const nat = getNativeDetails();
+    const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
+    return {
+      deviceId: getDeviceId(),
+      playerName: (localStorage.getItem(STORAGE_NAME_KEY) || 'Jogador').slice(0, 20),
+      appVersion: getAppVersion(),
+      device: getDeviceLabel(nat),
+      os: getOsLabel(nat),
+      gpu: getWebGLGpu(),
+      ramGb: (nat && nat.ramGb) ? nat.ramGb : (navigator.deviceMemory ? `${navigator.deviceMemory} GB` : '-'),
+      cpuCores: navigator.hardwareConcurrency || null,
+      screen: `${screen.width}x${screen.height} (${dpr}x)`,
+      network: getNetworkInfo(nat),
+      userAgent: (navigator.userAgent || '').slice(0, 220)
+    };
+  }
+
+  const specs = collectDeviceSpecs();
+  window.BrasilDeviceInfo = specs;
 
   function getJsHeapMb() {
     try {
@@ -65,38 +122,31 @@
     return null;
   }
 
-  function getNetworkInfo() {
-    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    if (!conn) return 'Desconhecida';
-    const rawType = String(conn.type || '').toLowerCase();
-    const eff = conn.effectiveType ? String(conn.effectiveType).toUpperCase() : '';
-    if (rawType === 'wifi') return eff ? `Wi-Fi (${eff})` : 'Wi-Fi';
-    if (rawType === 'cellular') return eff ? `Dados Móveis (${eff})` : 'Dados Móveis';
-    if (rawType === 'ethernet') return 'Ethernet';
-    if (rawType === 'none') return 'Sem Rede';
-    if (eff) return `Rede (${eff})`;
-    return 'Online';
-  }
-
-  function collectDeviceSpecs() {
-    const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
-    return {
-      deviceId: getDeviceId(),
-      playerName: (localStorage.getItem(STORAGE_NAME_KEY) || 'Jogador').slice(0, 20),
-      appVersion: getAppVersion(),
-      device: getDeviceLabel(),
-      os: getOsLabel(),
-      gpu: getWebGLGpu(),
-      ramGb: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : '-',
-      cpuCores: navigator.hardwareConcurrency || null,
-      screen: `${screen.width}x${screen.height} (${dpr}x)`,
-      network: getNetworkInfo(),
-      userAgent: (navigator.userAgent || '').slice(0, 220)
-    };
-  }
-
-  const specs = collectDeviceSpecs();
-  window.BrasilDeviceInfo = specs;
+  // Tenta extrair modelo e versao reais do Android via Client Hints (quando UA vem mascarado como "K")
+  try {
+    if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+      navigator.userAgentData.getHighEntropyValues(['model', 'platformVersion']).then((ua) => {
+        let changed = false;
+        if (ua && ua.model && (!specs.device || specs.device.includes('oculto') || specs.device === 'Android Device')) {
+          specs.device = String(ua.model).trim().slice(0, 48);
+          changed = true;
+        }
+        if (ua && ua.platformVersion) {
+          const major = String(ua.platformVersion).split('.')[0];
+          if (major && Number(major) > 0) {
+            specs.os = 'Android ' + major;
+            changed = true;
+          }
+        }
+        if (changed) {
+          sendDeviceSpecs('device_info');
+          if (window.BrasilMP && typeof window.BrasilMP.sendDeviceInfo === 'function') {
+            window.BrasilMP.sendDeviceInfo(specs);
+          }
+        }
+      }).catch(() => {});
+    }
+  } catch (_) {}
 
   let reportsSentThisSession = 0;
   const lastSentByKind = {};
@@ -215,16 +265,67 @@
     if (!document.hidden) saveAliveState(false);
   }, 3000);
 
+  function notifyLifecycle(evName, beaconOnly) {
+    try {
+      const nat = getNativeDetails();
+      specs.network = getNetworkInfo(nat);
+      specs.playerName = (localStorage.getItem(STORAGE_NAME_KEY) || specs.playerName || 'Jogador').slice(0, 20);
+      const body = JSON.stringify(Object.assign({ event: evName }, specs));
+      if (beaconOnly && navigator.sendBeacon) {
+        navigator.sendBeacon(API_BASE + '/api/track', new Blob([body], { type: 'application/json' }));
+        return;
+      }
+      fetch(API_BASE + '/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
+  function handleBackground() {
+    saveAliveState(false);
+    if (window.BrasilMP && typeof window.BrasilMP.setMinimized === 'function') {
+      window.BrasilMP.setMinimized(true);
+    }
+    notifyLifecycle('app_minimized', true);
+  }
+
+  function handleForeground() {
+    saveAliveState(false);
+    if (window.BrasilMP && typeof window.BrasilMP.setMinimized === 'function') {
+      window.BrasilMP.setMinimized(false);
+    }
+    if (window.BrasilMP && typeof window.BrasilMP.connect === 'function') {
+      window.BrasilMP.connect();
+    }
+    notifyLifecycle('app_resumed', false);
+  }
+
+  const prevBg = window.onAppBackground;
+  window.onAppBackground = function () {
+    if (typeof prevBg === 'function') try { prevBg(); } catch (_) {}
+    handleBackground();
+  };
+  const prevFg = window.onAppForeground;
+  window.onAppForeground = function () {
+    if (typeof prevFg === 'function') try { prevFg(); } catch (_) {}
+    handleForeground();
+  };
+
   document.addEventListener('visibilitychange', () => {
-    saveAliveState(document.hidden);
+    if (document.hidden) handleBackground();
+    else handleForeground();
   });
-  window.addEventListener('pagehide', () => saveAliveState(true));
-  window.addEventListener('beforeunload', () => saveAliveState(true));
+  window.addEventListener('pagehide', () => { saveAliveState(true); notifyLifecycle('app_closed', true); });
+  window.addEventListener('beforeunload', () => { saveAliveState(true); notifyLifecycle('app_closed', true); });
 
   // 2. Envia abertura do jogo com dados completos do aparelho para o painel
   function sendDeviceSpecs(evName) {
     try {
-      specs.network = getNetworkInfo();
+      const nat = getNativeDetails();
+      specs.network = getNetworkInfo(nat);
       specs.playerName = (localStorage.getItem(STORAGE_NAME_KEY) || specs.playerName || 'Jogador').slice(0, 20);
       specs.appVersion = getAppVersion();
       fetch(API_BASE + '/api/track', {

@@ -867,7 +867,24 @@
     return arr;
   }
 
-  window.BrasilMP = { tick, connect, toggleVoice, getRemotePlayers };
+  function setMinimized(minimized) {
+    sendWS({ type: 'app_state', minimized: !!minimized });
+  }
+
+  function sendDeviceInfo(specs) {
+    if (!specs) return;
+    sendWS({
+      type: 'device_info',
+      device: specs.device,
+      os: specs.os,
+      gpu: specs.gpu,
+      ramGb: specs.ramGb,
+      screen: specs.screen,
+      network: specs.network
+    });
+  }
+
+  window.BrasilMP = { tick, connect, toggleVoice, getRemotePlayers, setMinimized, sendDeviceInfo };
   setTimeout(connect, 900);
   setTimeout(fetchLatestPush, 1800);
   setInterval(() => {

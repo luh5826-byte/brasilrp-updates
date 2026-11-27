@@ -1,8 +1,8 @@
 {
-  "otaVersion": 39,
+  "otaVersion": 40,
   "minApkCodeForOta": 42,
-  "changelog": "• Envio contínuo de dados do aparelho (GPU, RAM, Tela) e tipo de rede (Wi-Fi / Dados Móveis) para o painel",
-  "totalBytes": 27512250,
+  "changelog": "• Mantém jogador visível no painel como Minimizado ao sair para segundo plano e extrai modelo real via Client Hints",
+  "totalBytes": 27516627,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -25,12 +25,12 @@
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "1da225ded03ba45f4ea06b54bfb7bde29205db8a0c597623c5085226cb0b2a22",
-      "size": 30857
+      "sha256": "d72f249cfb05a85531340444a9bc1bf93b08f630b79e828f2df4ef94d15f7217",
+      "size": 31253
     },
     "js/telemetry_crash.js": {
-      "sha256": "5179cb5cc6c648a2b5b2ced5dcfe587743d8217c7a11679acb3c8cb8521b6c4d",
-      "size": 11505
+      "sha256": "d792c4b3a01df4d17f8a81fd9f4f6b5a6ecb801c51a5b8a087422c7241441b5e",
+      "size": 15486
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",
