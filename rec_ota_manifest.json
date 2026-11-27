@@ -1,9 +1,9 @@
 {
   "app": "rec_ptbr",
-  "patch_version": 9,
-  "version_name": "0.6.0.1.1-ptbr-p9",
-  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v9.zip",
-  "changelog": "Popup Sobre a Traducao padronizada em ingles por padrao com botao tradutor ao lado do titulo + base PT-BR auditada",
+  "patch_version": 10,
+  "version_name": "0.6.0.1.1-ptbr-p10",
+  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v10.zip",
+  "changelog": "Verificacao e instalacao automatica de patch OTA 2.5s apos abrir o jogo + base PT-BR cumulativa",
   "telegram_url": "https://t.me/hentaigamestranslated",
   "cumulative": true
 }
