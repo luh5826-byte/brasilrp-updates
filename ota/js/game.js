@@ -2586,7 +2586,7 @@
   let _flareQuadGeo = null;
   function setupCarHierarchy(carObj, forwardPlusZ) {
     const parts = {
-      chassis: null, doorL: null, doorR: null, steeringWheel: null,
+      chassis: null, doorL: null, doorR: null, hood: null, steeringWheel: null,
       doorLSign: -1, doorRSign: 1,
       wheels: [], lightB: null, lightR: null,
       headMats: [], tailMats: [], intLightMats: [], paintMats: [],
@@ -2625,6 +2625,7 @@
       if (c.name === 'Chassis') parts.chassis = c;
       if (c.name === 'DoorL') parts.doorL = c;
       if (c.name === 'DoorR') parts.doorR = c;
+      if (c.name === 'CarHood') parts.hood = c;
       if (c.name === 'SteeringWheel' || /^STEER_HR/i.test(c.name)) {
         if (!parts.steeringWheel) {
           parts.steeringWheel = c;
@@ -2775,31 +2776,35 @@
     carObj.rotation.order = 'YXZ';
     carObj.updateMatrixWorld(true);
 
-    // 1. Re-ancora as 4 rodas diretamente em carObj (com curso independente de suspensão vertical!)
+    // 1. Re-ancora as 4 rodas diretamente em carObj pelo centro geométrico REAL (corrige excentricidade e desnível da Saveiro!)
     const wheelPivotsSet = new Set();
     let minWZ = 1e9, maxWZ = -1e9, minWX = 1e9, maxWX = -1e9;
+    const _wBox = new THREE.Box3();
+    const _wCenter = new THREE.Vector3();
     wheelNodes.forEach((wn) => {
-      const parent = wn.parent;
+      wn.updateMatrixWorld(true);
+      _wBox.setFromObject(wn);
       const steerPivot = new THREE.Group();
       steerPivot.name = wn.name + '_SuspPivot';
       steerPivot.rotation.order = 'YXZ';
-      steerPivot.position.copy(wn.position);
-      parent.add(steerPivot);
-      parent.remove(wn);
+      if (!_wBox.isEmpty()) {
+        _wBox.getCenter(_wCenter);
+        carObj.worldToLocal(_wCenter);
+        steerPivot.position.copy(_wCenter);
+      } else {
+        wn.getWorldPosition(_wCenter);
+        carObj.worldToLocal(_wCenter);
+        steerPivot.position.copy(_wCenter);
+      }
+      carObj.add(steerPivot);
 
       const spinGroup = new THREE.Group();
       spinGroup.position.set(0, 0, 0);
       steerPivot.add(spinGroup);
-
-      wn.position.set(0, 0, 0);
-      // Preserva a rotação/orientação original do GLB na roda (não zera wn.rotation!)
-      spinGroup.add(wn);
-
-      // Anexa steerPivot direto na raiz do veículo para que carroceria/portas balancem na suspensão sem descolar as rodas
       steerPivot.updateMatrixWorld(true);
-      if (steerPivot.parent !== carObj) {
-        carObj.attach(steerPivot);
-      }
+
+      // Anexa wn mantendo posição mundial -> centro geométrico exato da roda fica em (0,0,0) do spinGroup!
+      spinGroup.attach(wn);
       wheelPivotsSet.add(steerPivot);
 
       const lx = steerPivot.position.x;
@@ -2822,6 +2827,18 @@
         suspVel: 0
       });
     });
+
+    // Nivela altura e largura simétrica por eixo (evita Saveiro torta ou quicando por assimetria do GLB)
+    const frontWheels = parts.wheels.filter((w) => w.front);
+    const rearWheels = parts.wheels.filter((w) => !w.front);
+    if (frontWheels.length === 2) {
+      const avgY = (frontWheels[0].baseY + frontWheels[1].baseY) * 0.5;
+      frontWheels.forEach((w) => { w.baseY = avgY; w.steerPivot.position.y = avgY; });
+    }
+    if (rearWheels.length === 2) {
+      const avgY = (rearWheels[0].baseY + rearWheels[1].baseY) * 0.5;
+      rearWheels.forEach((w) => { w.baseY = avgY; w.steerPivot.position.y = avgY; });
+    }
 
     parts.wheelBase = (maxWZ > minWZ && maxWZ - minWZ > 1.2) ? (maxWZ - minWZ) : 2.68;
     parts.trackWidth = (maxWX > minWX && maxWX - minWX > 0.8) ? (maxWX - minWX) : 1.56;
@@ -2986,7 +3003,8 @@
       { re: /^WHEEL_LR/i, target: 'WheelRL', mode: 'wheel' },
       { re: /^WHEEL_RR/i, target: 'WheelRR', mode: 'wheel' },
       { re: /^L_Door/i, target: 'DoorL', mode: 'door' },
-      { re: /^R_door/i, target: 'DoorR', mode: 'door' }
+      { re: /^R_door/i, target: 'DoorR', mode: 'door' },
+      { re: /^Hood/i, target: 'CarHood', mode: 'hood' }
     ];
     const matWheelRules = [
       { re: /^(rim|tire)_FL$/i, target: 'WheelFL' },
@@ -3032,6 +3050,10 @@
       if (mode === 'door') {
         pivotWorld.x = pCenter.x >= 0 ? pBox.max.x : pBox.min.x;
         pivotWorld.z = pBox.max.z;
+      } else if (mode === 'hood') {
+        pivotWorld.x = pCenter.x;
+        pivotWorld.y = pBox.max.y;
+        pivotWorld.z = pBox.min.z;
       }
       const pivot = new THREE.Group();
       pivot.name = targetName;
@@ -3043,7 +3065,7 @@
     });
 
     wrapper.add(chassis);
-    const keepSeparate = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'SteeringWheel', 'LightBlue', 'LightRed']);
+    const keepSeparate = new Set(['WheelFL', 'WheelFR', 'WheelRL', 'WheelRR', 'DoorL', 'DoorR', 'CarHood', 'SteeringWheel', 'LightBlue', 'LightRed']);
     mergeStaticMeshesByMaterial(chassis, keepSeparate);
     groupedParts.forEach((_, targetName) => {
       const partObj = chassis.getObjectByName(targetName);
@@ -3097,6 +3119,8 @@
       doorsOpen: false,
       doorAngle: 0,
       doorAutoTimer: 0,
+      hoodOpen: false,
+      hoodAngle: 0,
       lightsOn: true,
       sirenOn: false,
       reverseHoldTimer: 0,
@@ -3746,6 +3770,17 @@
     showToast(c.doorsOpen ? '🚪 Portas abertas (Luz interna ON)' : '🚪 Portas fechadas');
   };
 
+  if (el('btnCarHood')) {
+    el('btnCarHood').onclick = () => {
+      const c = player.inCar;
+      if (!c || !c.parts || !c.parts.hood) return;
+      c.hoodOpen = !c.hoodOpen;
+      el('btnCarHood').classList.toggle('on', c.hoodOpen);
+      AudioFX.doorLatch();
+      showToast(c.hoodOpen ? '🔧 Capô aberto — motor à vista!' : '🔧 Capô fechado');
+    };
+  }
+
   ui.btnCarLights.onclick = () => {
     const c = player.inCar;
     if (!c) return;
@@ -3922,6 +3957,11 @@
     ui.speedBox.classList.remove('hidden');
     ui.btnCarLights.classList.toggle('on', car.lightsOn);
     ui.btnCarDoors.classList.remove('on');
+    if (el('btnCarHood')) {
+      const hasHood = !!(car.parts && car.parts.hood);
+      el('btnCarHood').classList.toggle('hidden', !hasHood);
+      el('btnCarHood').classList.toggle('on', !!car.hoodOpen);
+    }
     ui.btnCarCam.classList.toggle('on', player.firstPersonCar);
     input.camYaw = car.forwardSign > 0 ? (car.yaw + Math.PI) : car.yaw;
     vibrate(30);
@@ -7864,6 +7904,11 @@
       const angR = !dLeftIsDrv ? Math.max(v.doorAngle, drvAnimAng) : v.doorAngle;
       if (v.parts.doorL) v.parts.doorL.rotation.y = (v.parts.doorLSign || -1) * angL;
       if (v.parts.doorR) v.parts.doorR.rotation.y = (v.parts.doorRSign || 1) * angR;
+      if (v.parts.hood) {
+        const targetHood = v.hoodOpen ? -0.78 : 0.0;
+        v.hoodAngle = (v.hoodAngle || 0) + (targetHood - (v.hoodAngle || 0)) * Math.min(1, dt * 7.5);
+        v.parts.hood.rotation.x = v.hoodAngle;
+      }
 
       if (v.parts.steeringWheel) {
         _steerWheelQuat.setFromAxisAngle(_steerWheelAxis, v.steerAngle * 2.2);

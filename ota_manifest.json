@@ -1,24 +1,24 @@
 {
-  "otaVersion": 43,
+  "otaVersion": 44,
   "minApkCodeForOta": 42,
-  "changelog": "• Caminhada real ao redor do carro até a porta, entrada como motorista/passageiro e lotação realista (5 lugares sedã / 2 esportivo)",
-  "totalBytes": 27528195,
+  "changelog": "• Corrige pivô/excentricidade das rodas da Saveiro (alinhamento estilo Lexus) e adiciona abertura do capô no Lexus para ver o motor",
+  "totalBytes": 27530172,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "c10436e8dcba99868825dcf2d9a220df35a4a910f02654120eb114166e61dcdb",
-      "size": 51834
+      "sha256": "5a54395d2c6bb0e01af54eeab22c58da45925b287020d10b8c3b459466d42648",
+      "size": 51911
     },
     "js/audio_world.js": {
       "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "12480acb770ea30772b5344bbf70b95c99828e2855d63b5c8d33b2b75b5cd9cc",
-      "size": 414040
+      "sha256": "934ff7118c285ed0f6d4fe560fd8646710aa38ce37d9a03fcf611afa24b16ecb",
+      "size": 415940
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
