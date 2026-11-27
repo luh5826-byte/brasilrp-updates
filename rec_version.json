@@ -1,11 +1,11 @@
 {
   "app": "rec_ptbr",
   "baseGameVersion": "0.6.0.1.1",
-  "otaVersion": 7,
-  "versionName": "0.6.0.1.1-ptbr-p7",
+  "otaVersion": 8,
+  "versionName": "0.6.0.1.1-ptbr-p8",
   "translator": "DeveSerBug",
   "telegram": "https://t.me/hentaigamestranslated",
   "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/",
   "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota_manifest.json",
-  "otaChangelog": "Correcao definitiva da traducao PT-BR (dialogos, botoes do menu com contexto Button/Label, avisos iniciais), popup em ingles com icone tradutor ao lado do titulo e auto-reinicio apos OTA"
+  "otaChangelog": "Sincronizacao completa da base PT-BR auditada (107 linhas [color=...] corrigidas nos 60 dialogos + catalogo rec_translations.pt_BR.translation atualizado) para OTA cumulativo"
 }
