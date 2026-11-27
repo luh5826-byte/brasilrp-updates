@@ -3017,7 +3017,15 @@
       if (obj.name) {
         for (const rule of partRules) {
           if (rule.re.test(obj.name)) {
-            if (!groupedParts.has(rule.target)) groupedParts.set(rule.target, { objs: [obj], mode: rule.mode });
+            if (!groupedParts.has(rule.target)) groupedParts.set(rule.target, { objs: [], mode: rule.mode });
+            const entry = groupedParts.get(rule.target);
+            let hasAncestor = false;
+            let curP = obj.parent;
+            while (curP) {
+              if (entry.objs.includes(curP)) { hasAncestor = true; break; }
+              curP = curP.parent;
+            }
+            if (!hasAncestor && !entry.objs.includes(obj)) entry.objs.push(obj);
             return;
           }
         }
@@ -3850,6 +3858,12 @@
 
   function getOccupiedSeatIds(car) {
     const occ = new Set();
+    if (player.inCar === car && player.seat && player.seat.id) {
+      occ.add(player.seat.id);
+    }
+    if (jobNpcRef && !jobNpcRef.dead && jobNpcRef.inCar === car && jobNpcRef.seat && jobNpcRef.seat.id) {
+      occ.add(jobNpcRef.seat.id);
+    }
     if (window.BrasilMP && typeof window.BrasilMP.getRemotePlayers === 'function') {
       const list = window.BrasilMP.getRemotePlayers();
       for (let i = 0; i < list.length; i++) {
@@ -3860,6 +3874,39 @@
       }
     }
     return occ;
+  }
+
+  function orderJobNpcBoardCar(car) {
+    if (!jobNpcRef || jobNpcRef.dead || !car) return;
+    if (jobNpcRef.inCar === car || jobNpcRef.carTarget === car) return;
+    const seats = getVehicleSeats(car);
+    const occ = getOccupiedSeatIds(car);
+    const passSeat = seats.find((s) => s.id !== 'driver' && !occ.has(s.id));
+    if (!passSeat) return;
+    jobNpcRef.carTarget = car;
+    jobNpcRef.carSeatTarget = passSeat;
+    jobNpcRef.carAnim = null;
+    jobNpcRef.followingPlayer = true;
+    jobNpcRef.summoned = false;
+  }
+
+  function orderJobNpcExitCar() {
+    if (!jobNpcRef || !jobNpcRef.inCar) return;
+    const car = jobNpcRef.inCar;
+    const seat = jobNpcRef.seat || getVehicleSeats(car)[1] || getVehicleSeats(car)[0];
+    const standPos = localCarToWorld(car, seat.standX, seat.standZ);
+    const gy = getWalkableGround(standPos.x, standPos.z, car.pos.y, 1.5) ?? car.pos.y;
+    jobNpcRef.inCar = null;
+    jobNpcRef.seat = null;
+    jobNpcRef.carTarget = null;
+    jobNpcRef.carSeatTarget = null;
+    jobNpcRef.carAnim = null;
+    jobNpcRef.pos.set(standPos.x, gy + 0.05, standPos.z);
+    if (jobNpcRef.mesh) {
+      jobNpcRef.mesh.scale.setScalar(1.0);
+      jobNpcRef.mesh.position.copy(jobNpcRef.pos);
+    }
+    jobNpcRef.followingPlayer = true;
   }
 
   function chooseSeatForPlayer(car) {
@@ -3969,6 +4016,11 @@
     input.camYaw = car.forwardSign > 0 ? (car.yaw + Math.PI) : car.yaw;
     vibrate(30);
     showToast(seat.id === 'driver' ? `Entrando em: ${car.name}` : `🪑 Entrando como ${seat.label} • ${car.name}`);
+    if (jobNpcRef && !jobNpcRef.dead && (jobNpcRef.followingPlayer || jobNpcRef.summoned || jobNpcRef.pos.distanceTo(car.pos) < 14)) {
+      if (jobNpcRef.followingPlayer || jobNpcRef.summoned) {
+        orderJobNpcBoardCar(car);
+      }
+    }
   }
 
   function enterVehicle(car) {
@@ -4020,6 +4072,9 @@
     carAccessAnim.latchPlayed = true;
     carAccessAnim.slamPlayed = false;
     AudioFX.doorLatch();
+    if (jobNpcRef && jobNpcRef.inCar === car) {
+      setTimeout(orderJobNpcExitCar, 450);
+    }
 
     ui.carControls.classList.add('hidden');
     ui.footControls.classList.remove('hidden');
@@ -4181,7 +4236,13 @@
       showToast(`⚡ Limite: ${btn.textContent}`);
     };
   });
-  if (el('btnCarHorn')) el('btnCarHorn').onclick = () => AudioFX.horn();
+  if (el('btnCarHorn')) el('btnCarHorn').onclick = () => {
+    AudioFX.horn();
+    if (player.inCar && jobNpcRef && !jobNpcRef.dead && !jobNpcRef.inCar && jobNpcRef.pos.distanceTo(player.inCar.pos) < 28) {
+      orderJobNpcBoardCar(player.inCar);
+      showToast('💃 Chamando acompanhante para o carro!');
+    }
+  };
   if (el('btnCarRadio')) el('btnCarRadio').onclick = () => GtaRadio.next();
   document.querySelectorAll('#dist-pills .pill-btn').forEach((btn) => {
     btn.onclick = () => {
@@ -6557,7 +6618,7 @@
     return a + d * t;
   }
 
-  function applyDriverPoseBlend(sitBlend, duckBlend, reachHandle, pullDoor, sideSign, steerAngle) {
+  function applyDriverPoseBlend(sitBlend, duckBlend, reachHandle, pullDoor, sideSign, steerAngle, targetEnt = player) {
     const s = Math.max(0, Math.min(1, sitBlend));
     const st = (steerAngle || 0) * 0.45 * s;
     const duck = duckBlend * 0.36;
@@ -6568,39 +6629,39 @@
     const pullSpreadR = !doorLeftArm ? (pullDoor * 1.15 + reachHandle * 0.35) : 0;
     const torsoTurnDoor = (pullDoor * 0.28 + reachHandle * 0.16) * sideSign;
 
-    if (player.isDoa && player.bones && player.bones['pelvis_07']) {
-      setBoneWorldDelta(player, 'spine_upper_025', duck, 0, 0);
-      setBoneWorldDelta(player, 'leg_left_thigh_08', -1.46 * s, 0, -0.18);
-      setBoneWorldDelta(player, 'leg_right_thigh_015', -1.46 * s, 0, 0.18);
-      setBoneWorldDelta(player, 'leg_left_knee_09', 1.48 * s, 0, 0);
-      setBoneWorldDelta(player, 'leg_right_knee_016', 1.48 * s, 0, 0);
-      setBoneWorldDelta(player, 'arm_left_shoulder_2_0266', (-0.88 + st) * s - reachL, 0, -0.52 - pullSpreadL);
-      setBoneWorldDelta(player, 'arm_right_shoulder_2_0292', (-0.88 - st) * s - reachR, 0, 0.52 + pullSpreadR);
-      setBoneWorldDelta(player, 'arm_left_elbow_0267', -0.48 * s - reachL * 0.35, 0, 0);
-      setBoneWorldDelta(player, 'arm_right_elbow_0293', -0.48 * s - reachR * 0.35, 0, 0);
-    } else if (player.isCustomChar && player.customRig) {
-      const r = player.customRig;
-      if (r.spine) setBoneWorldDelta(player, r.spine, duck * 0.6, torsoTurnDoor * 0.5, 0);
-      if (r.chest) setBoneWorldDelta(player, r.chest, duck * 0.5, torsoTurnDoor * 0.5, 0);
-      if (r.thighL) setBoneWorldDelta(player, r.thighL, -1.46 * s, 0, 0);
-      if (r.thighR) setBoneWorldDelta(player, r.thighR, -1.46 * s, 0, 0);
-      if (r.calfL) setBoneWorldDelta(player, r.calfL, 1.48 * s, 0, 0);
-      if (r.calfR) setBoneWorldDelta(player, r.calfR, 1.48 * s, 0, 0);
-      if (r.armL) setBoneWorldDelta(player, r.armL, (-0.86 + st) * s - reachL, 0, 0.12 + pullSpreadL);
-      if (r.armR) setBoneWorldDelta(player, r.armR, (-0.86 - st) * s - reachR, 0, -0.12 - pullSpreadR);
-      if (r.foreL) setBoneWorldDelta(player, r.foreL, -0.46 * s - reachL * 0.45, 0, 0);
-      if (r.foreR) setBoneWorldDelta(player, r.foreR, -0.46 * s - reachR * 0.45, 0, 0);
-    } else if (player.bones && player.bones.Hips) {
-      setBoneDelta(player, 'Spine', duck * 0.55, torsoTurnDoor * 0.5, 0);
-      setBoneDelta(player, 'Chest', duck * 0.45, torsoTurnDoor * 0.5, 0);
-      setBoneDelta(player, 'ThighL', -1.46 * s, 0, 0);
-      setBoneDelta(player, 'ThighR', -1.46 * s, 0, 0);
-      setBoneDelta(player, 'ShinL', 1.48 * s, 0, 0);
-      setBoneDelta(player, 'ShinR', 1.48 * s, 0, 0);
-      setBoneDelta(player, 'UpperArmL', (-0.88 + st) * s - reachL, 0, 0.22 + pullSpreadL);
-      setBoneDelta(player, 'UpperArmR', (-0.88 - st) * s - reachR, 0, -0.22 - pullSpreadR);
-      setBoneDelta(player, 'ForeArmL', -0.46 * s - reachL * 0.3, 0, 0.15);
-      setBoneDelta(player, 'ForeArmR', -0.46 * s - reachR * 0.3, 0, -0.15);
+    if (targetEnt.isDoa && targetEnt.bones && targetEnt.bones['pelvis_07']) {
+      setBoneWorldDelta(targetEnt, 'spine_upper_025', duck, 0, 0);
+      setBoneWorldDelta(targetEnt, 'leg_left_thigh_08', -1.46 * s, 0, -0.18);
+      setBoneWorldDelta(targetEnt, 'leg_right_thigh_015', -1.46 * s, 0, 0.18);
+      setBoneWorldDelta(targetEnt, 'leg_left_knee_09', 1.48 * s, 0, 0);
+      setBoneWorldDelta(targetEnt, 'leg_right_knee_016', 1.48 * s, 0, 0);
+      setBoneWorldDelta(targetEnt, 'arm_left_shoulder_2_0266', (-0.88 + st) * s - reachL, 0, -0.52 - pullSpreadL);
+      setBoneWorldDelta(targetEnt, 'arm_right_shoulder_2_0292', (-0.88 - st) * s - reachR, 0, 0.52 + pullSpreadR);
+      setBoneWorldDelta(targetEnt, 'arm_left_elbow_0267', -0.48 * s - reachL * 0.35, 0, 0);
+      setBoneWorldDelta(targetEnt, 'arm_right_elbow_0293', -0.48 * s - reachR * 0.35, 0, 0);
+    } else if (targetEnt.isCustomChar && targetEnt.customRig) {
+      const r = targetEnt.customRig;
+      if (r.spine) setBoneWorldDelta(targetEnt, r.spine, duck * 0.6, torsoTurnDoor * 0.5, 0);
+      if (r.chest) setBoneWorldDelta(targetEnt, r.chest, duck * 0.5, torsoTurnDoor * 0.5, 0);
+      if (r.thighL) setBoneWorldDelta(targetEnt, r.thighL, -1.46 * s, 0, 0);
+      if (r.thighR) setBoneWorldDelta(targetEnt, r.thighR, -1.46 * s, 0, 0);
+      if (r.calfL) setBoneWorldDelta(targetEnt, r.calfL, 1.48 * s, 0, 0);
+      if (r.calfR) setBoneWorldDelta(targetEnt, r.calfR, 1.48 * s, 0, 0);
+      if (r.armL) setBoneWorldDelta(targetEnt, r.armL, (-0.86 + st) * s - reachL, 0, 0.12 + pullSpreadL);
+      if (r.armR) setBoneWorldDelta(targetEnt, r.armR, (-0.86 - st) * s - reachR, 0, -0.12 - pullSpreadR);
+      if (r.foreL) setBoneWorldDelta(targetEnt, r.foreL, -0.46 * s - reachL * 0.45, 0, 0);
+      if (r.foreR) setBoneWorldDelta(targetEnt, r.foreR, -0.46 * s - reachR * 0.45, 0, 0);
+    } else if (targetEnt.bones && targetEnt.bones.Hips) {
+      setBoneDelta(targetEnt, 'Spine', duck * 0.55, torsoTurnDoor * 0.5, 0);
+      setBoneDelta(targetEnt, 'Chest', duck * 0.45, torsoTurnDoor * 0.5, 0);
+      setBoneDelta(targetEnt, 'ThighL', -1.46 * s, 0, 0);
+      setBoneDelta(targetEnt, 'ThighR', -1.46 * s, 0, 0);
+      setBoneDelta(targetEnt, 'ShinL', 1.48 * s, 0, 0);
+      setBoneDelta(targetEnt, 'ShinR', 1.48 * s, 0, 0);
+      setBoneDelta(targetEnt, 'UpperArmL', (-0.88 + st) * s - reachL, 0, 0.22 + pullSpreadL);
+      setBoneDelta(targetEnt, 'UpperArmR', (-0.88 - st) * s - reachR, 0, -0.22 - pullSpreadR);
+      setBoneDelta(targetEnt, 'ForeArmL', -0.46 * s - reachL * 0.3, 0, 0.15);
+      setBoneDelta(targetEnt, 'ForeArmR', -0.46 * s - reachR * 0.3, 0, -0.15);
     }
   }
 
@@ -8470,7 +8531,89 @@
         }
         n.mesh.rotation.x = 0;
 
+        if (n.inCar && n.seat) {
+          const c = n.inCar;
+          c.mesh.updateMatrixWorld(true);
+          const bodyRef = (c.parts && c.parts.chassis) ? c.parts.chassis : c.mesh;
+          if (!window._npcSeatPos) {
+            window._npcSeatPos = new THREE.Vector3();
+            window._npcSeatQuat = new THREE.Quaternion();
+          }
+          window._npcSeatPos.set(n.seat.x, n.seat.y, n.seat.z).applyMatrix4(bodyRef.matrixWorld);
+          bodyRef.getWorldQuaternion(window._npcSeatQuat);
+          n.pos.copy(c.pos);
+          if (n.mesh) {
+            n.mesh.visible = true;
+            n.mesh.scale.setScalar(0.76);
+            n.mesh.position.copy(window._npcSeatPos);
+            n.mesh.quaternion.copy(window._npcSeatQuat);
+          }
+          applyDriverPoseBlend(1.0, 0, 0, 0, n.seat.x >= 0 ? 1 : -1, 0, n);
+          continue;
+        }
+        if (n.carTarget && n.carSeatTarget) {
+          const c = n.carTarget;
+          const s = n.carSeatTarget;
+          const doorWorld = localCarToWorld(c, s.standX, s.standZ);
+          const ddx = doorWorld.x - n.pos.x;
+          const ddz = doorWorld.z - n.pos.z;
+          const ddist = Math.hypot(ddx, ddz);
+          if (ddist > 0.45 && !n.carAnim) {
+            walking = true;
+            const spd = Math.min(4.6, 2.8 + ddist * 0.35);
+            n.pos.x += (ddx / ddist) * spd * dt;
+            n.pos.z += (ddz / ddist) * spd * dt;
+            n.mesh.rotation.y = Math.atan2(ddx, ddz);
+            const gyCar = getWalkableGround(n.pos.x, n.pos.z, n.pos.y);
+            if (gyCar !== null) n.pos.y = gyCar;
+            if (n.mesh) { n.mesh.position.copy(n.pos); n.mesh.scale.setScalar(1.0); }
+            animateJobNpcBones(n, dt * 1.4, true);
+            continue;
+          } else {
+            // Chegou na porta: abre, entra no banco e fecha a porta!
+            if (!n.carAnim) {
+              n.carAnim = { t: 0, dur: 0.95, latch: false, slam: false };
+            }
+            n.carAnim.t += dt;
+            const u = Math.min(1, n.carAnim.t / n.carAnim.dur);
+            const baseSeat = (c.parts && c.parts.driverSeatOffset) ? c.parts.driverSeatOffset : { x: 0.36, y: 0.12, z: -0.05 };
+            const drvSide = baseSeat.x >= 0 ? 1 : -1;
+            const isDrvSide = s.doorSide === drvSide;
+            const useLeft = (c.parts && c.parts.driverIsLeftNode !== false) ? isDrvSide : !isDrvSide;
+            const dAng = u < 0.35 ? smoothStep01(0.05, 0.35, u) * 1.04 : u < 0.72 ? 1.04 : (1.0 - Math.pow((u - 0.72) / 0.28, 2)) * 1.04;
+            if (useLeft) c.leftDoorAnimAngle = Math.max(c.leftDoorAnimAngle || 0, Math.max(0, dAng));
+            else c.rightDoorAnimAngle = Math.max(c.rightDoorAnimAngle || 0, Math.max(0, dAng));
+            if (u >= 0.08 && !n.carAnim.latch) { n.carAnim.latch = true; AudioFX.doorLatch(); }
+            if (u >= 0.95 && !n.carAnim.slam) { n.carAnim.slam = true; AudioFX.doorSlam(); }
+
+            const sinY = Math.sin(c.yaw), cosY = Math.cos(c.yaw);
+            const seatWX = c.pos.x + s.x * cosY + s.z * sinY;
+            const seatWY = c.pos.y + s.y;
+            const seatWZ = c.pos.z - s.x * sinY + s.z * cosY;
+            const ew = smoothStep01(0.25, 0.72, u);
+            if (n.mesh) {
+              n.mesh.position.set(doorWorld.x + (seatWX - doorWorld.x) * ew, c.pos.y + (seatWY - c.pos.y) * ew, doorWorld.z + (seatWZ - doorWorld.z) * ew);
+              n.mesh.scale.setScalar(1.0 + (0.76 - 1.0) * ew);
+              n.mesh.rotation.y = lerpAngleRad(c.yaw - s.doorSide * Math.PI * 0.5, c.yaw, ew);
+            }
+            applyDriverPoseBlend(ew, Math.sin(ew * Math.PI), 0, u > 0.68 ? Math.sin(((u - 0.68) / 0.3) * Math.PI) : 0, s.doorSide, 0, n);
+            if (u >= 1.0) {
+              if (useLeft) c.leftDoorAnimAngle = 0; else c.rightDoorAnimAngle = 0;
+              n.inCar = c;
+              n.seat = s;
+              n.carTarget = null;
+              n.carSeatTarget = null;
+              n.carAnim = null;
+              showToast(`💃 Entrou no ${c.name} com você!`);
+            }
+            continue;
+          }
+        }
         if (n.summoned) {
+          if (player.inCar) {
+            orderJobNpcBoardCar(player.inCar);
+            continue;
+          }
           // Segue rota real pelas ruas até chegar ao jogador
           n.routeTimer = (n.routeTimer || 0) + dt;
           if (n.routeTimer > 1.2 && distToPlayer > 5.0) {
