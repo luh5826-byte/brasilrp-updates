@@ -31,7 +31,7 @@
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) save = Object.assign(save, JSON.parse(raw));
   } catch (e) {}
-  if (save.playerChar !== 'cool_man' && save.playerChar !== 'policial') save.playerChar = 'cool_man';
+  if (save.playerChar !== 'cool_man') save.playerChar = 'cool_man';
   function persistSave() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
@@ -3105,13 +3105,13 @@
     const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
 
-    const isPm = typeKey === 'car_pm' || typeKey === 'car_pm_crown';
-    const isLexusSpec = isLexus || isSaveiro || isSaveiroBrasil;
+    const isPm = typeKey === 'car_pm';
+    const isLexusSpec = isLexus || isSaveiro || isSaveiroBrasil || isPm;
     const v = {
       type: typeKey,
       apexPhysics: isGt300,
       forwardSign: forwardPlusZ ? 1 : -1,
-      name: isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm_crown' ? 'Viatura Crown Victoria PM' : isPm ? 'Viatura PM-BR' : 'Gol Quadrado',
+      name: isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : isPm ? 'Viatura PM-BR' : 'Gol Quadrado',
       mesh,
       parts,
       pos: mesh.position,
@@ -3848,7 +3848,7 @@
     const dy = base.y;
     const dz = base.z;
     const sideSign = dx >= 0 ? 1 : -1;
-    const isSedan4Doors = car.type === 'lexus_lc_500_wald' || car.type === 'car_gol' || car.type === 'car_pm' || car.type === 'car_pm_crown';
+    const isSedan4Doors = car.type === 'lexus_lc_500_wald' || car.type === 'car_gol' || car.type === 'car_pm';
     const seats = [
       { id: 'driver', label: 'Motorista', x: dx, y: dy, z: dz, standX: sideSign * 1.44, standZ: dz - 0.05, doorSide: sideSign },
       { id: 'front_pass', label: 'Passageiro', x: -dx, y: dy, z: dz, standX: -sideSign * 1.44, standZ: dz - 0.05, doorSide: -sideSign }
@@ -4380,8 +4380,7 @@
 
   // --- Seletor de Personagens Jogáveis no Lobby 3D (Cool Man e Policial PM) ---
   const PLAYABLE_CHARS = {
-    cool_man: { label: 'Cool Man', path: 'models/chars/cool_man.glb', kind: 'custom' },
-    policial: { label: 'Policial PM', path: 'models/chars/policia_apuntando.glb', kind: 'custom' }
+    cool_man: { label: 'Cool Man', path: 'models/chars/cool_man.glb', kind: 'custom' }
   };
   const playableCharCache = {};
   let playerCharLoading = false;
@@ -5942,7 +5941,6 @@
   if (el('phCallSaveiroBrasil')) el('phCallSaveiroBrasil').onclick = () => deliverPhoneCar('saveiro_brasil', '🇧🇷 Saveiro Cross Brasil');
   if (el('phCallGol')) el('phCallGol').onclick = () => deliverPhoneCar('car_gol', '🚗 VW Gol Quadrado');
   if (el('phCallPm')) el('phCallPm').onclick = () => deliverPhoneCar('car_pm', '🚓 Viatura PM-BR');
-  if (el('phCallCrownPm')) el('phCallCrownPm').onclick = () => deliverPhoneCar('car_pm_crown', '🚓 Crown Victoria PM');
 
   if (el('phGoHomeQuick')) {
     el('phGoHomeQuick').onclick = () => {
@@ -6143,7 +6141,7 @@
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
       ui.loadFill.style.width = '45%';
 
-      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, golScene, pmScene, policeCarScene, swatGuardScene, policeSetScene, atmScene, jobScene] = await Promise.all([
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, golScene, pmScene, swatGuardScene, policeSetScene, atmScene, jobScene] = await Promise.all([
         loadGLB('models/chars/cool_man.glb'),
         loadGLB('models/chars/npc_outer_plane.glb'),
         loadGLB('models/chars/doa_npc_fighter.glb'),
@@ -6155,7 +6153,6 @@
         loadGLB('models/vehicles/toyota_gr_supra_gt300.glb'),
         loadGLB('models/vehicles/car_gol.glb'),
         loadGLB('models/vehicles/car_pm.glb'),
-        loadGLB('models/vehicles/police_car.glb'),
         loadGLB('models/chars/special_force_swat_police.glb'),
         loadGLB('models/props/set_policia.glb'),
         loadGLB('models/props/prop_atm.glb'),
@@ -6184,8 +6181,7 @@
         lexus_lc_500_wald: normalizeApexVehicleScene(lexusScene, 4.55),
         toyota_gr_supra_gt300: normalizeApexVehicleScene(gt300Scene, 4.62),
         car_gol: golScene,
-        car_pm: pmScene,
-        car_pm_crown: normalizeApexVehicleScene(policeCarScene, 4.75)
+        car_pm: pmScene
       };
       citizenTemplates = [];
       trafficTemplates = buildTrafficTemplates(trafficPackScene);
@@ -6297,9 +6293,9 @@
           policeSetScene.position.set(px - 1.8, setY, pz);
           scene.add(policeSetScene);
         }
-        // Viatura Crown Victoria PM-BR (police_car.glb) estacionada na Delegacia
+        // Viatura PM-BR (com física completa) estacionada na Delegacia
         const pmY = getSafeGroundForSpawn(px - 4.0, pz + 4.5, groundY);
-        spawnVehicle('car_pm_crown', px - 4.0, pmY + 0.03, pz + 4.5, 0.0);
+        spawnVehicle('car_pm', px - 4.0, pmY + 0.03, pz + 4.5, 0.0);
       })();
 
       // McDonald's Drive-Thru real em terreno plano aberto ao lado do meio-fio da Av. Sul (-45, 30)
@@ -8082,7 +8078,7 @@
       v.parts.tailMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = braking ? 4.5 : (v.lightsOn ? 1.8 : 0.1); });
       v.parts.intLightMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = interiorLit ? 3.0 : 0.2; });
 
-      if ((v.type === 'car_pm' || v.type === 'car_pm_crown') && v.parts.lightB && v.parts.lightR) {
+      if (v.type === 'car_pm' && v.parts.lightB && v.parts.lightR) {
         const blink = v.sirenOn ? Math.sin(t * 2.2) > 0 : false;
         v.parts.lightB.visible = !v.sirenOn || blink;
         v.parts.lightR.visible = !v.sirenOn || !blink;

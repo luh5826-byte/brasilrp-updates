@@ -1,24 +1,24 @@
 {
-  "otaVersion": 47,
+  "otaVersion": 48,
   "minApkCodeForOta": 42,
-  "changelog": "• Serviço Policial PM-BR completo (algemar, revistar, viatura, interrogar, prender), personagem policial com rig 68 ossos, Viatura Crown Victoria, SWAT e kit na Delegacia",
-  "totalBytes": 43496098,
+  "changelog": "• Inicia sempre com personagem civil, equipa farda PM-BR articulada ao aceitar serviço, libera revista/enquadro na NPC do Job e usa Viatura PM-BR com física Lexus",
+  "totalBytes": 32867614,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "16a344204d3d52a83a4e7d01f0ac493bf24903003135f59eaa1a5ed17b2c71b9",
-      "size": 53900
+      "sha256": "8182d1f0902f1c296426b544afc0209aea082dd76ee35df5843e6a4162e65587",
+      "size": 53458
     },
     "js/audio_world.js": {
       "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
       "size": 25574
     },
     "js/game.js": {
-      "sha256": "d64ed92643dd218ad0f42e29ce264e3672618451f57d6d380e57bcbf44ff7c39",
-      "size": 426055
+      "sha256": "3d6a0ede6b0192c9913e50580cf0a453420305ec056af77888f72b11c95dde85",
+      "size": 425503
     },
     "js/missions.js": {
       "sha256": "49aea5f722570c0fa75b29e3f835d83b8e6a6924f732ec1df8a0a6d6dd25b4fd",
@@ -29,16 +29,12 @@
       "size": 32144
     },
     "js/police_rp.js": {
-      "sha256": "b541fa4a9abc6ad064ced3d6cb10ad68183a9714a3e83ad6a2b6ef2aaea0d939",
-      "size": 15938
+      "sha256": "63d86e3a8c0fc5bba7a74929c7a27988a1ed0ccb441eec0fd4e5402e75bc0c78",
+      "size": 17588
     },
     "js/telemetry_crash.js": {
       "sha256": "b7240877ddd2c2daf70c4ef9b55839127cd863687d93e3c0159fb3b1772483ce",
       "size": 18409
-    },
-    "models/chars/policia_apuntando.glb": {
-      "sha256": "6aaefd614756cb89f4b7e9c291ff727a11aad848d2621c75339f2dd93878de7c",
-      "size": 2260632
     },
     "models/chars/special_force_swat_police.glb": {
       "sha256": "80fdefcb4eb3980439c32e7edb05693c19638b0a5e10480b592930358fb67d38",
@@ -63,10 +59,6 @@
     "models/props/set_policia.glb": {
       "sha256": "5c11a7d49558db97d845fed5efec403fdc14b9a23cdd59cae9a8b9da3433b7e1",
       "size": 2276464
-    },
-    "models/vehicles/police_car.glb": {
-      "sha256": "30bb8a585d15cc83ede76d1861482ccf7b92bf9435c2606f70c5a717c3c2fe52",
-      "size": 8368508
     },
     "models/vehicles/saveiro_brasil.glb": {
       "sha256": "08efb607a12a9ff425ca8548bd2653c3542e54418c9236363939116a87ed6426",

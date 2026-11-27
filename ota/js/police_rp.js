@@ -118,27 +118,64 @@
     if (b.showToast) b.showToast(`🚨 COPOM: ${crime.title} (${Math.round(dist)}m)`, 4200);
   }
 
+  function attachPoliceGear(enable) {
+    const b = window.BrasilRPBridge;
+    if (!b || !b.player || !b.player.bones) return;
+    const p = b.player;
+    const chestBone = (p.customRig && p.customRig.chest && p.bones[p.customRig.chest]) || p.bones['mixamorig:Spine2_81'] || null;
+    const headBone = (p.customRig && p.customRig.head && p.bones[p.customRig.head]) || p.bones['mixamorig:Head_1'] || null;
+    if (p._pmVest && p._pmVest.parent) p._pmVest.parent.remove(p._pmVest);
+    if (p._pmCap && p._pmCap.parent) p._pmCap.parent.remove(p._pmCap);
+    p._pmVest = null;
+    p._pmCap = null;
+    if (!enable) return;
+
+    if (chestBone) {
+      const vest = new THREE.Group();
+      const matVest = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55, metalness: 0.25 });
+      const matBadge = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.8 });
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.24), matVest);
+      const badge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.02), matBadge);
+      badge.position.set(0.08, 0.05, 0.13);
+      vest.add(box, badge);
+      chestBone.add(vest);
+      p._pmVest = vest;
+    }
+    if (headBone) {
+      const cap = new THREE.Group();
+      const matCap = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.5 });
+      const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.08, 12), matCap);
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.10), matCap);
+      visor.position.set(0, -0.02, 0.11);
+      cap.add(crown, visor);
+      cap.position.set(0, 0.16, 0.01);
+      headBone.add(cap);
+      p._pmCap = cap;
+    }
+  }
+
   function toggleDuty() {
     const b = window.BrasilRPBridge;
     if (!b) return;
     state.active = !state.active;
     if (state.active) {
       state.preDutyChar = (b.save && b.save.playerChar) || 'cool_man';
-      if (b.selectPlayableCharacter) b.selectPlayableCharacter('policial', true);
+      attachPoliceGear(true);
       if (b.AudioFX && b.AudioFX.coin) b.AudioFX.coin();
-      if (b.showToast) b.showToast('👮 Você entrou em SERVIÇO PM-BR! Aguarde o chamado do COPOM.', 3500);
+      if (b.showToast) b.showToast('👮 Você entrou em SERVIÇO PM-BR! Farda equipada — aguarde chamado.', 3500);
       speakPolice('Policial em serviço. QAP na rede.');
 
       // Garante viatura PM-BR próxima se não houver nenhuma perto
-      const hasPmCar = (b.vehicles || []).some((v) => (v.type === 'car_pm' || v.type === 'car_pm_crown') && v.pos.distanceTo(b.player.pos) < 35);
+      const hasPmCar = (b.vehicles || []).some((v) => v.type === 'car_pm' && v.pos.distanceTo(b.player.pos) < 35);
       if (!hasPmCar && b.spawnVehicle) {
         const vx = b.player.pos.x + 3.2;
         const vz = b.player.pos.z + 2.5;
         const vy = b.getSafeGroundForSpawn ? b.getSafeGroundForSpawn(vx, vz, b.player.pos.y) : b.player.pos.y;
-        b.spawnVehicle('car_pm_crown', vx, vy + 0.05, vz, 0);
+        b.spawnVehicle('car_pm', vx, vy + 0.05, vz, 0);
       }
       state.nextCallTimer = 2.5;
     } else {
+      attachPoliceGear(false);
       if (state.activeSuspect && b.npcs) {
         if (state.activeSuspect.mesh && state.activeSuspect.mesh.parent) {
           state.activeSuspect.mesh.parent.remove(state.activeSuspect.mesh);
@@ -149,7 +186,7 @@
       state.activeSuspect = null;
       if (b.clearGpsDestination) b.clearGpsDestination();
       if (b.selectPlayableCharacter) b.selectPlayableCharacter(state.preDutyChar || 'cool_man', true);
-      if (b.showToast) b.showToast('👮 Você saiu de serviço da PM-BR.', 2600);
+      if (b.showToast) b.showToast('👮 Você saiu de serviço e voltou ao seu personagem civil.', 2600);
     }
     updateBadge();
   }
@@ -165,7 +202,7 @@
     let best = null;
     let bestD = 4.6;
     for (const n of (b.npcs || [])) {
-      if (!n || n.dead || n.isJobNpc) continue;
+      if (!n || n.dead) continue;
       const d = n.pos.distanceTo(b.player.pos);
       if (d < bestD) { bestD = d; best = n; }
     }
