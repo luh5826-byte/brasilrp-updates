@@ -4,9 +4,9 @@
   "mandatory": false,
   "changelog": "• OTIMIZAÇÃO DEFINITIVA (53,6x menos Draw Calls: 7.660 -> 143 DC) com MSAA (antialiasing) religado\n• Linhas brilhantes / vazamento de mipmap no Texture Atlas corrigidos (inset 0.5 texel + gradiente 1.4 texel + trilinear)\n• Atualização OTA agora é automática (sem perguntar); confirmação apenas para novo APK\n• Merge por material nos veículos (Lexus, Saveiro, Mustang, Gol, PM) e -149 MB VRAM",
   "apkUrl": "https://github.com/luh5826-byte/brasilrp-updates/releases/download/v1.0.42/BrasilRP_GTA6.apk",
-  "otaVersion": 42,
+  "otaVersion": 43,
   "minApkCodeForOta": 42,
-  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/672ae6683bd30120971e07e0de2653b56a4e74b2/ota/",
-  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/672ae6683bd30120971e07e0de2653b56a4e74b2/ota_manifest.json",
-  "otaChangelog": "• Sincroniza e recupera o ID próprio (BRP-XXXXXX) direto do servidor mesmo se limpar os dados"
+  "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/8e27a6f1267a0b42d25124f20f96a2e783de46e1/ota/",
+  "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/8e27a6f1267a0b42d25124f20f96a2e783de46e1/ota_manifest.json",
+  "otaChangelog": "• Caminhada real ao redor do carro até a porta, entrada como motorista/passageiro e lotação realista (5 lugares sedã / 2 esportivo)"
 }
