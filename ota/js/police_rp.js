@@ -123,31 +123,70 @@
     if (!b || !b.player || !b.player.bones) return;
     const p = b.player;
     const chestBone = (p.customRig && p.customRig.chest && p.bones[p.customRig.chest]) || p.bones['mixamorig:Spine2_81'] || null;
+    const hipsBone = (p.customRig && p.customRig.hips && p.bones[p.customRig.hips]) || p.bones['mixamorig:Hips_94'] || null;
     const headBone = (p.customRig && p.customRig.head && p.bones[p.customRig.head]) || p.bones['mixamorig:Head_1'] || null;
     if (p._pmVest && p._pmVest.parent) p._pmVest.parent.remove(p._pmVest);
+    if (p._pmBelt && p._pmBelt.parent) p._pmBelt.parent.remove(p._pmBelt);
     if (p._pmCap && p._pmCap.parent) p._pmCap.parent.remove(p._pmCap);
     p._pmVest = null;
+    p._pmBelt = null;
     p._pmCap = null;
     if (!enable) return;
 
     if (chestBone) {
       const vest = new THREE.Group();
       const matVest = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55, metalness: 0.25 });
-      const matBadge = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.8 });
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.24), matVest);
-      const badge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.02), matBadge);
-      badge.position.set(0.08, 0.05, 0.13);
-      vest.add(box, badge);
+      const matTrim = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.45, metalness: 0.35 });
+      const matBadge = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.25, metalness: 0.85 });
+      const matRadio = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.4, metalness: 0.5 });
+
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.35, 0.25), matVest);
+      const plateFront = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.27), matTrim);
+      const badge = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.085, 0.02), matBadge);
+      badge.position.set(0.08, 0.05, 0.14);
+
+      // Rádio comunicador no ombro esquerdo
+      const radio = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.04), matRadio);
+      radio.position.set(0.13, 0.12, 0.12);
+      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.10, 6), matRadio);
+      ant.position.set(0.14, 0.20, 0.12);
+
+      vest.add(box, plateFront, badge, radio, ant);
       chestBone.add(vest);
       p._pmVest = vest;
     }
+
+    // Cinto tático com Algemas metálicas + Coldre na cintura (hips)
+    if (hipsBone) {
+      const belt = new THREE.Group();
+      const matBelt = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.5, metalness: 0.4 });
+      const matSteel = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.25, metalness: 0.9 });
+
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.26), matBelt);
+      // Algemas (duas argolas metálicas presas atrás/lado do cinto)
+      const cuffL = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.008, 6, 12), matSteel);
+      cuffL.position.set(0.14, -0.02, -0.10);
+      const cuffR = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.008, 6, 12), matSteel);
+      cuffR.position.set(0.18, -0.04, -0.08);
+      // Coldre na coxa/cintura direita
+      const holster = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.09), matBelt);
+      holster.position.set(-0.19, -0.06, 0.02);
+
+      belt.add(strap, cuffL, cuffR, holster);
+      hipsBone.add(belt);
+      p._pmBelt = belt;
+    }
+
     if (headBone) {
       const cap = new THREE.Group();
       const matCap = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.5 });
+      const matGold = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.85 });
       const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.08, 12), matCap);
       const visor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.10), matCap);
       visor.position.set(0, -0.02, 0.11);
-      cap.add(crown, visor);
+      const emblem = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.015), matGold);
+      emblem.position.set(0, 0.01, 0.12);
+      cap.add(crown, visor, emblem);
       cap.position.set(0, 0.16, 0.01);
       headBone.add(cap);
       p._pmCap = cap;
@@ -234,10 +273,25 @@
     if (b.AudioFX && b.AudioFX.beep) b.AudioFX.beep(520, 0.12, 'triangle', 0.1);
     if (t.suspect.cuffed) {
       speakPolice('Parado! Polícia! Mãos na cabeça, você está algemado!');
+      if (!t._cuffVisual && t.mesh) {
+        const matSteel = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.25, metalness: 0.9 });
+        const cg = new THREE.Group();
+        const r1 = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 6, 12), matSteel);
+        r1.position.set(-0.06, 0.92, -0.18);
+        const r2 = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 6, 12), matSteel);
+        r2.position.set(0.06, 0.92, -0.18);
+        cg.add(r1, r2);
+        t.mesh.add(cg);
+        t._cuffVisual = cg;
+      }
       if (b.showToast) b.showToast(`🚨 ${t.suspect.name} imobilizado e algemado!`);
     } else {
       t.suspect.inCar = null;
       t.suspect.seat = null;
+      if (t._cuffVisual && t._cuffVisual.parent) {
+        t._cuffVisual.parent.remove(t._cuffVisual);
+        t._cuffVisual = null;
+      }
       if (b.showToast) b.showToast(`🔓 Algemas removidas de ${t.suspect.name}.`);
     }
   }

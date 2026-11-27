@@ -1,8 +1,8 @@
 {
-  "otaVersion": 48,
+  "otaVersion": 49,
   "minApkCodeForOta": 42,
-  "changelog": "• Inicia sempre com personagem civil, equipa farda PM-BR articulada ao aceitar serviço, libera revista/enquadro na NPC do Job e usa Viatura PM-BR com física Lexus",
-  "totalBytes": 32867614,
+  "changelog": "• Equipa colete tático, cinto com algemas, rádio e coldre no Cool Man em serviço PM-BR + algemas visuais no suspeito preso",
+  "totalBytes": 32870478,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -29,8 +29,8 @@
       "size": 32144
     },
     "js/police_rp.js": {
-      "sha256": "63d86e3a8c0fc5bba7a74929c7a27988a1ed0ccb441eec0fd4e5402e75bc0c78",
-      "size": 17588
+      "sha256": "d8037cd07c7a08628310be815aa39a3894467348dd5d36bc655e6651271a32c6",
+      "size": 20452
     },
     "js/telemetry_crash.js": {
       "sha256": "b7240877ddd2c2daf70c4ef9b55839127cd863687d93e3c0159fb3b1772483ce",
