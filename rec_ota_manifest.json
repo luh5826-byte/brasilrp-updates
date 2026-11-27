@@ -1,9 +1,9 @@
 {
   "app": "rec_ptbr",
-  "patch_version": 10,
-  "version_name": "0.6.0.1.1-ptbr-p10",
-  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v10.zip",
-  "changelog": "Verificacao e instalacao automatica de patch OTA 2.5s apos abrir o jogo + base PT-BR cumulativa",
+  "patch_version": 11,
+  "version_name": "0.6.0.1.1-ptbr-p11",
+  "patch_url": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/patch_v11.zip",
+  "changelog": "Suporte a notificacao Push do painel REC + auto-OTA em 2.5s + base PT-BR cumulativa",
   "telegram_url": "https://t.me/hentaigamestranslated",
   "cumulative": true
 }

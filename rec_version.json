@@ -1,11 +1,11 @@
 {
   "app": "rec_ptbr",
   "baseGameVersion": "0.6.0.1.1",
-  "otaVersion": 10,
-  "versionName": "0.6.0.1.1-ptbr-p10",
+  "otaVersion": 11,
+  "versionName": "0.6.0.1.1-ptbr-p11",
   "translator": "DeveSerBug",
   "telegram": "https://t.me/hentaigamestranslated",
   "otaBaseUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota/",
   "otaManifestUrl": "https://raw.githubusercontent.com/luh5826-byte/brasilrp-updates/main/rec_ota_manifest.json",
-  "otaChangelog": "Verificacao e instalacao automatica de patch OTA 2.5s apos abrir o jogo + base PT-BR cumulativa"
+  "otaChangelog": "Suporte a notificacao Push do painel REC + auto-OTA em 2.5s + base PT-BR cumulativa"
 }
