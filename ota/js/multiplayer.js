@@ -18,10 +18,13 @@
 
   let serverUrl = localStorage.getItem(STORAGE_SERVER_KEY) || DEFAULT_SERVER_URL;
   let playerName = localStorage.getItem(STORAGE_NAME_KEY) || ('RP_' + Math.floor(100 + Math.random() * 899));
-  let deviceId = localStorage.getItem('brasilrp_device_id');
+  let deviceId = (window.BrasilDeviceInfo && window.BrasilDeviceInfo.deviceId) || localStorage.getItem('brasilrp_user_uid') || localStorage.getItem('brasilrp_device_id');
   if (!deviceId) {
-    deviceId = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    try { localStorage.setItem('brasilrp_device_id', deviceId); } catch (_) {}
+    deviceId = 'BRP-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    try {
+      localStorage.setItem('brasilrp_user_uid', deviceId);
+      localStorage.setItem('brasilrp_device_id', deviceId);
+    } catch (_) {}
   }
 
   let ws = null;

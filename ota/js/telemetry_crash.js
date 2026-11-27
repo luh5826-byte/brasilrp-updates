@@ -2,18 +2,69 @@
   'use strict';
 
   const API_BASE = 'https://brasilrp-server.onrender.com';
+  const STORAGE_USER_UID = 'brasilrp_user_uid';
   const STORAGE_DEVICE_ID = 'brasilrp_device_id';
   const STORAGE_NAME_KEY = 'brasilrp_mp_name';
   const STORAGE_ALIVE_KEY = 'brasilrp_session_alive_v1';
 
-  function getDeviceId() {
-    let id = '';
-    try { id = localStorage.getItem(STORAGE_DEVICE_ID) || ''; } catch (_) {}
-    if (!id) {
-      id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-      try { localStorage.setItem(STORAGE_DEVICE_ID, id); } catch (_) {}
+  function hashToBrpCode(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
     }
-    return id;
+    const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let out = '';
+    let n = h >>> 0;
+    for (let i = 0; i < 6; i++) {
+      out += alphabet[n % alphabet.length];
+      n = Math.floor(n / alphabet.length) ^ ((h >>> (i * 4)) & 0xff);
+    }
+    return 'BRP-' + out;
+  }
+
+  function getDeviceId() {
+    // 1. Se o APK tiver ID nativo permanente (ANDROID_ID), usa sempre ele (nao muda nem reinstalando)
+    try {
+      if (window.BrasilNative && typeof window.BrasilNative.getPermanentId === 'function') {
+        const natId = String(window.BrasilNative.getPermanentId() || '').trim();
+        if (natId.startsWith('BRP-')) {
+          try {
+            localStorage.setItem(STORAGE_USER_UID, natId);
+            localStorage.setItem(STORAGE_DEVICE_ID, natId);
+          } catch (_) {}
+          return natId;
+        }
+      }
+    } catch (_) {}
+
+    // 2. ID proprio persistente salvo no aparelho
+    let uid = '';
+    try { uid = localStorage.getItem(STORAGE_USER_UID) || ''; } catch (_) {}
+    if (uid && uid.startsWith('BRP-')) return uid;
+
+    // 3. Migra ID antigo de forma deterministica ou gera um novo BRP-XXXXXX fixo
+    let legacy = '';
+    try { legacy = localStorage.getItem(STORAGE_DEVICE_ID) || ''; } catch (_) {}
+    if (legacy && legacy.startsWith('BRP-')) {
+      uid = legacy;
+    } else if (legacy) {
+      uid = hashToBrpCode(legacy);
+    } else {
+      const seed = [
+        navigator.userAgent || '',
+        screen.width + 'x' + screen.height,
+        navigator.hardwareConcurrency || '',
+        Date.now(),
+        Math.random()
+      ].join('|');
+      uid = hashToBrpCode(seed);
+    }
+    try {
+      localStorage.setItem(STORAGE_USER_UID, uid);
+      localStorage.setItem(STORAGE_DEVICE_ID, uid);
+    } catch (_) {}
+    return uid;
   }
 
   function getWebGLGpu() {

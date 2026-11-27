@@ -1,8 +1,8 @@
 {
-  "otaVersion": 40,
+  "otaVersion": 41,
   "minApkCodeForOta": 42,
-  "changelog": "• Mantém jogador visível no painel como Minimizado ao sair para segundo plano e extrai modelo real via Client Hints",
-  "totalBytes": 27516627,
+  "changelog": "• ID próprio fixo (BRP-XXXXXX) por usuário para controle no painel",
+  "totalBytes": 27518467,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
@@ -25,12 +25,12 @@
       "size": 36539
     },
     "js/multiplayer.js": {
-      "sha256": "d72f249cfb05a85531340444a9bc1bf93b08f630b79e828f2df4ef94d15f7217",
-      "size": 31253
+      "sha256": "1875fb211365c41574339c360586b466bd8fb08ef984033406d7baf3ab40be1e",
+      "size": 31421
     },
     "js/telemetry_crash.js": {
-      "sha256": "d792c4b3a01df4d17f8a81fd9f4f6b5a6ecb801c51a5b8a087422c7241441b5e",
-      "size": 15486
+      "sha256": "81df7592aae66e3abfd31ee8d9c485ededa5767188c43283c82bbb50cdd95cbc",
+      "size": 17158
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",
