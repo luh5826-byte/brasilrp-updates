@@ -1684,3 +1684,55 @@ body.gamepad-mode .weapon-phone-col {
   from { opacity: 0; transform: translate(-50%, -18px) scale(0.97); }
   to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
+
+/* Serviço Policial PM-BR */
+.police-badge {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 420;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 58, 138, 0.92));
+  border: 1.5px solid #38bdf8;
+  color: #e0f2fe;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  pointer-events: none;
+}
+.police-badge.hidden { display: none !important; }
+.police-action-bar {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 430;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: min(560px, 92vw);
+  padding: 6px 8px;
+  border-radius: 14px;
+  background: rgba(10, 15, 28, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  backdrop-filter: blur(8px);
+}
+.police-action-bar.hidden { display: none !important; }
+.pol-act-btn {
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: linear-gradient(180deg, rgba(30, 64, 175, 0.85), rgba(15, 23, 42, 0.92));
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.pol-act-btn.danger {
+  border-color: rgba(248, 113, 113, 0.65);
+  background: linear-gradient(180deg, rgba(185, 28, 28, 0.9), rgba(127, 29, 29, 0.95));
+}

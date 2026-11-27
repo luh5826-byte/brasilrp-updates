@@ -31,7 +31,7 @@
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) save = Object.assign(save, JSON.parse(raw));
   } catch (e) {}
-  save.playerChar = 'cool_man';
+  if (save.playerChar !== 'cool_man' && save.playerChar !== 'policial') save.playerChar = 'cool_man';
   function persistSave() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
@@ -3002,6 +3002,12 @@
       { re: /^WHEEL_RF/i, target: 'WheelFR', mode: 'wheel' },
       { re: /^WHEEL_LR/i, target: 'WheelRL', mode: 'wheel' },
       { re: /^WHEEL_RR/i, target: 'WheelRR', mode: 'wheel' },
+      { re: /^CrownVic\.Wheel\.Ft\.L/i, target: 'WheelFL', mode: 'wheel' },
+      { re: /^CrownVic\.Wheel\.Ft\.R/i, target: 'WheelFR', mode: 'wheel' },
+      { re: /^CrownVic\.Wheel\.Bk\.L/i, target: 'WheelRL', mode: 'wheel' },
+      { re: /^CrownVic\.Wheel\.Bk\.R/i, target: 'WheelRR', mode: 'wheel' },
+      { re: /^Roof light bar/i, target: 'LightBlue', mode: 'part' },
+      { re: /^roof lights/i, target: 'LightRed', mode: 'part' },
       { re: /^L_Door/i, target: 'DoorL', mode: 'door' },
       { re: /^R_door/i, target: 'DoorR', mode: 'door' },
       { re: /^Hood/i, target: 'CarHood', mode: 'hood' }
@@ -3099,12 +3105,13 @@
     const forwardPlusZ = true;
     const parts = setupCarHierarchy(mesh, forwardPlusZ);
 
+    const isPm = typeKey === 'car_pm' || typeKey === 'car_pm_crown';
     const isLexusSpec = isLexus || isSaveiro || isSaveiroBrasil;
     const v = {
       type: typeKey,
       apexPhysics: isGt300,
       forwardSign: forwardPlusZ ? 1 : -1,
-      name: isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm' ? 'Viatura PM-BR' : 'Gol Quadrado',
+      name: isGt300 ? 'Toyota GR Supra GT300' : isLexus ? 'Lexus LC 500 Wald' : isMustang ? 'Ford Mustang GTD' : isSaveiroBrasil ? 'Saveiro Cross Brasil' : isSaveiro ? 'VW Pickup Azul' : typeKey === 'car_pm_crown' ? 'Viatura Crown Victoria PM' : isPm ? 'Viatura PM-BR' : 'Gol Quadrado',
       mesh,
       parts,
       pos: mesh.position,
@@ -3119,7 +3126,7 @@
       rollVel: 0,
       pitchVel: 0,
       angVel: 0,
-      mass: isGt300 ? 1.28 : isLexusSpec ? 1.40 : isMustang ? 1.35 : typeKey === 'car_pm' ? 1.45 : 1.08,
+      mass: isGt300 ? 1.28 : isLexusSpec ? 1.40 : isMustang ? 1.35 : isPm ? 1.45 : 1.08,
       hp: 100,
       broken: false,
       nitro: 100,
@@ -3134,8 +3141,8 @@
       reverseHoldTimer: 0,
       inReverseGear: false,
       // GT300 usa física, aceleração, esterçamento e drift fiéis ao Apex Circuit!
-      maxTopSpeedMs: isGt300 ? (296 / 3.6) : isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : typeKey === 'car_pm' ? (168 / 3.6) : (145 / 3.6),
-      accelPower: isGt300 ? 34.0 : isMustang ? 19.0 : isLexusSpec ? 17.5 : typeKey === 'car_pm' ? 16.5 : 14.5,
+      maxTopSpeedMs: isGt300 ? (296 / 3.6) : isMustang ? (190 / 3.6) : isLexusSpec ? (175 / 3.6) : isPm ? (178 / 3.6) : (145 / 3.6),
+      accelPower: isGt300 ? 34.0 : isMustang ? 19.0 : isLexusSpec ? 17.5 : isPm ? 17.5 : 14.5,
       turnRate: isGt300 ? 2.15 : isLexusSpec ? 1.92 : 1.98,
       wheelSteerMax: isGt300 ? 0.44 : 0.34,
       soundProfile: (isGt300 || isLexusSpec) ? 'v8_muscle' : null
@@ -3841,7 +3848,7 @@
     const dy = base.y;
     const dz = base.z;
     const sideSign = dx >= 0 ? 1 : -1;
-    const isSedan4Doors = car.type === 'lexus_lc_500_wald' || car.type === 'car_gol' || car.type === 'car_pm';
+    const isSedan4Doors = car.type === 'lexus_lc_500_wald' || car.type === 'car_gol' || car.type === 'car_pm' || car.type === 'car_pm_crown';
     const seats = [
       { id: 'driver', label: 'Motorista', x: dx, y: dy, z: dz, standX: sideSign * 1.44, standZ: dz - 0.05, doorSide: sideSign },
       { id: 'front_pass', label: 'Passageiro', x: -dx, y: dy, z: dz, standX: -sideSign * 1.44, standZ: dz - 0.05, doorSide: -sideSign }
@@ -4101,6 +4108,10 @@
     if (nearestProp.type === 'atm') {
       refreshMoneyUI();
       el('bankModal').classList.remove('hidden');
+    } else if (nearestProp.type === 'police_station') {
+      if (window.BrasilPolice && typeof window.BrasilPolice.toggleDuty === 'function') {
+        window.BrasilPolice.toggleDuty();
+      }
     } else if (nearestProp.type === 'job') {
       el('jobModal').classList.remove('hidden');
     } else if (nearestProp.type === 'safehouse') {
@@ -4367,9 +4378,10 @@
     }
   })();
 
-  // --- Seletor de Personagens Jogáveis no Lobby 3D (somente Cool Man disponível ao jogador) ---
+  // --- Seletor de Personagens Jogáveis no Lobby 3D (Cool Man e Policial PM) ---
   const PLAYABLE_CHARS = {
-    cool_man: { label: 'Cool Man', path: 'models/chars/cool_man.glb', kind: 'custom' }
+    cool_man: { label: 'Cool Man', path: 'models/chars/cool_man.glb', kind: 'custom' },
+    policial: { label: 'Policial PM', path: 'models/chars/policia_apuntando.glb', kind: 'custom' }
   };
   const playableCharCache = {};
   let playerCharLoading = false;
@@ -4485,20 +4497,20 @@
         bone.updateMatrixWorld(true);
       }
 
-      const thighL = findBoneByPatterns(bMap, ['cc_base_l_thigh', 'leftupleg', 'l_thigh', 'thigh_l']);
-      const thighR = findBoneByPatterns(bMap, ['cc_base_r_thigh', 'rightupleg', 'r_thigh', 'thigh_r']);
-      const calfL  = findBoneByPatterns(bMap, ['cc_base_l_calf', 'leftleg', 'l_calf', 'calf_l', 'shin_l']);
-      const calfR  = findBoneByPatterns(bMap, ['cc_base_r_calf', 'rightleg', 'r_calf', 'calf_r', 'shin_r']);
-      const footL  = findBoneByPatterns(bMap, ['cc_base_l_foot', 'leftfoot', 'l_foot', 'foot_l']);
-      const footR  = findBoneByPatterns(bMap, ['cc_base_r_foot', 'rightfoot', 'r_foot', 'foot_r']);
-      const toeL   = findBoneByPatterns(bMap, ['cc_base_l_toebase', 'lefttoebase', 'l_toe', 'toe_l']);
-      const toeR   = findBoneByPatterns(bMap, ['cc_base_r_toebase', 'righttoebase', 'r_toe', 'toe_r']);
-      const armL   = findBoneByPatterns(bMap, ['cc_base_l_upperarm', 'leftarm_0', 'leftarm', 'l_upperarm', 'upperarm_l']);
-      const armR   = findBoneByPatterns(bMap, ['cc_base_r_upperarm', 'rightarm_0', 'rightarm', 'r_upperarm', 'upperarm_r']);
-      const foreL  = findBoneByPatterns(bMap, ['cc_base_l_forearm_', 'cc_base_l_forearm', 'leftforearm_0', 'leftforearm', 'l_forearm', 'forearm_l']);
-      const foreR  = findBoneByPatterns(bMap, ['cc_base_r_forearm_', 'cc_base_r_forearm', 'rightforearm_0', 'rightforearm', 'r_forearm', 'forearm_r']);
-      const handL  = findBoneByPatterns(bMap, ['cc_base_l_hand', 'lefthand_0', 'lefthand', 'l_hand', 'hand_l']);
-      const handR  = findBoneByPatterns(bMap, ['cc_base_r_hand', 'righthand_0', 'righthand', 'r_hand', 'hand_r']);
+      const thighL = findBoneByPatterns(bMap, ['cc_base_l_thigh', 'leftupleg', 'l_thigh', 'thigh_l', 'bip001 l thigh']);
+      const thighR = findBoneByPatterns(bMap, ['cc_base_r_thigh', 'rightupleg', 'r_thigh', 'thigh_r', 'bip001 r thigh']);
+      const calfL  = findBoneByPatterns(bMap, ['cc_base_l_calf', 'leftleg', 'l_calf', 'calf_l', 'shin_l', 'bip001 l calf']);
+      const calfR  = findBoneByPatterns(bMap, ['cc_base_r_calf', 'rightleg', 'r_calf', 'calf_r', 'shin_r', 'bip001 r calf']);
+      const footL  = findBoneByPatterns(bMap, ['cc_base_l_foot', 'leftfoot', 'l_foot', 'foot_l', 'bip001 l foot']);
+      const footR  = findBoneByPatterns(bMap, ['cc_base_r_foot', 'rightfoot', 'r_foot', 'foot_r', 'bip001 r foot']);
+      const toeL   = findBoneByPatterns(bMap, ['cc_base_l_toebase', 'lefttoebase', 'l_toe', 'toe_l', 'bip001 l toe0']);
+      const toeR   = findBoneByPatterns(bMap, ['cc_base_r_toebase', 'righttoebase', 'r_toe', 'toe_r', 'bip001 r toe0']);
+      const armL   = findBoneByPatterns(bMap, ['cc_base_l_upperarm', 'leftarm_0', 'leftarm', 'l_upperarm', 'upperarm_l', 'bip001 l upperarm']);
+      const armR   = findBoneByPatterns(bMap, ['cc_base_r_upperarm', 'rightarm_0', 'rightarm', 'r_upperarm', 'upperarm_r', 'bip001 r upperarm']);
+      const foreL  = findBoneByPatterns(bMap, ['cc_base_l_forearm_', 'cc_base_l_forearm', 'leftforearm_0', 'leftforearm', 'l_forearm', 'forearm_l', 'bip001 l forearm']);
+      const foreR  = findBoneByPatterns(bMap, ['cc_base_r_forearm_', 'cc_base_r_forearm', 'rightforearm_0', 'rightforearm', 'r_forearm', 'forearm_r', 'bip001 r forearm']);
+      const handL  = findBoneByPatterns(bMap, ['cc_base_l_hand', 'lefthand_0', 'lefthand', 'l_hand', 'hand_l', 'bip001 l hand']);
+      const handR  = findBoneByPatterns(bMap, ['cc_base_r_hand', 'righthand_0', 'righthand', 'r_hand', 'hand_r', 'bip001 r hand']);
 
       function alignFootLevel(boneName, childName) {
         if (!boneName || !childName) return;
@@ -4711,30 +4723,34 @@
         const lk = k.toLowerCase();
         return lk.includes('hair') || lk.includes('cat_ears') || lk.includes('ponytail') || lk.includes('skirt') || lk.includes('ribbon');
       });
-      player.customRig = {
-        hips: findBoneByPatterns(player.bones, ['cc_base_pelvis', 'cc_base_hip', 'hips_01', 'hips']),
-        spine: findBoneByPatterns(player.bones, ['cc_base_spine01', 'cc_base_waist', 'spine_02', 'spine1', 'spine']),
-        chest: findBoneByPatterns(player.bones, ['cc_base_spine02', 'spine2_04', 'spine2', 'chest']),
-        neck: findBoneByPatterns(player.bones, ['cc_base_necktwist01', 'neck_05', 'neck']),
-        head: findBoneByPatterns(player.bones, ['cc_base_head', 'head_08', 'head']),
-        eyeL: findBoneByPatterns(player.bones, ['cc_base_l_eye', 'lefteye', 'l_eye', 'eye_l']),
-        eyeR: findBoneByPatterns(player.bones, ['cc_base_r_eye', 'righteye', 'r_eye', 'eye_r']),
-        bustL: findBoneByPatterns(player.bones, ['cc_base_l_breast', 'l_breast', 'breast_l', 'bustl']),
-        bustR: findBoneByPatterns(player.bones, ['cc_base_r_breast', 'r_breast', 'breast_r', 'bustr']),
-        thighL: findBoneByPatterns(player.bones, ['cc_base_l_thigh', 'leftupleg', 'l_thigh', 'thigh_l']),
-        thighR: findBoneByPatterns(player.bones, ['cc_base_r_thigh', 'rightupleg', 'r_thigh', 'thigh_r']),
-        calfL: findBoneByPatterns(player.bones, ['cc_base_l_calf', 'leftleg', 'l_calf', 'calf_l', 'shin_l']),
-        calfR: findBoneByPatterns(player.bones, ['cc_base_r_calf', 'rightleg', 'r_calf', 'calf_r', 'shin_r']),
-        footL: findBoneByPatterns(player.bones, ['cc_base_l_foot', 'leftfoot', 'l_foot', 'foot_l']),
-        footR: findBoneByPatterns(player.bones, ['cc_base_r_foot', 'rightfoot', 'r_foot', 'foot_r']),
-        armL: findBoneByPatterns(player.bones, ['cc_base_l_upperarm', 'leftarm_0', 'leftarm', 'l_upperarm', 'upperarm_l']),
-        armR: findBoneByPatterns(player.bones, ['cc_base_r_upperarm', 'rightarm_0', 'rightarm', 'r_upperarm', 'upperarm_r']),
-        foreL: findBoneByPatterns(player.bones, ['cc_base_l_forearm_', 'cc_base_l_forearm', 'leftforearm_0', 'leftforearm', 'l_forearm', 'forearm_l']),
-        foreR: findBoneByPatterns(player.bones, ['cc_base_r_forearm_', 'cc_base_r_forearm', 'rightforearm_0', 'rightforearm', 'r_forearm', 'forearm_r']),
-        extraHair,
-        armDownZ: (info.armDownZ !== undefined) ? info.armDownZ : 0.62
-      };
+      player.customRig = buildCustomRigMap(player.bones, info, extraHair);
     }
+  }
+
+  function buildCustomRigMap(bones, info, extraHair) {
+    return {
+      hips: findBoneByPatterns(bones, ['cc_base_pelvis', 'cc_base_hip', 'hips_01', 'hips', 'bip001 pelvis']),
+      spine: findBoneByPatterns(bones, ['cc_base_spine01', 'cc_base_waist', 'spine_02', 'spine1', 'spine', 'bip001 spine']),
+      chest: findBoneByPatterns(bones, ['cc_base_spine02', 'spine2_04', 'spine2', 'chest', 'bip001 spine2']),
+      neck: findBoneByPatterns(bones, ['cc_base_necktwist01', 'neck_05', 'neck', 'bip001 neck']),
+      head: findBoneByPatterns(bones, ['cc_base_head', 'head_08', 'head', 'bip001 head']),
+      eyeL: findBoneByPatterns(bones, ['cc_base_l_eye', 'lefteye', 'l_eye', 'eye_l']),
+      eyeR: findBoneByPatterns(bones, ['cc_base_r_eye', 'righteye', 'r_eye', 'eye_r']),
+      bustL: findBoneByPatterns(bones, ['cc_base_l_breast', 'l_breast', 'breast_l', 'bustl']),
+      bustR: findBoneByPatterns(bones, ['cc_base_r_breast', 'r_breast', 'breast_r', 'bustr']),
+      thighL: findBoneByPatterns(bones, ['cc_base_l_thigh', 'leftupleg', 'l_thigh', 'thigh_l', 'bip001 l thigh']),
+      thighR: findBoneByPatterns(bones, ['cc_base_r_thigh', 'rightupleg', 'r_thigh', 'thigh_r', 'bip001 r thigh']),
+      calfL: findBoneByPatterns(bones, ['cc_base_l_calf', 'leftleg', 'l_calf', 'calf_l', 'shin_l', 'bip001 l calf']),
+      calfR: findBoneByPatterns(bones, ['cc_base_r_calf', 'rightleg', 'r_calf', 'calf_r', 'shin_r', 'bip001 r calf']),
+      footL: findBoneByPatterns(bones, ['cc_base_l_foot', 'leftfoot', 'l_foot', 'foot_l', 'bip001 l foot']),
+      footR: findBoneByPatterns(bones, ['cc_base_r_foot', 'rightfoot', 'r_foot', 'foot_r', 'bip001 r foot']),
+      armL: findBoneByPatterns(bones, ['cc_base_l_upperarm', 'leftarm_0', 'leftarm', 'l_upperarm', 'upperarm_l', 'bip001 l upperarm']),
+      armR: findBoneByPatterns(bones, ['cc_base_r_upperarm', 'rightarm_0', 'rightarm', 'r_upperarm', 'upperarm_r', 'bip001 r upperarm']),
+      foreL: findBoneByPatterns(bones, ['cc_base_l_forearm_', 'cc_base_l_forearm', 'leftforearm_0', 'leftforearm', 'l_forearm', 'forearm_l', 'bip001 l forearm']),
+      foreR: findBoneByPatterns(bones, ['cc_base_r_forearm_', 'cc_base_r_forearm', 'rightforearm_0', 'rightforearm', 'r_forearm', 'forearm_r', 'bip001 r forearm']),
+      extraHair,
+      armDownZ: (info && info.armDownZ !== undefined) ? info.armDownZ : 0.62
+    };
   }
 
   const CHAR_PREVIEW_STYLE = {
@@ -4935,8 +4951,8 @@
   }
 
   async function selectPlayableCharacter(charId, silent) {
-    charId = 'cool_man';
-    const info = PLAYABLE_CHARS.cool_man;
+    if (!PLAYABLE_CHARS[charId]) charId = 'cool_man';
+    const info = PLAYABLE_CHARS[charId];
     if (playerCharLoading) return;
     save.playerChar = charId;
     persistSave();
@@ -5926,6 +5942,7 @@
   if (el('phCallSaveiroBrasil')) el('phCallSaveiroBrasil').onclick = () => deliverPhoneCar('saveiro_brasil', '🇧🇷 Saveiro Cross Brasil');
   if (el('phCallGol')) el('phCallGol').onclick = () => deliverPhoneCar('car_gol', '🚗 VW Gol Quadrado');
   if (el('phCallPm')) el('phCallPm').onclick = () => deliverPhoneCar('car_pm', '🚓 Viatura PM-BR');
+  if (el('phCallCrownPm')) el('phCallCrownPm').onclick = () => deliverPhoneCar('car_pm_crown', '🚓 Crown Victoria PM');
 
   if (el('phGoHomeQuick')) {
     el('phGoHomeQuick').onclick = () => {
@@ -6021,7 +6038,7 @@
   }
   if (el('btnHouseWardrobe')) {
     el('btnHouseWardrobe').onclick = () => {
-      selectPlayableCharacter('cool_man', false);
+      selectPlayableCharacter(save.playerChar || 'cool_man', false);
     };
   }
   if (el('btnHouseSpawnCar')) {
@@ -6126,7 +6143,7 @@
       ui.loadStatus.textContent = 'Carregando Veículos, Personagens e Tráfego...';
       ui.loadFill.style.width = '45%';
 
-      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, golScene, pmScene, atmScene, jobScene] = await Promise.all([
+      const [coolManScene, npcJobScene, npcDoaScene, trafficPackScene, saveiroScene, saveiroBrasilScene, mustangScene, lexusScene, gt300Scene, golScene, pmScene, policeCarScene, swatGuardScene, policeSetScene, atmScene, jobScene] = await Promise.all([
         loadGLB('models/chars/cool_man.glb'),
         loadGLB('models/chars/npc_outer_plane.glb'),
         loadGLB('models/chars/doa_npc_fighter.glb'),
@@ -6138,6 +6155,9 @@
         loadGLB('models/vehicles/toyota_gr_supra_gt300.glb'),
         loadGLB('models/vehicles/car_gol.glb'),
         loadGLB('models/vehicles/car_pm.glb'),
+        loadGLB('models/vehicles/police_car.glb'),
+        loadGLB('models/chars/special_force_swat_police.glb'),
+        loadGLB('models/props/set_policia.glb'),
         loadGLB('models/props/prop_atm.glb'),
         loadGLB('models/props/prop_job.glb')
       ]);
@@ -6164,7 +6184,8 @@
         lexus_lc_500_wald: normalizeApexVehicleScene(lexusScene, 4.55),
         toyota_gr_supra_gt300: normalizeApexVehicleScene(gt300Scene, 4.62),
         car_gol: golScene,
-        car_pm: pmScene
+        car_pm: pmScene,
+        car_pm_crown: normalizeApexVehicleScene(policeCarScene, 4.75)
       };
       citizenTemplates = [];
       trafficTemplates = buildTrafficTemplates(trafficPackScene);
@@ -6233,6 +6254,52 @@
         hGrp.add(pad);
         scene.add(hGrp);
         rpProps.push({ type: 'safehouse', label: 'Minha Casa', pos: hGrp.position, mesh: hGrp });
+      })();
+
+      // Base / Delegacia PM-BR (Bater Ponto Policial & Entrega de Presos)
+      const POLICE_STATION_POS = new THREE.Vector3(-162.0, 0, -172.0);
+      (function buildPoliceStation() {
+        const px = POLICE_STATION_POS.x, pz = POLICE_STATION_POS.z;
+        const py = getSafeGroundForSpawn(px, pz, groundY);
+        POLICE_STATION_POS.y = py;
+        const pGrp = new THREE.Group();
+        pGrp.position.set(px, py, pz);
+        const ring = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.45, 1.45, 2.3, 18, 1, true),
+          new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })
+        );
+        ring.position.y = 1.15;
+        pGrp.add(ring);
+        const pad = new THREE.Mesh(
+          new THREE.CircleGeometry(1.5, 20).rotateX(-Math.PI / 2),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.78, depthWrite: false })
+        );
+        pad.position.y = 0.05;
+        pGrp.add(pad);
+        scene.add(pGrp);
+        rpProps.push({ type: 'police_station', label: 'Delegacia PM-BR', pos: pGrp.position, mesh: pGrp });
+
+        // Oficial SWAT (special_force_swat_police.glb) de guarda na Delegacia
+        if (swatGuardScene) {
+          const swat = normalizeCustomCharScene(swatGuardScene, 1.72);
+          const sy = getSafeGroundForSpawn(px + 1.8, pz, groundY);
+          swat.position.set(px + 1.8, sy, pz);
+          swat.rotation.y = Math.PI * 0.5;
+          scene.add(swat);
+        }
+        // Kit Tático Policial (set_policia.glb) na base PM-BR
+        if (policeSetScene) {
+          const pBox = new THREE.Box3().setFromObject(policeSetScene);
+          const pSz = new THREE.Vector3(); pBox.getSize(pSz);
+          const pMax = Math.max(pSz.x, pSz.y, pSz.z, 0.01);
+          policeSetScene.scale.multiplyScalar(1.35 / pMax);
+          const setY = getSafeGroundForSpawn(px - 1.8, pz, groundY);
+          policeSetScene.position.set(px - 1.8, setY, pz);
+          scene.add(policeSetScene);
+        }
+        // Viatura Crown Victoria PM-BR (police_car.glb) estacionada na Delegacia
+        const pmY = getSafeGroundForSpawn(px - 4.0, pz + 4.5, groundY);
+        spawnVehicle('car_pm_crown', px - 4.0, pmY + 0.03, pz + 4.5, 0.0);
       })();
 
       // McDonald's Drive-Thru real em terreno plano aberto ao lado do meio-fio da Av. Sul (-45, 30)
@@ -6355,6 +6422,13 @@
         showToast,
         setGpsDestination,
         clearGpsDestination,
+        selectPlayableCharacter,
+        getVehicleSeats,
+        localCarToWorld,
+        applyDriverPoseBlend,
+        animateJobNpcBones,
+        getWalkableGround,
+        policeStationPos: POLICE_STATION_POS,
         createRemoteCharVisual: (charId) => {
           const cid = (charId && playableCharCache[charId]) ? charId : (playableCharCache.cool_man ? 'cool_man' : Object.keys(playableCharCache)[0]);
           const tpl = cid ? playableCharCache[cid] : null;
@@ -6389,29 +6463,7 @@
               const lk = k.toLowerCase();
               return lk.includes('hair') || lk.includes('cat_ears') || lk.includes('ponytail') || lk.includes('skirt') || lk.includes('ribbon');
             });
-            customRig = {
-              hips: findBoneByPatterns(bones, ['cc_base_pelvis', 'cc_base_hip', 'hips_01', 'hips']),
-              spine: findBoneByPatterns(bones, ['cc_base_spine01', 'cc_base_waist', 'spine_02', 'spine1', 'spine']),
-              chest: findBoneByPatterns(bones, ['cc_base_spine02', 'spine2_04', 'spine2', 'chest']),
-              neck: findBoneByPatterns(bones, ['cc_base_necktwist01', 'neck_05', 'neck']),
-              head: findBoneByPatterns(bones, ['cc_base_head', 'head_08', 'head']),
-              eyeL: findBoneByPatterns(bones, ['cc_base_l_eye', 'lefteye', 'l_eye', 'eye_l']),
-              eyeR: findBoneByPatterns(bones, ['cc_base_r_eye', 'righteye', 'r_eye', 'eye_r']),
-              bustL: findBoneByPatterns(bones, ['cc_base_l_breast', 'l_breast', 'breast_l', 'bustl']),
-              bustR: findBoneByPatterns(bones, ['cc_base_r_breast', 'r_breast', 'breast_r', 'bustr']),
-              thighL: findBoneByPatterns(bones, ['cc_base_l_thigh', 'leftupleg', 'l_thigh', 'thigh_l']),
-              thighR: findBoneByPatterns(bones, ['cc_base_r_thigh', 'rightupleg', 'r_thigh', 'thigh_r']),
-              calfL: findBoneByPatterns(bones, ['cc_base_l_calf', 'leftleg', 'l_calf', 'calf_l', 'shin_l']),
-              calfR: findBoneByPatterns(bones, ['cc_base_r_calf', 'rightleg', 'r_calf', 'calf_r', 'shin_r']),
-              footL: findBoneByPatterns(bones, ['cc_base_l_foot', 'leftfoot', 'l_foot', 'foot_l']),
-              footR: findBoneByPatterns(bones, ['cc_base_r_foot', 'rightfoot', 'r_foot', 'foot_r']),
-              armL: findBoneByPatterns(bones, ['cc_base_l_upperarm', 'leftarm_0', 'leftarm', 'l_upperarm', 'upperarm_l']),
-              armR: findBoneByPatterns(bones, ['cc_base_r_upperarm', 'rightarm_0', 'rightarm', 'r_upperarm', 'upperarm_r']),
-              foreL: findBoneByPatterns(bones, ['cc_base_l_forearm_', 'cc_base_l_forearm', 'leftforearm_0', 'leftforearm', 'l_forearm', 'forearm_l']),
-              foreR: findBoneByPatterns(bones, ['cc_base_r_forearm_', 'cc_base_r_forearm', 'rightforearm_0', 'rightforearm', 'r_forearm', 'forearm_r']),
-              extraHair,
-              armDownZ: (info.armDownZ !== undefined) ? info.armDownZ : 0.62
-            };
+            customRig = buildCustomRigMap(bones, info, extraHair);
           }
 
           return {
@@ -6492,6 +6544,7 @@
     pollGamepad(dt);
     if (window.BrasilAudio && window.BrasilAudio.tick) window.BrasilAudio.tick(dt);
     if (window.BrasilMP && window.BrasilMP.tick) window.BrasilMP.tick(dt);
+    if (window.BrasilPolice && window.BrasilPolice.tick) window.BrasilPolice.tick(dt);
 
     fpsCount++;
     fpsTimer += dt;
@@ -8029,7 +8082,7 @@
       v.parts.tailMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = braking ? 4.5 : (v.lightsOn ? 1.8 : 0.1); });
       v.parts.intLightMats.forEach((m) => { if (m.emissiveIntensity !== undefined) m.emissiveIntensity = interiorLit ? 3.0 : 0.2; });
 
-      if (v.type === 'car_pm' && v.parts.lightB && v.parts.lightR) {
+      if ((v.type === 'car_pm' || v.type === 'car_pm_crown') && v.parts.lightB && v.parts.lightR) {
         const blink = v.sirenOn ? Math.sin(t * 2.2) > 0 : false;
         v.parts.lightB.visible = !v.sirenOn || blink;
         v.parts.lightR.visible = !v.sirenOn || !blink;
@@ -8455,6 +8508,16 @@
       setBoneDelta(n, 'ForeArmL', (-0.36 + g1 * 0.14) * ib + (-elbowBase - Math.max(0, s) * (0.42 * mb + 0.24 * sb)) - 0.52 * ab, 0, 0.16);
       setBoneDelta(n, 'ForeArmR', (-0.34 - g2 * 0.12) * ib + (-elbowBase - Math.max(0, -s) * (0.42 * mb + 0.24 * sb)) - 0.52 * ab, 0, -0.16);
       setBoneDelta(n, 'Head', Math.sin(t * 1.5) * 0.05 * ib - 0.04 * mb - 0.06 * sb, Math.cos(t * 1.1) * 0.09 * ib + s * 0.03 * mb, Math.sin(t * 0.9) * 0.035 * ib);
+    }
+
+    if (n === player && n.mesh && !n.inCar && (!n.bones || Object.keys(n.bones).length === 0)) {
+      if (walking) {
+        n.walkPhase = (n.walkPhase || 0) + dt * 9.5;
+        n.mesh.position.y += Math.abs(Math.sin(n.walkPhase)) * 0.045;
+        n.mesh.rotation.z = Math.sin(n.walkPhase) * 0.04;
+      } else {
+        n.mesh.rotation.z *= 0.85;
+      }
     }
 
     // Animação de Combo de Soco nos ossos de 21-bones (NPC 1 / Walking)

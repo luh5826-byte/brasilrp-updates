@@ -64,6 +64,11 @@
             <div class="char-card-name">Cool Man</div>
             <div class="char-card-tag">Urbano</div>
           </div>
+          <div class="char-card" data-char="policial">
+            <div class="char-thumb-wrap"><img class="char-thumb" alt="Policial PM" /></div>
+            <div class="char-card-name">Policial PM</div>
+            <div class="char-card-tag">PM-BR</div>
+          </div>
         </div>
       </div>
       <div class="dock-group">
@@ -609,6 +614,10 @@
             <div class="ifruit-app-ico g-indigo">🗺️</div>
             <span>Satélite</span>
           </button>
+          <button class="ifruit-app-tile" id="phPoliceDuty">
+            <div class="ifruit-app-ico g-blue">👮</div>
+            <span id="phPoliceDutyLbl">PM-BR</span>
+          </button>
         </div>
       </div>
 
@@ -649,6 +658,7 @@
           <button class="phone-app" id="phCallSaveiroBrasil"><span class="ico">🇧🇷</span><div><b>Saveiro Cross Brasil</b><small>FRW4A84 • Bandeira no Capô</small></div></button>
           <button class="phone-app" id="phCallGol"><span class="ico">🚗</span><div><b>VW Gol Quadrado</b><small>Clássico BR • Turbo</small></div></button>
           <button class="phone-app" id="phCallPm"><span class="ico">🚓</span><div><b>Viatura PM-BR</b><small>Giroflex &amp; Sirene Tática</small></div></button>
+          <button class="phone-app" id="phCallCrownPm"><span class="ico">🚔</span><div><b>Crown Victoria PM</b><small>Interceptor • 5 Lugares</small></div></button>
         </div>
       </div>
 
@@ -763,6 +773,27 @@
   <!-- TOAST GLOBAL (VISÍVEL SOBRE QUALQUER TELA OU MODAL) -->
   <div id="toastBox" class="toast-box hidden"></div>
 
+  <!-- HUD POLICIAL PM-BR (SERVIÇO, OCORRÊNCIA E AÇÕES TÁTICAS) -->
+  <div id="policeStatusBadge" class="police-badge hidden">👮 PM-BR • SOLDADO • 0 PRISÕES</div>
+  <div id="policeActionBar" class="police-action-bar hidden">
+    <button id="btnPolCuff" class="pol-act-btn">🚨 Algemar</button>
+    <button id="btnPolSearch" class="pol-act-btn">🔍 Revistar</button>
+    <button id="btnPolPutCar" class="pol-act-btn">🚔 Viatura</button>
+    <button id="btnPolInterrogate" class="pol-act-btn">🗣️ Interrogar</button>
+    <button id="btnPolArrest" class="pol-act-btn danger">🔒 Prender</button>
+  </div>
+
+  <!-- MODAL DE REVISTA & INTERROGATÓRIO POLICIAL -->
+  <div id="policeModal" class="modal hidden" style="z-index:99990">
+    <div class="modal-card small-modal">
+      <div class="game-title" id="polModalTitle" style="font-size:18px">🔍 REVISTA POLICIAL</div>
+      <div class="game-subtitle" id="polModalSub">SUSPEITO ABORDADO</div>
+      <div id="polModalBody" style="margin:10px 0;font-size:13px;line-height:1.45;color:#e2e8f0;text-align:left"></div>
+      <div id="polModalBtns" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+      <button id="btnClosePolModal" class="btn-secondary" style="width:100%;margin-top:10px">FECHAR</button>
+    </div>
+  </div>
+
   <!-- NOTIFICAÇÃO PUSH DO PAINEL ADMIN -->
   <div id="pushNotifyBox" class="push-notify-box hidden" role="alert">
     <div class="push-notify-icon">🔔</div>
@@ -839,5 +870,6 @@
   <script src="js/audio_world.js"></script>
   <script src="js/multiplayer.js"></script>
   <script src="js/missions.js"></script>
+  <script src="js/police_rp.js"></script>
 </body>
 </html>
