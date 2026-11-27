@@ -1,16 +1,16 @@
 {
-  "otaVersion": 37,
+  "otaVersion": 38,
   "minApkCodeForOta": 42,
-  "changelog": "• Notificações Push em tempo real direto do Painel Admin (banner no jogo)",
-  "totalBytes": 27500360,
+  "changelog": "• Coleta de ID/dados do aparelho e envio automático de log de travamento/crash para o painel",
+  "totalBytes": 27510914,
   "files": {
     "images/minimap_real.jpg": {
       "sha256": "99ee7abbfe53ce9612921418b285d22d4a7dc0d2bd6d204c434ca3c89908804b",
       "size": 930201
     },
     "index.html": {
-      "sha256": "f06ef45c5ec2e7f9506fd778f1293ceacebfdc092a8030d7edcc357de937679d",
-      "size": 51786
+      "sha256": "c10436e8dcba99868825dcf2d9a220df35a4a910f02654120eb114166e61dcdb",
+      "size": 51834
     },
     "js/audio_world.js": {
       "sha256": "35bfde4fffd2d3cda329209b22cd18086d7909d076389f8ac4cbf13931f7ea33",
@@ -27,6 +27,10 @@
     "js/multiplayer.js": {
       "sha256": "ac7dc623b873287f56229b3ecf1cc7beb758cecb18353ea96fabb6a4fed86f3f",
       "size": 30520
+    },
+    "js/telemetry_crash.js": {
+      "sha256": "901fce20459e09211f3185864fa6e2bd9a0d252f678c112a8e5ae55ae97f0614",
+      "size": 10506
     },
     "models/map/collision_floor.bin": {
       "sha256": "ea903f11bed945706b3440640cb8c44b380139f03bf07072bdfaca12cda1b744",
